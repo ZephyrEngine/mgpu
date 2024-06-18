@@ -1,0 +1,3 @@
+[submodule "external/atom"]
+	path = external/atom
+	url = https://github.com/fleroviux/atom.git
