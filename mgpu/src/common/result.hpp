@@ -10,7 +10,7 @@ namespace mgpu {
     if(result_code != MGPU_SUCCESS) { \
       return result_code;\
     } \
-  } while(0);
+  } while(0)
 
   template<typename TValue>
   using Result = atom::Result<MGPUResult, TValue>;
