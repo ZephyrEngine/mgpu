@@ -11,7 +11,8 @@ set(SOURCES
 
 set(HEADERS
   src/backend/opengl/render_device_backend.hpp
-  src/backend/render_device_backend.hpp
+  src/backend/render_device_backend_base.hpp
+  src/common/result.hpp
   src/render_device.hpp
 )
 

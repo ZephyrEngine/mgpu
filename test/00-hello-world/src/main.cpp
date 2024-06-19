@@ -26,7 +26,7 @@ int main() {
   );
 
   MGPURenderDevice mgpu_render_device{};
-  MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_OPENGL, &mgpu_render_device));
+  MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_OPENGL, sdl_window, &mgpu_render_device));
 
   SDL_Event sdl_event{};
 

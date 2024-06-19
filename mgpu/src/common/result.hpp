@@ -1,8 +1,18 @@
-//
-// Created by Mireille on 18/06/2024.
-//
 
-#ifndef MGPU_RESULT_HPP
-#define MGPU_RESULT_HPP
+#pragma once
 
-#endif //MGPU_RESULT_HPP
+#include <mgpu/mgpu.h>
+#include <atom/result.hpp>
+
+namespace mgpu {
+
+  #define MGPU_FORWARD_ERROR(result_code) do { \
+    if(result_code != MGPU_SUCCESS) { \
+      return result_code;\
+    } \
+  } while(0);
+
+  template<typename TValue>
+  using Result = atom::Result<MGPUResult, TValue>;
+
+}  // namespace mgpu

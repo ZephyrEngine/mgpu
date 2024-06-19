@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <mgpu/mgpu.h>
+
 namespace mgpu {
 
   class RenderDeviceBackendBase {

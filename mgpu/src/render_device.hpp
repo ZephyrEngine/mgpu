@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "backend/render_device_backend.hpp"
+#include "backend/render_device_backend_base.hpp"
 
 namespace mgpu {
 

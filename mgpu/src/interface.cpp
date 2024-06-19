@@ -13,22 +13,23 @@ const char* mgpuResultCodeToString(MGPUResult result) {
   switch(result) {
     REGISTER(MGPU_SUCCESS)
     REGISTER(MGPU_BAD_ENUM)
+    REGISTER(MGPU_INTERNAL_ERROR)
     default: ATOM_PANIC("internal error");
   }
 
   #undef REGISTER
 }
 
-MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, MGPURenderDevice* render_device) {
-  std::unique_ptr<mgpu::RenderDeviceBackendBase> render_device_backend{};
+MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, MGPURenderDevice* render_device) {
+  mgpu::Result<std::unique_ptr<mgpu::RenderDeviceBackendBase>> render_device_backend{MGPU_BAD_ENUM};
 
   switch(backend) {
-    case MGPU_BACKEND_OPENGL: render_device_backend = std::make_unique<mgpu::OGLRenderDeviceBackend>(); break;
-    case MGPU_BACKEND_VULKAN: ATOM_PANIC("internal error"); break;
-    default: return MGPU_BAD_ENUM;
+    case MGPU_BACKEND_OPENGL: render_device_backend = mgpu::OGLRenderDeviceBackend::Create(sdl_window); break;
+    case MGPU_BACKEND_VULKAN: break;
   }
 
-  *render_device = (MGPURenderDevice)(new mgpu::RenderDevice{std::move(render_device_backend)});
+  MGPU_FORWARD_ERROR(render_device_backend.Code())
+  *render_device = (MGPURenderDevice)(new mgpu::RenderDevice{render_device_backend.Unwrap()});
   return MGPU_SUCCESS;
 }
 
