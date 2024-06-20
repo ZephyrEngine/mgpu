@@ -220,6 +220,7 @@ VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
 }
 
 VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
+  vkDeviceWaitIdle(m_vk_device);
   vkDestroySurfaceKHR(m_vk_instance->Handle(), m_vk_surface, nullptr);
   vkDestroyDevice(m_vk_device, nullptr);
 }
