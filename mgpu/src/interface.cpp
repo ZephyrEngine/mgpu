@@ -4,7 +4,7 @@
 
 #include "backend/opengl/render_device_backend.hpp"
 #include "backend/vulkan/render_device_backend.hpp"
-#include "render_device.hpp"
+#include "frontend/render_device.hpp"
 
 extern "C" {
 

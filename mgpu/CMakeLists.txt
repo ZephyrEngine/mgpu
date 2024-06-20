@@ -9,8 +9,8 @@ set(SOURCES
   src/backend/vulkan/utility/vulkan_command_pool.cpp
   src/backend/vulkan/utility/vulkan_instance.cpp
   src/backend/vulkan/render_device_backend.cpp
+  src/frontend/render_device.cpp
   src/interface.cpp
-  src/render_device.cpp
 )
 
 set(HEADERS
@@ -21,8 +21,8 @@ set(HEADERS
   src/backend/vulkan/utility/vulkan_physical_device.hpp
   src/backend/vulkan/render_device_backend.hpp
   src/backend/render_device_backend_base.hpp
+  src/frontend/render_device.hpp
   src/common/result.hpp
-  src/render_device.hpp
 )
 
 set(HEADERS_PUBLIC
