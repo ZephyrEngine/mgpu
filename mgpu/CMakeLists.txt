@@ -5,12 +5,17 @@
 
 set(SOURCES
   src/backend/opengl/render_device_backend.cpp
+  src/backend/vulkan/utility/vulkan_instance.cpp
+  src/backend/vulkan/render_device_backend.cpp
   src/interface.cpp
   src/render_device.cpp
 )
 
 set(HEADERS
   src/backend/opengl/render_device_backend.hpp
+  src/backend/vulkan/utility/vulkan_instance.hpp
+  src/backend/vulkan/utility/vulkan_physical_device.hpp
+  src/backend/vulkan/render_device_backend.hpp
   src/backend/render_device_backend_base.hpp
   src/common/result.hpp
   src/render_device.hpp
@@ -30,4 +35,4 @@ add_library(mgpu ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(mgpu PUBLIC include)
 target_include_directories(mgpu PRIVATE src)
 target_link_libraries(mgpu PUBLIC mgpu-cxx-opts SDL2::SDL2 Vulkan::Vulkan OpenGL::GL GLEW::GLEW)
-target_link_libraries(mgpu PRIVATE atom-common)
+target_link_libraries(mgpu PRIVATE atom-common fmt)

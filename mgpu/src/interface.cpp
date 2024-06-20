@@ -3,6 +3,7 @@
 #include <atom/panic.hpp>
 
 #include "backend/opengl/render_device_backend.hpp"
+#include "backend/vulkan/render_device_backend.hpp"
 #include "render_device.hpp"
 
 extern "C" {
@@ -25,10 +26,10 @@ MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, M
 
   switch(backend) {
     case MGPU_BACKEND_OPENGL: render_device_backend = mgpu::OGLRenderDeviceBackend::Create(sdl_window); break;
-    case MGPU_BACKEND_VULKAN: break;
+    case MGPU_BACKEND_VULKAN: render_device_backend = mgpu::VulkanRenderDeviceBackend::Create(sdl_window); break;
   }
 
-  MGPU_FORWARD_ERROR(render_device_backend.Code())
+  MGPU_FORWARD_ERROR(render_device_backend.Code());
   *render_device = (MGPURenderDevice)(new mgpu::RenderDevice{render_device_backend.Unwrap()});
   return MGPU_SUCCESS;
 }

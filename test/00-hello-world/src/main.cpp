@@ -3,8 +3,9 @@
 
 #include <atom/panic.hpp>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
 #undef main
+
+#define USE_VULKAN 1
 
 #define MGPU_CHECK(result_expression) \
   do { \
@@ -16,17 +17,26 @@
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
 
+  MGPURenderDevice mgpu_render_device{};
+
   SDL_Window* sdl_window = SDL_CreateWindow(
     "test-00-hello-world",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     1600,
     900,
+#if USE_VULKAN == 1
+    SDL_WINDOW_VULKAN
+#else
     SDL_WINDOW_OPENGL
+#endif
   );
 
-  MGPURenderDevice mgpu_render_device{};
+#if USE_VULKAN == 1
+  MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_VULKAN, sdl_window, &mgpu_render_device));
+#else
   MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_OPENGL, sdl_window, &mgpu_render_device));
+#endif
 
   SDL_Event sdl_event{};
 
