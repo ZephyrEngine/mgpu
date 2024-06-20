@@ -5,6 +5,7 @@
 
 set(SOURCES
   src/backend/opengl/render_device_backend.cpp
+  src/backend/vulkan/utility/vulkan_command_pool.cpp
   src/backend/vulkan/utility/vulkan_instance.cpp
   src/backend/vulkan/render_device_backend.cpp
   src/interface.cpp
@@ -13,6 +14,7 @@ set(SOURCES
 
 set(HEADERS
   src/backend/opengl/render_device_backend.hpp
+  src/backend/vulkan/utility/vulkan_command_pool.hpp
   src/backend/vulkan/utility/vulkan_instance.hpp
   src/backend/vulkan/utility/vulkan_physical_device.hpp
   src/backend/vulkan/render_device_backend.hpp

@@ -217,9 +217,13 @@ VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
     , m_vk_graphics_compute_queue_family_index{vk_graphics_compute_queue_family_index}
     , m_vk_present_queue_family_indices{std::move(vk_present_queue_family_indices)}
     , m_vk_surface{vk_surface} {
+  // TODO(fleroviux): proper error handling
+  m_vk_command_pool = VulkanCommandPool::Create(
+    m_vk_device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, vk_graphics_compute_queue_family_index).Unwrap();
 }
 
 VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
+  m_vk_command_pool.reset();
   vkDeviceWaitIdle(m_vk_device);
   vkDestroySurfaceKHR(m_vk_instance->Handle(), m_vk_surface, nullptr);
   vkDestroyDevice(m_vk_device, nullptr);

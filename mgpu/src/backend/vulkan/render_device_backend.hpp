@@ -5,6 +5,7 @@
 #include <SDL2/SDL_vulkan.h>
 #include <memory>
 
+#include "backend/vulkan/utility/vulkan_command_pool.hpp"
 #include "backend/vulkan/utility/vulkan_instance.hpp"
 #include "backend/render_device_backend_base.hpp"
 #include "common/result.hpp"
@@ -41,6 +42,8 @@ class VulkanRenderDeviceBackend : public RenderDeviceBackendBase {
     u32 m_vk_graphics_compute_queue_family_index;
     std::vector<u32> m_vk_present_queue_family_indices;
     VkSurfaceKHR m_vk_surface;
+
+    std::shared_ptr<VulkanCommandPool> m_vk_command_pool{};
 };
 
 }  // namespace mgpu
