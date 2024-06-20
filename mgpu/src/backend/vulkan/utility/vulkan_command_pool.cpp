@@ -16,7 +16,6 @@ Result<std::unique_ptr<VulkanCommandPool>> VulkanCommandPool::Create(VkDevice vk
   if(vkCreateCommandPool(vk_device, &create_info, nullptr, &vk_command_pool) != VK_SUCCESS) {
     return MGPU_INTERNAL_ERROR;
   }
-
   return std::unique_ptr<VulkanCommandPool>(new VulkanCommandPool{vk_device, vk_command_pool});
 }
 

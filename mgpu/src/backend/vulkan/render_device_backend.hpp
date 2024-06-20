@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "backend/vulkan/utility/vulkan_command_pool.hpp"
+#include "backend/vulkan/utility/vulkan_command_buffer.hpp"
 #include "backend/vulkan/utility/vulkan_instance.hpp"
 #include "backend/render_device_backend_base.hpp"
 #include "common/result.hpp"
@@ -44,6 +45,7 @@ class VulkanRenderDeviceBackend : public RenderDeviceBackendBase {
     VkSurfaceKHR m_vk_surface;
 
     std::shared_ptr<VulkanCommandPool> m_vk_command_pool{};
+    std::shared_ptr<VulkanCommandBuffer> m_vk_command_buffer{};
 };
 
 }  // namespace mgpu

@@ -219,11 +219,15 @@ VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
     , m_vk_surface{vk_surface} {
   // TODO(fleroviux): proper error handling
   m_vk_command_pool = VulkanCommandPool::Create(
-    m_vk_device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, vk_graphics_compute_queue_family_index).Unwrap();
+    m_vk_device, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_vk_graphics_compute_queue_family_index).Unwrap();
+  m_vk_command_buffer = VulkanCommandBuffer::Create(m_vk_device, m_vk_command_pool).Unwrap();
 }
 
 VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
+  // TODO(fleroviux): get rid of the hacky smart pointer resets
+  m_vk_command_buffer.reset();
   m_vk_command_pool.reset();
+
   vkDeviceWaitIdle(m_vk_device);
   vkDestroySurfaceKHR(m_vk_instance->Handle(), m_vk_surface, nullptr);
   vkDestroyDevice(m_vk_device, nullptr);
