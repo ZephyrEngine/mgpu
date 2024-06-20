@@ -6,13 +6,13 @@
 
 namespace mgpu {
 
-  #define MGPU_FORWARD_ERROR(result_code) do { \
-    if(result_code != MGPU_SUCCESS) { \
-      return result_code;\
-    } \
-  } while(0)
+#define MGPU_FORWARD_ERROR(result_code) do { \
+  if(result_code != MGPU_SUCCESS) { \
+    return result_code;\
+  } \
+} while(0)
 
-  template<typename TValue>
-  using Result = atom::Result<MGPUResult, TValue>;
+template<typename TValue>
+using Result = atom::Result<MGPUResult, TValue>;
 
 }  // namespace mgpu

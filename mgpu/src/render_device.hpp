@@ -7,12 +7,12 @@
 
 namespace mgpu {
 
-  class RenderDevice {
-    public:
-      explicit RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend);
+class RenderDevice {
+  public:
+    explicit RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend);
 
-    private:
-      std::unique_ptr<RenderDeviceBackendBase> m_backend{};
-  };
+  private:
+    std::unique_ptr<RenderDeviceBackendBase> m_backend{};
+};
 
 }  // namespace mgpu

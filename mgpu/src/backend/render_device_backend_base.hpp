@@ -5,9 +5,9 @@
 
 namespace mgpu {
 
-  class RenderDeviceBackendBase {
-    public:
-      virtual ~RenderDeviceBackendBase() = default;
-  };
+class RenderDeviceBackendBase {
+  public:
+    virtual ~RenderDeviceBackendBase() = default;
+};
 
 }  // namespace mgpu

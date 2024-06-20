@@ -3,8 +3,8 @@
 
 namespace mgpu {
 
-  RenderDevice::RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend)
-      : m_backend{std::move(backend)} {
-  }
+RenderDevice::RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend)
+    : m_backend{std::move(backend)} {
+}
 
 }  // namespace mgpu

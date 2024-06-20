@@ -10,16 +10,16 @@
 
 namespace mgpu {
 
-  class OGLRenderDeviceBackend : public RenderDeviceBackendBase {
-    public:
-      static Result<std::unique_ptr<RenderDeviceBackendBase>> Create(SDL_Window* sdl_window);
+class OGLRenderDeviceBackend : public RenderDeviceBackendBase {
+  public:
+    static Result<std::unique_ptr<RenderDeviceBackendBase>> Create(SDL_Window* sdl_window);
 
-     ~OGLRenderDeviceBackend() override;
+   ~OGLRenderDeviceBackend() override;
 
-    private:
-      OGLRenderDeviceBackend(SDL_GLContext gl_context);
+  private:
+    OGLRenderDeviceBackend(SDL_GLContext gl_context);
 
-      SDL_GLContext m_gl_context{};
-  };
+    SDL_GLContext m_gl_context{};
+};
 
 }  // namespace mgpu
