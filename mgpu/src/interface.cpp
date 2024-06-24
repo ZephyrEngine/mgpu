@@ -15,6 +15,8 @@ const char* mgpuResultCodeToString(MGPUResult result) {
     REGISTER(MGPU_SUCCESS)
     REGISTER(MGPU_BAD_ENUM)
     REGISTER(MGPU_INTERNAL_ERROR)
+    REGISTER(MGPU_OUT_OF_MEMORY)
+    REGISTER(MGPU_BAD_DIMENSIONS)
     default: ATOM_PANIC("internal error");
   }
 

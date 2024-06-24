@@ -13,7 +13,7 @@
 
 namespace mgpu {
 
-class VulkanRenderDeviceBackend : public RenderDeviceBackendBase {
+class VulkanRenderDeviceBackend final : public RenderDeviceBackendBase {
   public:
     static Result<std::unique_ptr<RenderDeviceBackendBase>> Create(SDL_Window* sdl_window);
 

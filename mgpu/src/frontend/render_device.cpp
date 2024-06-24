@@ -10,7 +10,10 @@ RenderDevice::RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend)
 }
 
 Result<Buffer*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
-  // TODO(fleroviux): validate inputs
+  // TODO(fleroviux): error on empty usage set?
+  if(create_info->size == 0u) {
+    return MGPU_BAD_DIMENSIONS;
+  }
   return m_backend->CreateBuffer(create_info);
 }
 
