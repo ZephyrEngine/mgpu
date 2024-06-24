@@ -19,6 +19,9 @@ class VulkanRenderDeviceBackend : public RenderDeviceBackendBase {
 
    ~VulkanRenderDeviceBackend() override;
 
+    Result<Buffer*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
+    void DestroyBuffer(Buffer* buffer) override;
+
   private:
     static Result<std::unique_ptr<VulkanInstance>> CreateVulkanInstance(SDL_Window* sdl_window);
 

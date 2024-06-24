@@ -38,4 +38,15 @@ void mgpuDestroyRenderDevice(MGPURenderDevice render_device) {
   delete (mgpu::RenderDevice*)render_device;
 }
 
+MGPUResult mgpuCreateBuffer(MGPURenderDevice render_device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer) {
+  mgpu::Result<mgpu::Buffer*> buffer_result = ((mgpu::RenderDevice*)render_device)->CreateBuffer(create_info);
+  MGPU_FORWARD_ERROR(buffer_result.Code());
+  *buffer = (MGPUBuffer)buffer_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
+void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer) {
+  ((mgpu::RenderDevice*)render_device)->DestroyBuffer((mgpu::Buffer*)buffer);
+}
+
 }  // extern "C"

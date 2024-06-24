@@ -1,10 +1,21 @@
 
+#include <atom/panic.hpp>
+
 #include "render_device.hpp"
 
 namespace mgpu {
 
 RenderDevice::RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend)
     : m_backend{std::move(backend)} {
+}
+
+Result<Buffer*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
+  // TODO(fleroviux): validate inputs
+  return m_backend->CreateBuffer(create_info);
+}
+
+void RenderDevice::DestroyBuffer(Buffer* buffer) {
+  m_backend->DestroyBuffer(buffer);
 }
 
 }  // namespace mgpu

@@ -1,11 +1,12 @@
 
 #include <mgpu/mgpu.h>
 
+#include <atom/integer.hpp>
 #include <atom/panic.hpp>
 #include <SDL2/SDL.h>
 #undef main
 
-#define USE_VULKAN 1
+#define USE_VULKAN 0
 #define MGPU_CHECK(result_expression) \
   do { \
     MGPUResult result = result_expression; \
@@ -37,6 +38,13 @@ int main() {
   MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_OPENGL, sdl_window, &mgpu_render_device));
 #endif
 
+  const MGPUBufferCreateInfo buffer_create_info{
+    .size = 100 * sizeof(u32),
+    .usage = (MGPUBufferUsage)(MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER)
+  };
+  MGPUBuffer mgpu_buffer{};
+  MGPU_CHECK(mgpuCreateBuffer(mgpu_render_device, &buffer_create_info, &mgpu_buffer))
+
   SDL_Event sdl_event{};
 
   while(true) {
@@ -50,6 +58,7 @@ int main() {
   }
 
 done:
+  mgpuDestroyBuffer(mgpu_render_device, mgpu_buffer);
   mgpuDestroyRenderDevice(mgpu_render_device);
   SDL_DestroyWindow(sdl_window);
   return 0;

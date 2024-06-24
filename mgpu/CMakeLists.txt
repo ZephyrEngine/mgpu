@@ -4,6 +4,7 @@
 # TODO: remove dependency on SDL2 if possible
 
 set(SOURCES
+  src/backend/opengl/buffer.cpp
   src/backend/opengl/render_device_backend.cpp
   src/backend/vulkan/utility/vulkan_command_buffer.cpp
   src/backend/vulkan/utility/vulkan_command_pool.cpp
@@ -15,6 +16,7 @@ set(SOURCES
 )
 
 set(HEADERS
+  src/backend/opengl/buffer.hpp
   src/backend/opengl/render_device_backend.hpp
   src/backend/vulkan/utility/vulkan_command_buffer.hpp
   src/backend/vulkan/utility/vulkan_command_pool.hpp
@@ -23,6 +25,7 @@ set(HEADERS
   src/backend/vulkan/utility/vulkan_physical_device.hpp
   src/backend/vulkan/render_device_backend.hpp
   src/backend/render_device_backend_base.hpp
+  src/frontend/buffer.hpp
   src/frontend/render_device.hpp
   src/common/result.hpp
 )

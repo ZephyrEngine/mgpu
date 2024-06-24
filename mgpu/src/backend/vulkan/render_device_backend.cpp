@@ -233,4 +233,12 @@ VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
   vkDestroyDevice(m_vk_device, nullptr);
 }
 
+Result<Buffer*> VulkanRenderDeviceBackend::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
+  ATOM_PANIC("unimplemented")
+}
+
+void VulkanRenderDeviceBackend::DestroyBuffer(Buffer* buffer) {
+  ATOM_PANIC("unimplemented")
+}
+
 }  // namespace mgpu
