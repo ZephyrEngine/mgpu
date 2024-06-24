@@ -11,6 +11,7 @@ set(SOURCES
   src/backend/vulkan/utility/vulkan_fence.cpp
   src/backend/vulkan/utility/vulkan_instance.cpp
   src/backend/vulkan/render_device_backend.cpp
+  src/backend/vulkan/vma.cpp
   src/frontend/render_device.cpp
   src/interface.cpp
 )
@@ -43,5 +44,5 @@ add_library(mgpu ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 
 target_include_directories(mgpu PUBLIC include)
 target_include_directories(mgpu PRIVATE src)
-target_link_libraries(mgpu PUBLIC mgpu-cxx-opts SDL2::SDL2 Vulkan::Vulkan VulkanMemoryAllocator OpenGL::GL GLEW::GLEW)
-target_link_libraries(mgpu PRIVATE atom-common fmt)
+target_link_libraries(mgpu PUBLIC mgpu-cxx-opts SDL2::SDL2 Vulkan::Vulkan OpenGL::GL GLEW::GLEW)
+target_link_libraries(mgpu PRIVATE atom-common fmt VulkanMemoryAllocator)

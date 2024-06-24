@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <memory>
+#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 #include "backend/vulkan/utility/vulkan_command_pool.hpp"
 #include "backend/vulkan/utility/vulkan_command_buffer.hpp"
@@ -38,6 +40,7 @@ class VulkanRenderDeviceBackend final : public RenderDeviceBackendBase {
       VkDevice vk_device,
       u32 vk_graphics_compute_queue_family_index,
       std::vector<u32>&& vk_present_queue_family_indices,
+      VmaAllocator vma_allocator,
       VkSurfaceKHR vk_surface
     );
 
@@ -45,6 +48,7 @@ class VulkanRenderDeviceBackend final : public RenderDeviceBackendBase {
     VkDevice m_vk_device;
     u32 m_vk_graphics_compute_queue_family_index;
     std::vector<u32> m_vk_present_queue_family_indices;
+    VmaAllocator m_vma_allocator;
     VkSurfaceKHR m_vk_surface;
 
     std::shared_ptr<VulkanCommandPool> m_vk_command_pool{};

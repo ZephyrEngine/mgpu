@@ -13,6 +13,8 @@ Result<std::unique_ptr<RenderDeviceBackendBase>> VulkanRenderDeviceBackend::Crea
 
   std::unique_ptr<VulkanInstance> vk_instance = vk_instance_result.Unwrap();
 
+  const VulkanPhysicalDevice* vk_physical_device = PickVulkanPhysicalDevice(vk_instance);
+
   u32 vk_graphics_compute_queue_family_index{};
   std::vector<u32> vk_present_queue_family_indices{};
   auto vk_device_result = CreateVulkanDevice(PickVulkanPhysicalDevice(vk_instance), vk_graphics_compute_queue_family_index, vk_present_queue_family_indices);
@@ -24,11 +26,33 @@ Result<std::unique_ptr<RenderDeviceBackendBase>> VulkanRenderDeviceBackend::Crea
     return MGPU_INTERNAL_ERROR;
   }
 
+  VkDevice vk_device = vk_device_result.Unwrap();
+
+  VmaAllocator vma_allocator{};
+  const VmaAllocatorCreateInfo vma_create_info = {
+    .flags = 0,
+    .physicalDevice = vk_physical_device->Handle(),
+    .device = vk_device,
+    .preferredLargeHeapBlockSize = 0,
+    .pAllocationCallbacks = nullptr,
+    .pDeviceMemoryCallbacks = nullptr,
+    .pHeapSizeLimit = nullptr,
+    .pVulkanFunctions = nullptr,
+    .instance = vk_instance->Handle(),
+    .vulkanApiVersion = VK_API_VERSION_1_0,
+    .pTypeExternalMemoryHandleTypes = nullptr
+  };
+  if(vmaCreateAllocator(&vma_create_info, &vma_allocator) != VK_SUCCESS) {
+    fmt::print("mgpu: Vulkan: failed to create a VmaAllocator instance\n");
+    return MGPU_INTERNAL_ERROR;
+  }
+
   return std::unique_ptr<RenderDeviceBackendBase>{new VulkanRenderDeviceBackend{
     std::move(vk_instance),
-    vk_device_result.Unwrap(),
+    vk_device,
     vk_graphics_compute_queue_family_index,
     std::move(vk_present_queue_family_indices),
+    vma_allocator,
     vk_surface
   }};
 }
@@ -211,11 +235,13 @@ VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
   VkDevice vk_device,
   u32 vk_graphics_compute_queue_family_index,
   std::vector<u32>&& vk_present_queue_family_indices,
+  VmaAllocator vma_allocator,
   VkSurfaceKHR vk_surface
 )   : m_vk_instance{std::move(vk_instance)}
     , m_vk_device{vk_device}
     , m_vk_graphics_compute_queue_family_index{vk_graphics_compute_queue_family_index}
     , m_vk_present_queue_family_indices{std::move(vk_present_queue_family_indices)}
+    , m_vma_allocator{vma_allocator}
     , m_vk_surface{vk_surface} {
   // TODO(fleroviux): proper error handling
   m_vk_command_pool = VulkanCommandPool::Create(
@@ -229,6 +255,7 @@ VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
   m_vk_command_pool.reset();
 
   vkDeviceWaitIdle(m_vk_device);
+  vmaDestroyAllocator(m_vma_allocator);
   vkDestroySurfaceKHR(m_vk_instance->Handle(), m_vk_surface, nullptr);
   vkDestroyDevice(m_vk_device, nullptr);
 }
