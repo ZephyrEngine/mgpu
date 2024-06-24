@@ -43,5 +43,5 @@ add_library(mgpu ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 
 target_include_directories(mgpu PUBLIC include)
 target_include_directories(mgpu PRIVATE src)
-target_link_libraries(mgpu PUBLIC mgpu-cxx-opts SDL2::SDL2 Vulkan::Vulkan OpenGL::GL GLEW::GLEW)
+target_link_libraries(mgpu PUBLIC mgpu-cxx-opts SDL2::SDL2 Vulkan::Vulkan VulkanMemoryAllocator OpenGL::GL GLEW::GLEW)
 target_link_libraries(mgpu PRIVATE atom-common fmt)
