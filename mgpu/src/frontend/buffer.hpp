@@ -5,11 +5,11 @@
 
 namespace mgpu {
 
-class Buffer {
+class BufferBase {
   public:
-    explicit Buffer(const MGPUBufferCreateInfo& create_info) : m_create_info{create_info} {}
+    explicit BufferBase(const MGPUBufferCreateInfo& create_info) : m_create_info{create_info} {}
 
-    virtual ~Buffer() = default;
+    virtual ~BufferBase() = default;
 
     const MGPUBufferCreateInfo& CreateInfo() {
       return m_create_info;

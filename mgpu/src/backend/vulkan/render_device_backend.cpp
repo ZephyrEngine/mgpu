@@ -7,7 +7,7 @@
 
 namespace mgpu {
 
-Result<std::unique_ptr<RenderDeviceBackendBase>> VulkanRenderDeviceBackend::Create(SDL_Window* sdl_window) {
+Result<std::unique_ptr<RenderDeviceBackendBase>> RenderDeviceBackendVulkan::Create(SDL_Window* sdl_window) {
   auto vk_instance_result = CreateVulkanInstance(sdl_window);
   MGPU_FORWARD_ERROR(vk_instance_result.Code());
 
@@ -47,7 +47,7 @@ Result<std::unique_ptr<RenderDeviceBackendBase>> VulkanRenderDeviceBackend::Crea
     return MGPU_INTERNAL_ERROR;
   }
 
-  return std::unique_ptr<RenderDeviceBackendBase>{new VulkanRenderDeviceBackend{
+  return std::unique_ptr<RenderDeviceBackendBase>{new RenderDeviceBackendVulkan{
     std::move(vk_instance),
     vk_device,
     vk_graphics_compute_queue_family_index,
@@ -57,7 +57,7 @@ Result<std::unique_ptr<RenderDeviceBackendBase>> VulkanRenderDeviceBackend::Crea
   }};
 }
 
-Result<std::unique_ptr<VulkanInstance>> VulkanRenderDeviceBackend::CreateVulkanInstance(SDL_Window* sdl_window) {
+Result<std::unique_ptr<VulkanInstance>> RenderDeviceBackendVulkan::CreateVulkanInstance(SDL_Window* sdl_window) {
   const VkApplicationInfo app_info{
     .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
     .pNext = nullptr,
@@ -86,7 +86,7 @@ Result<std::unique_ptr<VulkanInstance>> VulkanRenderDeviceBackend::CreateVulkanI
   return VulkanInstance::Create(app_info, required_extension_names, required_layer_names);
 }
 
-Result<VkDevice> VulkanRenderDeviceBackend::CreateVulkanDevice(
+Result<VkDevice> RenderDeviceBackendVulkan::CreateVulkanDevice(
   const VulkanPhysicalDevice* vk_physical_device,
   u32& vk_graphics_compute_queue_family_index,
   std::vector<u32>& vk_present_queue_family_indices
@@ -216,7 +216,7 @@ Result<VkDevice> VulkanRenderDeviceBackend::CreateVulkanDevice(
   return vk_physical_device->CreateLogicalDevice(queue_create_infos, required_device_extensions, required_device_layers);
 }
 
-const VulkanPhysicalDevice* VulkanRenderDeviceBackend::PickVulkanPhysicalDevice(const std::unique_ptr<VulkanInstance>& vk_instance) {
+const VulkanPhysicalDevice* RenderDeviceBackendVulkan::PickVulkanPhysicalDevice(const std::unique_ptr<VulkanInstance>& vk_instance) {
   VulkanPhysicalDevice* integrated_gpu{};
 
   for(auto& physical_device : vk_instance->EnumeratePhysicalDevices()) {
@@ -230,7 +230,7 @@ const VulkanPhysicalDevice* VulkanRenderDeviceBackend::PickVulkanPhysicalDevice(
   return integrated_gpu;
 }
 
-VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
+RenderDeviceBackendVulkan::RenderDeviceBackendVulkan(
   std::unique_ptr<VulkanInstance> vk_instance,
   VkDevice vk_device,
   u32 vk_graphics_compute_queue_family_index,
@@ -249,7 +249,7 @@ VulkanRenderDeviceBackend::VulkanRenderDeviceBackend(
   m_vk_command_buffer = VulkanCommandBuffer::Create(m_vk_device, m_vk_command_pool).Unwrap();
 }
 
-VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
+RenderDeviceBackendVulkan::~RenderDeviceBackendVulkan() {
   // TODO(fleroviux): get rid of the hacky smart pointer resets
   m_vk_command_buffer.reset();
   m_vk_command_pool.reset();
@@ -260,11 +260,11 @@ VulkanRenderDeviceBackend::~VulkanRenderDeviceBackend() {
   vkDestroyDevice(m_vk_device, nullptr);
 }
 
-Result<Buffer*> VulkanRenderDeviceBackend::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
+Result<BufferBase*> RenderDeviceBackendVulkan::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
   ATOM_PANIC("unimplemented")
 }
 
-void VulkanRenderDeviceBackend::DestroyBuffer(Buffer* buffer) {
+void RenderDeviceBackendVulkan::DestroyBuffer(BufferBase* buffer) {
   ATOM_PANIC("unimplemented")
 }
 

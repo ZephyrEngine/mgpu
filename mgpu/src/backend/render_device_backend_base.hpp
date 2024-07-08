@@ -12,8 +12,8 @@ class RenderDeviceBackendBase {
   public:
     virtual ~RenderDeviceBackendBase() = default;
 
-    virtual Result<Buffer*> CreateBuffer(const MGPUBufferCreateInfo* create_info) = 0;
-    virtual void DestroyBuffer(Buffer* buffer) = 0;
+    virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo* create_info) = 0;
+    virtual void DestroyBuffer(BufferBase* buffer) = 0;
 };
 
 }  // namespace mgpu

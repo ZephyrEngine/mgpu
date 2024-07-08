@@ -9,7 +9,7 @@ RenderDevice::RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend)
     : m_backend{std::move(backend)} {
 }
 
-Result<Buffer*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
+Result<BufferBase*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* create_info) {
   // TODO(fleroviux): error on empty usage set?
   if(create_info->size == 0u) {
     return MGPU_BAD_DIMENSIONS;
@@ -17,7 +17,7 @@ Result<Buffer*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* create_in
   return m_backend->CreateBuffer(create_info);
 }
 
-void RenderDevice::DestroyBuffer(Buffer* buffer) {
+void RenderDevice::DestroyBuffer(BufferBase* buffer) {
   m_backend->DestroyBuffer(buffer);
 }
 

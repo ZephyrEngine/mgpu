@@ -15,14 +15,14 @@
 
 namespace mgpu {
 
-class VulkanRenderDeviceBackend final : public RenderDeviceBackendBase {
+class RenderDeviceBackendVulkan final : public RenderDeviceBackendBase {
   public:
     static Result<std::unique_ptr<RenderDeviceBackendBase>> Create(SDL_Window* sdl_window);
 
-   ~VulkanRenderDeviceBackend() override;
+   ~RenderDeviceBackendVulkan() override;
 
-    Result<Buffer*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
-    void DestroyBuffer(Buffer* buffer) override;
+    Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
+    void DestroyBuffer(BufferBase* buffer) override;
 
   private:
     static Result<std::unique_ptr<VulkanInstance>> CreateVulkanInstance(SDL_Window* sdl_window);
@@ -35,7 +35,7 @@ class VulkanRenderDeviceBackend final : public RenderDeviceBackendBase {
 
     static const VulkanPhysicalDevice* PickVulkanPhysicalDevice(const std::unique_ptr<VulkanInstance>& vk_instance);
 
-    VulkanRenderDeviceBackend(
+    RenderDeviceBackendVulkan(
       std::unique_ptr<VulkanInstance> vk_instance,
       VkDevice vk_device,
       u32 vk_graphics_compute_queue_family_index,

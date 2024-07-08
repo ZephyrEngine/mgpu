@@ -14,8 +14,8 @@ class RenderDevice {
   public:
     explicit RenderDevice(std::unique_ptr<RenderDeviceBackendBase> backend);
 
-    Result<Buffer*> CreateBuffer(const MGPUBufferCreateInfo* create_info);
-    void DestroyBuffer(Buffer* buffer);
+    Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo* create_info);
+    void DestroyBuffer(BufferBase* buffer);
 
   private:
     std::unique_ptr<RenderDeviceBackendBase> m_backend{};

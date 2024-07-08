@@ -11,17 +11,17 @@
 
 namespace mgpu {
 
-class OGLRenderDeviceBackend final : public RenderDeviceBackendBase {
+class RenderDeviceBackendOGL final : public RenderDeviceBackendBase {
   public:
     static Result<std::unique_ptr<RenderDeviceBackendBase>> Create(SDL_Window* sdl_window);
 
-   ~OGLRenderDeviceBackend() override;
+   ~RenderDeviceBackendOGL() override;
 
-    Result<Buffer*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
-    void DestroyBuffer(Buffer* buffer) override;
+    Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
+    void DestroyBuffer(BufferBase* buffer) override;
 
   private:
-    explicit OGLRenderDeviceBackend(SDL_GLContext gl_context);
+    explicit RenderDeviceBackendOGL(SDL_GLContext gl_context);
 
     SDL_GLContext m_gl_context{};
 };

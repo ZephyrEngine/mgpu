@@ -27,8 +27,8 @@ MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, M
   mgpu::Result<std::unique_ptr<mgpu::RenderDeviceBackendBase>> render_device_backend{MGPU_BAD_ENUM};
 
   switch(backend) {
-    case MGPU_BACKEND_OPENGL: render_device_backend = mgpu::OGLRenderDeviceBackend::Create(sdl_window); break;
-    case MGPU_BACKEND_VULKAN: render_device_backend = mgpu::VulkanRenderDeviceBackend::Create(sdl_window); break;
+    case MGPU_BACKEND_OPENGL: render_device_backend = mgpu::RenderDeviceBackendOGL::Create(sdl_window); break;
+    case MGPU_BACKEND_VULKAN: render_device_backend = mgpu::RenderDeviceBackendVulkan::Create(sdl_window); break;
   }
 
   MGPU_FORWARD_ERROR(render_device_backend.Code());
@@ -41,14 +41,14 @@ void mgpuDestroyRenderDevice(MGPURenderDevice render_device) {
 }
 
 MGPUResult mgpuCreateBuffer(MGPURenderDevice render_device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer) {
-  mgpu::Result<mgpu::Buffer*> buffer_result = ((mgpu::RenderDevice*)render_device)->CreateBuffer(create_info);
+  mgpu::Result<mgpu::BufferBase*> buffer_result = ((mgpu::RenderDevice*)render_device)->CreateBuffer(create_info);
   MGPU_FORWARD_ERROR(buffer_result.Code());
   *buffer = (MGPUBuffer)buffer_result.Unwrap();
   return MGPU_SUCCESS;
 }
 
 void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer) {
-  ((mgpu::RenderDevice*)render_device)->DestroyBuffer((mgpu::Buffer*)buffer);
+  ((mgpu::RenderDevice*)render_device)->DestroyBuffer((mgpu::BufferBase*)buffer);
 }
 
 }  // extern "C"

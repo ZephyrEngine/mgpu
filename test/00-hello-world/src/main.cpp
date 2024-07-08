@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 #undef main
 
-#define USE_VULKAN 1
+#define USE_VULKAN 0
 #define MGPU_CHECK(result_expression) \
   do { \
     MGPUResult result = result_expression; \

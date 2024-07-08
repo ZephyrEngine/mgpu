@@ -10,18 +10,18 @@
 
 namespace mgpu {
 
-class OGLBuffer final : public Buffer {
+class BufferOGL final : public BufferBase {
   public:
-    static Result<Buffer*> Create(const MGPUBufferCreateInfo& create_info);
+    static Result<BufferBase*> Create(const MGPUBufferCreateInfo& create_info);
 
-   ~OGLBuffer() override;
+   ~BufferOGL() override;
 
    [[nodiscard]] GLuint Handle() {
      return m_gl_buffer;
    }
 
   private:
-    OGLBuffer(const MGPUBufferCreateInfo& create_info, GLuint gl_buffer);
+    BufferOGL(const MGPUBufferCreateInfo& create_info, GLuint gl_buffer);
 
     GLuint m_gl_buffer;
 };
