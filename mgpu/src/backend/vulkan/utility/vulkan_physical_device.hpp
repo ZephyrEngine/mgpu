@@ -9,6 +9,9 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#include "common/result.hpp"
+#include "vulkan_result.hpp"
+
 namespace mgpu {
 
 class VulkanPhysicalDevice {
@@ -69,7 +72,7 @@ class VulkanPhysicalDevice {
       return std::ranges::find_if(m_vk_available_device_layers, predicate) != m_vk_available_device_layers.end();
     }
 
-    [[nodiscard]] VkDevice CreateLogicalDevice(
+    [[nodiscard]] Result<VkDevice> CreateLogicalDevice(
       std::span<const VkDeviceQueueCreateInfo> queue_create_infos,
       std::span<const char* const> required_device_extensions,
       std::span<const char* const> required_device_layers
@@ -89,9 +92,8 @@ class VulkanPhysicalDevice {
 
       VkDevice vk_device{};
 
-      // TODO(fleroviux): pass error to the user instead of asserting.
-      if(vkCreateDevice(m_vk_physical_device, &create_info, nullptr, &vk_device) != VK_SUCCESS) {
-        ATOM_PANIC("Failed to create a logical device");
+      if(VkResult vk_result = vkCreateDevice(m_vk_physical_device, &create_info, nullptr, &vk_device); vk_result != VK_SUCCESS) {
+        vk_result_to_mgpu_result(vk_result);
       }
       return vk_device;
     }

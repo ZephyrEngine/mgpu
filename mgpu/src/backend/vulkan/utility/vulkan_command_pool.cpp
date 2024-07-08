@@ -1,5 +1,6 @@
 
 #include "vulkan_command_pool.hpp"
+#include "vulkan_result.hpp"
 
 namespace mgpu {
 
@@ -13,8 +14,8 @@ Result<std::unique_ptr<VulkanCommandPool>> VulkanCommandPool::Create(VkDevice vk
 
   VkCommandPool vk_command_pool;
 
-  if(vkCreateCommandPool(vk_device, &create_info, nullptr, &vk_command_pool) != VK_SUCCESS) {
-    return MGPU_INTERNAL_ERROR;
+  if(VkResult vk_result = vkCreateCommandPool(vk_device, &create_info, nullptr, &vk_command_pool); vk_result != VK_SUCCESS) {
+    return vk_result_to_mgpu_result(vk_result);
   }
   return std::unique_ptr<VulkanCommandPool>(new VulkanCommandPool{vk_device, vk_command_pool});
 }

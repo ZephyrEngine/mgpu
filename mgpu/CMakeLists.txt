@@ -24,6 +24,7 @@ set(HEADERS
   src/backend/vulkan/utility/vulkan_fence.hpp
   src/backend/vulkan/utility/vulkan_instance.hpp
   src/backend/vulkan/utility/vulkan_physical_device.hpp
+  src/backend/vulkan/utility/vulkan_result.hpp
   src/backend/vulkan/render_device_backend.hpp
   src/backend/render_device_backend_base.hpp
   src/frontend/buffer.hpp

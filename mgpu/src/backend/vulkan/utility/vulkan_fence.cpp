@@ -1,5 +1,6 @@
 
 #include "vulkan_fence.hpp"
+#include "vulkan_result.hpp"
 
 namespace mgpu {
 
@@ -12,8 +13,8 @@ Result<std::unique_ptr<VulkanFence>> VulkanFence::Create(VkDevice vk_device, Cre
 
   VkFence vk_fence;
 
-  if(vkCreateFence(vk_device, &create_info, nullptr, &vk_fence) != VK_SUCCESS) {
-    return MGPU_INTERNAL_ERROR;
+  if(VkResult vk_result = vkCreateFence(vk_device, &create_info, nullptr, &vk_fence); vk_result != VK_SUCCESS) {
+    return vk_result_to_mgpu_result(vk_result);
   }
   return std::unique_ptr<VulkanFence>{new VulkanFence{vk_device, vk_fence}};
 }

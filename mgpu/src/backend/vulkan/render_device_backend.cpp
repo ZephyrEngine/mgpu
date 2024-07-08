@@ -83,7 +83,7 @@ Result<std::unique_ptr<VulkanInstance>> RenderDeviceBackendVulkan::CreateVulkanI
   }
 #endif
 
-  return VulkanInstance::Create(app_info, required_extension_names, required_layer_names);
+  return VulkanInstance::Create(app_info, required_extension_names, required_layer_names, true);
 }
 
 Result<VkDevice> RenderDeviceBackendVulkan::CreateVulkanDevice(

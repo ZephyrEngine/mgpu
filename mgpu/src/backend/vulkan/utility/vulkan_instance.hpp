@@ -10,7 +10,9 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#include "common/result.hpp"
 #include "vulkan_physical_device.hpp"
+#include "vulkan_result.hpp"
 
 namespace mgpu {
 
@@ -42,10 +44,11 @@ class VulkanInstance {
       return m_vk_physical_devices;
     }
 
-    static std::unique_ptr<VulkanInstance> Create(
+    static Result<std::unique_ptr<VulkanInstance>> Create(
       const VkApplicationInfo& app_info,
       std::vector<const char*> required_instance_extensions,
-      std::vector<const char*> required_instance_layers
+      std::vector<const char*> required_instance_layers,
+      bool accept_vulkan_portability
     ) {
       for(const auto required_layer_name : required_instance_layers) {
         if(!QueryInstanceLayerSupport(required_layer_name)) {
@@ -55,8 +58,7 @@ class VulkanInstance {
 
       VkInstanceCreateFlags instance_create_flags = 0;
 
-      // TODO(fleroviux): make this optional
-      if(QueryInstanceExtensionSupport(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+      if(accept_vulkan_portability && QueryInstanceExtensionSupport(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
         required_instance_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         required_instance_extensions.push_back("VK_KHR_get_physical_device_properties2"); // required by VK_KHR_portability_subset
         instance_create_flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
@@ -81,9 +83,8 @@ class VulkanInstance {
 
       VkInstance vk_instance{};
 
-      // TODO(fleroviux): pass error to the user instead of asserting.
-      if(vkCreateInstance(&create_info, nullptr, &vk_instance) != VK_SUCCESS) {
-        ATOM_PANIC("Failed to create Vulkan instance!");
+      if(VkResult vk_result = vkCreateInstance(&create_info, nullptr, &vk_instance); vk_result != VK_SUCCESS) {
+        return vk_result_to_mgpu_result(vk_result);
       }
       return std::unique_ptr<VulkanInstance>{new VulkanInstance{vk_instance}};
     }

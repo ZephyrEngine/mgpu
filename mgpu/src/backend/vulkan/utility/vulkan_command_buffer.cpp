@@ -1,6 +1,7 @@
 
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_command_pool.hpp"
+#include "vulkan_result.hpp"
 
 namespace mgpu {
 
@@ -15,8 +16,8 @@ Result<std::unique_ptr<VulkanCommandBuffer>> VulkanCommandBuffer::Create(VkDevic
 
   VkCommandBuffer vk_command_buffer;
 
-  if(vkAllocateCommandBuffers(vk_device, &alloc_info, &vk_command_buffer) != VK_SUCCESS) {
-    return MGPU_INTERNAL_ERROR;
+  if(VkResult vk_result = vkAllocateCommandBuffers(vk_device, &alloc_info, &vk_command_buffer); vk_result != VK_SUCCESS) {
+    return vk_result_to_mgpu_result(vk_result);
   }
   return std::unique_ptr<VulkanCommandBuffer>{new VulkanCommandBuffer{vk_device, vk_command_buffer, std::move(vk_command_pool)}};
 }
