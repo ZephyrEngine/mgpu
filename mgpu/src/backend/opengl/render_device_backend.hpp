@@ -18,6 +18,9 @@ class RenderDeviceBackendOGL final : public RenderDeviceBackendBase {
    ~RenderDeviceBackendOGL() override;
 
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo* create_info) override;
+    Result<void*> MapBuffer(BufferBase* buffer) override;
+    MGPUResult UnmapBuffer(BufferBase* buffer) override;
+    MGPUResult FlushBuffer(BufferBase* buffer, u64 offset, u64 size) override;
     void DestroyBuffer(BufferBase* buffer) override;
 
   private:

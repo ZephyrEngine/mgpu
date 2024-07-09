@@ -32,6 +32,18 @@ Result<BufferBase*> RenderDeviceBackendOGL::CreateBuffer(const MGPUBufferCreateI
   return BufferOGL::Create(*create_info);
 }
 
+Result<void*> RenderDeviceBackendOGL::MapBuffer(BufferBase* buffer) {
+  return ((BufferOGL*)buffer)->Map();
+}
+
+MGPUResult RenderDeviceBackendOGL::UnmapBuffer(BufferBase* buffer) {
+  return ((BufferOGL*)buffer)->Unmap();
+}
+
+MGPUResult RenderDeviceBackendOGL::FlushBuffer(BufferBase* buffer, u64 offset, u64 size) {
+  return ((BufferOGL*)buffer)->Flush(offset, size);
+}
+
 void RenderDeviceBackendOGL::DestroyBuffer(BufferBase* buffer) {
   delete buffer;
 }

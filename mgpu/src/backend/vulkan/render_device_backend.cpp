@@ -264,6 +264,18 @@ Result<BufferBase*> RenderDeviceBackendVulkan::CreateBuffer(const MGPUBufferCrea
   ATOM_PANIC("unimplemented")
 }
 
+Result<void*> RenderDeviceBackendVulkan::MapBuffer(BufferBase* buffer) {
+  ATOM_PANIC("unimplemented")
+}
+
+MGPUResult RenderDeviceBackendVulkan::UnmapBuffer(BufferBase* buffer) {
+  ATOM_PANIC("unimplemented")
+}
+
+MGPUResult RenderDeviceBackendVulkan::FlushBuffer(BufferBase* buffer, u64 offset, u64 size) {
+  ATOM_PANIC("unimplemented")
+}
+
 void RenderDeviceBackendVulkan::DestroyBuffer(BufferBase* buffer) {
   ATOM_PANIC("unimplemented")
 }

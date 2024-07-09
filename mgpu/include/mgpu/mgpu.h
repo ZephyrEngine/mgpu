@@ -23,6 +23,8 @@ typedef enum MGPUResult {
   MGPU_INTERNAL_ERROR = 2,
   MGPU_OUT_OF_MEMORY = 3,
   MGPU_BAD_DIMENSIONS = 4,
+  MGPU_BUFFER_NOT_HOST_VISIBLE = 5,
+  MGPU_BUFFER_NOT_MAPPED = 6,
 
   MGPU_RESERVED = -1
 } MGPUResult;
@@ -42,6 +44,11 @@ typedef enum MGPUBufferUsage {
   MGPU_BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
 } MGPUBufferUsage;
 
+typedef enum MGPUBufferFlags {
+  MGPU_BUFFER_FLAGS_HOST_VISIBLE = 0x00000001,
+  MGPU_BUFFER_FLAGS_HOST_RANDOM_ACCESS = 0x00000002
+} MGPUBufferFlags;
+
 // ======================================================= //
 //   Common structure definitions                          //
 // ======================================================= //
@@ -53,7 +60,9 @@ typedef enum MGPUBufferUsage {
 
 typedef struct MGPUBufferCreateInfo {
   uint64_t size;
-  MGPUBufferUsage usage;
+  MGPUBufferUsage usage; // TODO(fleroviux): fix broken OR-ing behavior
+  MGPUBufferFlags flags; // TODO(fleroviux): fix broken OR-ing behavior
+  bool mapped_at_creation;
 } MGPUBufferCreateInfo;
 
 #ifdef __cplusplus
@@ -64,13 +73,16 @@ extern "C" {
 //   Methods                                               //
 // ======================================================= //
 
-const char* mgpuResultCodeToString(MGPUResult result);
-
 MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, MGPURenderDevice* render_device);
 void mgpuDestroyRenderDevice(MGPURenderDevice render_device);
 
 MGPUResult mgpuCreateBuffer(MGPURenderDevice render_device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
+MGPUResult mgpuMapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, void** address);
+MGPUResult mgpuUnmapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer);
+MGPUResult mgpuFlushBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, uint64_t offset, uint64_t size);
 void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer);
+
+const char* mgpuResultCodeToString(MGPUResult result);
 
 #ifdef __cplusplus
 }  // extern "C"

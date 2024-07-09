@@ -8,21 +8,6 @@
 
 extern "C" {
 
-const char* mgpuResultCodeToString(MGPUResult result) {
-  #define REGISTER(result_code) case result_code: return "" # result_code; break;
-
-  switch(result) {
-    REGISTER(MGPU_SUCCESS)
-    REGISTER(MGPU_BAD_ENUM)
-    REGISTER(MGPU_INTERNAL_ERROR)
-    REGISTER(MGPU_OUT_OF_MEMORY)
-    REGISTER(MGPU_BAD_DIMENSIONS)
-    default: ATOM_PANIC("internal error");
-  }
-
-  #undef REGISTER
-}
-
 MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, MGPURenderDevice* render_device) {
   mgpu::Result<std::unique_ptr<mgpu::RenderDeviceBackendBase>> render_device_backend{MGPU_BAD_ENUM};
 
@@ -47,8 +32,40 @@ MGPUResult mgpuCreateBuffer(MGPURenderDevice render_device, const MGPUBufferCrea
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuMapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, void** address) {
+  mgpu::Result<void*> address_result = ((mgpu::RenderDevice*)render_device)->MapBuffer((mgpu::BufferBase*)buffer);
+  MGPU_FORWARD_ERROR(address_result.Code());
+  *address = address_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuUnmapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer) {
+  return ((mgpu::RenderDevice*)render_device)->UnmapBuffer((mgpu::BufferBase*)buffer);
+}
+
+MGPUResult mgpuFlushBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, uint64_t offset, uint64_t size) {
+  return ((mgpu::RenderDevice*)render_device)->FlushBuffer((mgpu::BufferBase*)buffer, offset, size);
+}
+
 void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer) {
   ((mgpu::RenderDevice*)render_device)->DestroyBuffer((mgpu::BufferBase*)buffer);
+}
+
+const char* mgpuResultCodeToString(MGPUResult result) {
+  #define REGISTER(result_code) case result_code: return "" # result_code; break;
+
+  switch(result) {
+    REGISTER(MGPU_SUCCESS)
+    REGISTER(MGPU_BAD_ENUM)
+    REGISTER(MGPU_INTERNAL_ERROR)
+    REGISTER(MGPU_OUT_OF_MEMORY)
+    REGISTER(MGPU_BAD_DIMENSIONS)
+    REGISTER(MGPU_BUFFER_NOT_HOST_VISIBLE)
+    REGISTER(MGPU_BUFFER_NOT_MAPPED)
+    default: ATOM_PANIC("internal error")
+  }
+
+  #undef REGISTER
 }
 
 }  // extern "C"

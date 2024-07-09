@@ -14,6 +14,14 @@
       ATOM_PANIC("MGPU error: {} ({})", "" # result_expression, mgpuResultCodeToString(result)); \
   } while(0);
 
+#ifndef USE_VULKAN
+
+#include <SDL2/SDL_opengl.h>
+#include <GL/glew.h>
+#include <GL/gl.h>
+
+#endif
+
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
 
@@ -40,10 +48,20 @@ int main() {
 
   const MGPUBufferCreateInfo buffer_create_info{
     .size = 100 * sizeof(u32),
-    .usage = (MGPUBufferUsage)(MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER)
+    .usage = (MGPUBufferUsage)(MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER),
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE,
+    .mapped_at_creation = false
   };
   MGPUBuffer mgpu_buffer{};
   MGPU_CHECK(mgpuCreateBuffer(mgpu_render_device, &buffer_create_info, &mgpu_buffer))
+
+  void* mgpu_buffer_address = nullptr;
+  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
+  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
+//  MGPU_CHECK(mgpuFlushBuffer(mgpu_render_device, mgpu_buffer, 1u, 99 * sizeof(u32)))
+//  MGPU_CHECK(mgpuUnmapBuffer(mgpu_render_device, mgpu_buffer))
+//  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
+//  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
 
   SDL_Event sdl_event{};
 
@@ -54,7 +72,9 @@ int main() {
       }
     }
 
-    // ...
+#ifndef USE_VULKAN
+    SDL_GL_SwapWindow(sdl_window);
+#endif
   }
 
 done:
