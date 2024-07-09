@@ -280,4 +280,12 @@ void RenderDeviceBackendVulkan::DestroyBuffer(BufferBase* buffer) {
   ATOM_PANIC("unimplemented")
 }
 
+MGPUFence RenderDeviceBackendVulkan::FenceSync() {
+  ATOM_PANIC("unimplemented")
+}
+
+MGPUResult RenderDeviceBackendVulkan::WaitFence(MGPUFence fence) {
+  ATOM_PANIC("unimplemented")
+}
+
 }  // namespace mgpu

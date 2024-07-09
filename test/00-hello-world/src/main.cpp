@@ -49,8 +49,7 @@ int main() {
   const MGPUBufferCreateInfo buffer_create_info{
     .size = 100 * sizeof(u32),
     .usage = (MGPUBufferUsage)(MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER),
-    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE,
-    .mapped_at_creation = false
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
   };
   MGPUBuffer mgpu_buffer{};
   MGPU_CHECK(mgpuCreateBuffer(mgpu_render_device, &buffer_create_info, &mgpu_buffer))
@@ -71,6 +70,10 @@ int main() {
         goto done;
       }
     }
+
+    MGPUFence mgpu_fence = mgpuFenceSync(mgpu_render_device);
+    // ...
+    mgpuWaitFence(mgpu_render_device, mgpu_fence);
 
 #ifndef USE_VULKAN
     SDL_GL_SwapWindow(sdl_window);

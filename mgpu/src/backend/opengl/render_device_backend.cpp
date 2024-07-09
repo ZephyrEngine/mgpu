@@ -48,4 +48,13 @@ void RenderDeviceBackendOGL::DestroyBuffer(BufferBase* buffer) {
   delete buffer;
 }
 
+MGPUFence RenderDeviceBackendOGL::FenceSync() {
+  return (MGPUFence)glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+}
+
+MGPUResult RenderDeviceBackendOGL::WaitFence(MGPUFence fence) {
+  glClientWaitSync((GLsync)fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+  return MGPU_SUCCESS;
+}
+
 }  // namespace mgpu

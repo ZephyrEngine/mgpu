@@ -51,6 +51,14 @@ void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer) {
   ((mgpu::RenderDevice*)render_device)->DestroyBuffer((mgpu::BufferBase*)buffer);
 }
 
+MGPUFence mgpuFenceSync(MGPURenderDevice render_device) {
+  return ((mgpu::RenderDevice*)render_device)->FenceSync();
+}
+
+MGPUResult mgpuWaitFence(MGPURenderDevice render_device, MGPUFence fence) {
+  return ((mgpu::RenderDevice*)render_device)->WaitFence(fence);
+}
+
 const char* mgpuResultCodeToString(MGPUResult result) {
   #define REGISTER(result_code) case result_code: return "" # result_code; break;
 

@@ -27,6 +27,9 @@ class RenderDeviceBackendVulkan final : public RenderDeviceBackendBase {
     MGPUResult FlushBuffer(BufferBase* buffer, u64 offset, u64 size) override;
     void DestroyBuffer(BufferBase* buffer) override;
 
+    MGPUFence FenceSync() override;
+    MGPUResult WaitFence(MGPUFence fence) override;
+
   private:
     static Result<std::unique_ptr<VulkanInstance>> CreateVulkanInstance(SDL_Window* sdl_window);
 

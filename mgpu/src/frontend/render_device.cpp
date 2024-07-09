@@ -15,10 +15,6 @@ Result<BufferBase*> RenderDevice::CreateBuffer(const MGPUBufferCreateInfo* creat
     return MGPU_BAD_DIMENSIONS;
   }
 
-  if(create_info->mapped_at_creation && !(create_info->flags & MGPU_BUFFER_FLAGS_HOST_VISIBLE)) {
-    return MGPU_BUFFER_NOT_HOST_VISIBLE;
-  }
-
   return m_backend->CreateBuffer(create_info);
 }
 
@@ -52,6 +48,14 @@ MGPUResult RenderDevice::FlushBuffer(BufferBase* buffer, u64 offset, u64 size) {
 
 void RenderDevice::DestroyBuffer(BufferBase* buffer) {
   m_backend->DestroyBuffer(buffer);
+}
+
+MGPUFence RenderDevice::FenceSync() {
+  return m_backend->FenceSync();
+}
+
+MGPUResult RenderDevice::WaitFence(MGPUFence fence) {
+  return m_backend->WaitFence(fence);
 }
 
 }  // namespace mgpu
