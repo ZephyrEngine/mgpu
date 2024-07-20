@@ -5,11 +5,13 @@
 #include <atom/float.hpp>
 #include <atom/integer.hpp>
 #include <atom/panic.hpp>
+#include <fstream>
 #include <SDL.h>
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <optional>
+#include <vk_mem_alloc.h>
 
 #include "shader/triangle.vert.h"
 #include "shader/triangle.frag.h"
@@ -21,6 +23,9 @@ bool enable_validation_layers = true;
 #else
 bool enable_validation_layers = false;
 #endif
+
+static constexpr int k_window_width = 512;
+static constexpr int k_window_height = 384;
 
 class HelloTriangle {
   public:
@@ -36,8 +41,8 @@ class HelloTriangle {
         "Vulkan Playground",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1920,
-        1080,
+        k_window_width,
+        k_window_height,
         SDL_WINDOW_VULKAN
       );
 
@@ -56,6 +61,7 @@ class HelloTriangle {
       }
 
       CreateLogicalDevice();
+      CreateVMA();
       CreateSurface();
       CreateSwapChain();
       CreateCommandPool();
@@ -65,6 +71,7 @@ class HelloTriangle {
       CreateRenderPass();
       CreateFramebuffers();
       CreateGraphicsPipeline();
+      CreateVBO();
     }
 
     void MainLoop() {
@@ -103,88 +110,35 @@ class HelloTriangle {
         .pInheritanceInfo = nullptr
       };
       vkBeginCommandBuffer(m_vk_command_buffer, &begin_cmd_buffer_info);
-
-      const bool do_render_pass = true;
-
-      // Record some basic commands
       {
-        if(do_render_pass) {
-          const VkClearValue clear_value{
-            .color = VkClearColorValue{
-              .float32 = {0.01f, 0.01f, 0.01f, 1.0f}
-            }
-          };
+        const VkClearValue clear_value{
+          .color = VkClearColorValue{
+            .float32 = {0.01f, 0.01f, 0.01f, 1.0f}
+          }
+        };
 
-          const VkRenderPassBeginInfo render_pass_begin_info{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .pNext = nullptr,
-            .renderPass = m_vk_render_pass,
-            .framebuffer = m_vk_swap_chain_fbs[image],
-            .renderArea = VkRect2D{
-              .offset = VkOffset2D{0u, 0u},
-              .extent = VkExtent2D{1920u, 1080u}
-            },
-            .clearValueCount = 1u,
-            .pClearValues = &clear_value
-          };
+        const VkRenderPassBeginInfo render_pass_begin_info{
+          .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+          .pNext = nullptr,
+          .renderPass = m_vk_render_pass,
+          .framebuffer = m_vk_swap_chain_fbs[image],
+          .renderArea = VkRect2D{
+            .offset = VkOffset2D{0u, 0u},
+            .extent = VkExtent2D{k_window_width, k_window_height}
+          },
+          .clearValueCount = 1u,
+          .pClearValues = &clear_value
+        };
 
-          vkCmdBeginRenderPass(m_vk_command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(m_vk_command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-          vkCmdBindPipeline(m_vk_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vk_pipeline);
-          vkCmdDraw(m_vk_command_buffer, 3u, 1u, 0u, 0u);
+        vkCmdBindPipeline(m_vk_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vk_pipeline);
+        VkDeviceSize buffer_offset{0u};
+        vkCmdBindVertexBuffers(m_vk_command_buffer, 0u, 1u, &m_vbo_vk_buffer, &buffer_offset);
+        vkCmdDraw(m_vk_command_buffer, m_vbo_vertex_count, 1u, 0u, 0u);
 
-          vkCmdEndRenderPass(m_vk_command_buffer);
-        } else {
-          // TODO: validate that our pipeline barriers are correct as per spec.
-
-          const VkImageSubresourceRange range{
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0u,
-            .levelCount = 1u,
-            .baseArrayLayer = 0u,
-            .layerCount = 1u
-          };
-
-          const VkClearColorValue clear_color{
-            .float32 = {1.0f, 0.0f, 0.0f, 1.0f}
-          };
-
-          const VkImageMemoryBarrier to_transfer_dst{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = nullptr,
-            .srcAccessMask = 0,
-            .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT, // validate that this is correct!
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED, // needed because of concurrent access. but do we really need concurrent access?
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = m_vk_swap_chain_images[image],
-            .subresourceRange = range
-          };
-          vkCmdPipelineBarrier(m_vk_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0u, nullptr, 0u, nullptr, 1u, &to_transfer_dst);
-
-          vkCmdClearColorImage(m_vk_command_buffer, m_vk_swap_chain_images[image], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1u, &range);
-
-          // Transition the swap chain image to the PRESENT_SRC_KHR layout required by vkQueueSubmit().
-          // We set the dstAccessMask to 0 and dstStageMask to TOP_OF_PIPE_BIT because vkQueueSubmit()
-          // will make sure to make any writes to the underlying memory visible to the presentation engine.
-          const VkImageMemoryBarrier to_present_src{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = nullptr,
-            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .dstAccessMask = 0,
-            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED, // needed because of concurrent access. but do we really need concurrent access?
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = m_vk_swap_chain_images[image],
-            .subresourceRange = range
-          };
-          vkCmdPipelineBarrier(m_vk_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0u, nullptr, 0u, nullptr, 1u, &to_present_src);
-        }
+        vkCmdEndRenderPass(m_vk_command_buffer);
       }
-
-      // Complete command recording and mark the command buffer as ready for queue submission.
       vkEndCommandBuffer(m_vk_command_buffer);
 
       // Execute our command buffer once the acquired image is ready and signal the command buffer fence once the command buffer has executed.
@@ -496,6 +450,26 @@ class HelloTriangle {
       }
     }
 
+    void CreateVMA() {
+      const VmaAllocatorCreateInfo vma_create_info = {
+        .flags = 0,
+        .physicalDevice = m_vk_physical_device,
+        .device = m_vk_device,
+        .preferredLargeHeapBlockSize = 0,
+        .pAllocationCallbacks = nullptr,
+        .pDeviceMemoryCallbacks = nullptr,
+        .pHeapSizeLimit = nullptr,
+        .pVulkanFunctions = nullptr,
+        .instance = m_vk_instance,
+        .vulkanApiVersion = VK_API_VERSION_1_0,
+        .pTypeExternalMemoryHandleTypes = nullptr
+      };
+
+      if(vmaCreateAllocator(&vma_create_info, &m_vma_allocator) != VK_SUCCESS) {
+        ATOM_PANIC("Failed to create VMA allocator");
+      }
+    }
+
     void CreateSurface() {
       if(!SDL_Vulkan_CreateSurface(m_window, m_vk_instance, &m_vk_surface)) {
         ATOM_PANIC("Failed to create a Vulkan surface for the window");
@@ -514,8 +488,8 @@ class HelloTriangle {
         .imageFormat = VK_FORMAT_B8G8R8A8_SRGB,
         .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
         .imageExtent = VkExtent2D{
-          .width = 1920,
-          .height = 1080
+          .width = k_window_width,
+          .height = k_window_height
         },
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, // TODO
@@ -681,8 +655,8 @@ class HelloTriangle {
           .renderPass = m_vk_render_pass,
           .attachmentCount = 1u,
           .pAttachments = &view,
-          .width = 1920u,
-          .height = 1080u,
+          .width = k_window_width,
+          .height = k_window_height,
           .layers = 1u
         };
 
@@ -756,14 +730,44 @@ class HelloTriangle {
         ATOM_PANIC("Failed to create pipeline layout");
       }
 
+      const VkVertexInputBindingDescription vertex_input_binding_desc{
+        .binding = 0u,
+        .stride = sizeof(f32) * 10,
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+      };
+
+      const VkVertexInputAttributeDescription vertex_input_attribute_descs[]{
+        // POSITION
+        {
+          .location = 0u,
+          .binding = 0u,
+          .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+          .offset = 0u
+        },
+        // COLOR
+        {
+          .location = 1u,
+          .binding = 0u,
+          .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+          .offset = sizeof(f32) * 4
+        },
+        // UV
+        {
+          .location = 2u,
+          .binding = 0u,
+          .format = VK_FORMAT_R32G32_SFLOAT,
+          .offset = sizeof(f32) * 8
+        }
+      };
+
       const VkPipelineVertexInputStateCreateInfo vertex_input_state{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .vertexBindingDescriptionCount = 0u,
-        .pVertexBindingDescriptions = nullptr,
-        .vertexAttributeDescriptionCount = 0u,
-        .pVertexAttributeDescriptions = nullptr
+        .vertexBindingDescriptionCount = 1u,
+        .pVertexBindingDescriptions = &vertex_input_binding_desc,
+        .vertexAttributeDescriptionCount = sizeof(vertex_input_attribute_descs) / sizeof(VkVertexInputAttributeDescription),
+        .pVertexAttributeDescriptions = vertex_input_attribute_descs
       };
 
       const VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
@@ -777,8 +781,8 @@ class HelloTriangle {
       const VkViewport viewport{
         .x = 0,
         .y = 0,
-        .width = 1920,
-        .height = 1080,
+        .width = k_window_width,
+        .height = k_window_height,
         .minDepth = 0, // TODO
         .maxDepth = 1
       };
@@ -866,9 +870,66 @@ class HelloTriangle {
       }
     }
 
+    void CreateVBO() {
+//      const f32 data[] {
+//        // POSITION            |  COLOR              |  UV
+//        -0.5,  0.5,  0.0, 1.0,   1.0, 0.0, 0.0, 1.0,   0.0, 0.0,
+//         0.5,  0.5,  0.0, 1.0,   0.0, 1.0, 0.0, 1.0,   0.0, 0.0,
+//         0.0, -0.5,  0.0, 1.0,   0.0, 0.0, 1.0, 1.0,   0.0, 0.0,
+//      };
+
+      std::vector<u8> vbo_data{};
+
+      std::ifstream file{"vbo.bin", std::ios::binary};
+      if(!file.good()) {
+        ATOM_PANIC("failed to open vbo.bin");
+      }
+
+      file.seekg(0u, std::ios::end);
+      vbo_data.resize(file.tellg());
+      file.seekg(0);
+      file.read((char*)vbo_data.data(), vbo_data.size());
+
+      const VkBufferCreateInfo vk_create_info{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = vbo_data.size(),
+        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr
+      };
+
+      const VmaAllocationCreateInfo vma_alloc_info{
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO
+      };
+
+      if(vmaCreateBuffer(m_vma_allocator, &vk_create_info, &vma_alloc_info, &m_vbo_vk_buffer, &m_vbo_vma_allocation, nullptr) != VK_SUCCESS) {
+        ATOM_PANIC("Failed to allocate VBO :(");
+      }
+
+      void* mapped_address;
+      if(vmaMapMemory(m_vma_allocator, m_vbo_vma_allocation, &mapped_address) != VK_SUCCESS) {
+        ATOM_PANIC("Failed to map VBO :(")
+      }
+
+      std::memcpy(mapped_address, (const void*)vbo_data.data(), vbo_data.size());
+
+      // TODO: is flushing necessary?
+      vmaFlushAllocation(m_vma_allocator, m_vbo_vma_allocation, 0u, VK_WHOLE_SIZE);
+
+      vmaUnmapMemory(m_vma_allocator, m_vbo_vma_allocation);
+
+      m_vbo_vertex_count = vbo_data.size() / (sizeof(f32) * 10);
+    }
+
     void Cleanup() {
       vkDeviceWaitIdle(m_vk_device);
 
+      vkDestroyBuffer(m_vk_device, m_vbo_vk_buffer, nullptr);
+      vmaFreeMemory(m_vma_allocator, m_vbo_vma_allocation);
       vkDestroyPipeline(m_vk_device, m_vk_pipeline, nullptr);
       for(auto fb : m_vk_swap_chain_fbs) vkDestroyFramebuffer(m_vk_device, fb, nullptr);
       vkDestroyRenderPass(m_vk_device, m_vk_render_pass, nullptr);
@@ -879,6 +940,7 @@ class HelloTriangle {
       for(auto view : m_vk_swap_chain_views) vkDestroyImageView(m_vk_device, view, nullptr);
       vkDestroySwapchainKHR(m_vk_device, m_vk_swap_chain, nullptr);
       vkDestroySurfaceKHR(m_vk_instance, m_vk_surface, nullptr);
+      vmaDestroyAllocator(m_vma_allocator);
       vkDestroyDevice(m_vk_device, nullptr);
       vkDestroyInstance(m_vk_instance, nullptr);
       SDL_DestroyWindow(m_window);
@@ -891,6 +953,7 @@ class HelloTriangle {
     VkQueue m_vk_graphics_compute_queue{};
     std::vector<u32> m_present_queue_family_indices{};
     std::optional<VkQueue> m_vk_dedicated_compute_queue{};
+    VmaAllocator m_vma_allocator{};
     VkSurfaceKHR m_vk_surface{VK_NULL_HANDLE};
     VkSwapchainKHR m_vk_swap_chain{};
     std::vector<VkImage> m_vk_swap_chain_images{};
@@ -902,6 +965,10 @@ class HelloTriangle {
     VkRenderPass m_vk_render_pass{};
     std::vector<VkFramebuffer> m_vk_swap_chain_fbs{};
     VkPipeline m_vk_pipeline{};
+
+    VkBuffer m_vbo_vk_buffer{};
+    VmaAllocation m_vbo_vma_allocation{};
+    u32 m_vbo_vertex_count{};
 };
 
 int main() {
