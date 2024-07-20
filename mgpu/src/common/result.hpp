@@ -7,7 +7,7 @@
 namespace mgpu {
 
 #define MGPU_FORWARD_ERROR(result_code) do { \
-  if(result_code != MGPU_SUCCESS) { \
+  if((result_code) != MGPU_SUCCESS) { \
     return result_code;\
   } \
 } while(0)
