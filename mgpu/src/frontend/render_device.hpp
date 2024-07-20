@@ -21,9 +21,6 @@ class RenderDevice {
     MGPUResult FlushBuffer(BufferBase* buffer, u64 offset, u64 size);
     void DestroyBuffer(BufferBase* buffer);
 
-    MGPUFence FenceSync();
-    MGPUResult WaitFence(MGPUFence fence);
-
   private:
     std::unique_ptr<RenderDeviceBackendBase> m_backend{};
 };

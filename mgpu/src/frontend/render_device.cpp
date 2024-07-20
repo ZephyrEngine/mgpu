@@ -50,12 +50,4 @@ void RenderDevice::DestroyBuffer(BufferBase* buffer) {
   m_backend->DestroyBuffer(buffer);
 }
 
-MGPUFence RenderDevice::FenceSync() {
-  return m_backend->FenceSync();
-}
-
-MGPUResult RenderDevice::WaitFence(MGPUFence fence) {
-  return m_backend->WaitFence(fence);
-}
-
 }  // namespace mgpu

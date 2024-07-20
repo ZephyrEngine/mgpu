@@ -12,7 +12,6 @@
 
 typedef struct MGPURenderDeviceImpl* MGPURenderDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
-typedef void* MGPUFence;
 
 // ======================================================= //
 //   Enumerations                                          //
@@ -80,9 +79,6 @@ MGPUResult mgpuMapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, void
 MGPUResult mgpuUnmapBuffer(MGPURenderDevice render_device, MGPUBuffer buffer);
 MGPUResult mgpuFlushBuffer(MGPURenderDevice render_device, MGPUBuffer buffer, uint64_t offset, uint64_t size);
 void mgpuDestroyBuffer(MGPURenderDevice render_device, MGPUBuffer buffer);
-
-MGPUFence mgpuFenceSync(MGPURenderDevice render_device);
-MGPUResult mgpuWaitFence(MGPURenderDevice render_device, MGPUFence fence);
 
 const char* mgpuResultCodeToString(MGPUResult result);
 

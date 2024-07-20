@@ -18,9 +18,6 @@ class RenderDeviceBackendBase {
     virtual MGPUResult UnmapBuffer(BufferBase* buffer) = 0;
     virtual MGPUResult FlushBuffer(BufferBase* buffer, u64 offset, u64 size) = 0;
     virtual void DestroyBuffer(BufferBase* buffer) = 0;
-
-    virtual MGPUFence FenceSync() = 0;
-    virtual MGPUResult WaitFence(MGPUFence fence) = 0;
 };
 
 }  // namespace mgpu
