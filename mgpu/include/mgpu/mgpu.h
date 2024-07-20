@@ -17,6 +17,8 @@ typedef struct MGPUBufferImpl* MGPUBuffer;
 //   Enumerations                                          //
 // ======================================================= //
 
+typedef uint32_t MGPUFlags;
+
 typedef enum MGPUResult {
   MGPU_SUCCESS = 0,
   MGPU_BAD_ENUM = 1,
@@ -43,10 +45,14 @@ typedef enum MGPUBufferUsage {
   MGPU_BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
 } MGPUBufferUsage;
 
+typedef MGPUFlags MGPUBufferUsageBits;
+
 typedef enum MGPUBufferFlags {
   MGPU_BUFFER_FLAGS_HOST_VISIBLE = 0x00000001,
   MGPU_BUFFER_FLAGS_HOST_RANDOM_ACCESS = 0x00000002
 } MGPUBufferFlags;
+
+typedef MGPUFlags MGPUBufferFlagsBits;
 
 // ======================================================= //
 //   Common structure definitions                          //
@@ -59,8 +65,8 @@ typedef enum MGPUBufferFlags {
 
 typedef struct MGPUBufferCreateInfo {
   uint64_t size;
-  MGPUBufferUsage usage; // TODO(fleroviux): fix broken OR-ing behavior
-  MGPUBufferFlags flags; // TODO(fleroviux): fix broken OR-ing behavior
+  MGPUBufferUsageBits usage;
+  MGPUBufferFlagsBits flags;
 } MGPUBufferCreateInfo;
 
 #ifdef __cplusplus
