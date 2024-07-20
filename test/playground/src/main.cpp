@@ -24,8 +24,8 @@ bool enable_validation_layers = true;
 bool enable_validation_layers = false;
 #endif
 
-static constexpr int k_window_width = 512;
-static constexpr int k_window_height = 384;
+static constexpr int k_window_width = 256 * 4;
+static constexpr int k_window_height = 192 * 4;
 
 class HelloTriangle {
   public:

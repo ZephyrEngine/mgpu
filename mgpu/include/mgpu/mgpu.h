@@ -31,8 +31,7 @@ typedef enum MGPUResult {
 } MGPUResult;
 
 typedef enum MGPUBackend {
-  MGPU_BACKEND_OPENGL = 0,
-  MGPU_BACKEND_VULKAN = 1
+  MGPU_BACKEND_VULKAN = 0
 } MGPUBackend;
 
 typedef enum MGPUBufferUsage {

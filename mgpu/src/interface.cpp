@@ -2,7 +2,6 @@
 #include <mgpu/mgpu.h>
 #include <atom/panic.hpp>
 
-#include "backend/opengl/render_device_backend.hpp"
 #include "backend/vulkan/render_device_backend.hpp"
 #include "frontend/render_device.hpp"
 
@@ -12,7 +11,6 @@ MGPUResult mgpuCreateRenderDevice(MGPUBackend backend, SDL_Window* sdl_window, M
   mgpu::Result<std::unique_ptr<mgpu::RenderDeviceBackendBase>> render_device_backend{MGPU_BAD_ENUM};
 
   switch(backend) {
-    case MGPU_BACKEND_OPENGL: render_device_backend = mgpu::RenderDeviceBackendOGL::Create(sdl_window); break;
     case MGPU_BACKEND_VULKAN: render_device_backend = mgpu::RenderDeviceBackendVulkan::Create(sdl_window); break;
   }
 
