@@ -14,7 +14,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 
   MGPU_FORWARD_ERROR(cxx_device_result.Code());
   *device = (MGPUDevice)cxx_device_result.Unwrap();
-  return MGPU_INTERNAL_ERROR;
+  return MGPU_SUCCESS;
 }
 
 }  // extern "C"

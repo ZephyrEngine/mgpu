@@ -27,12 +27,14 @@ Result<InstanceBase*> Instance::Create() {
     .apiVersion = VK_API_VERSION_1_0
   };
 
-  std::vector<const char*> vk_required_instance_extensions{};
+  std::vector<const char*> vk_required_instance_extensions{"VK_KHR_surface"};
   std::vector<const char*> vk_required_instance_layers{};
 
   // Enable validation layers in debug builds
 #ifndef NDEBUG
-  vk_required_instance_layers.push_back("VK_LAYER_KHRONOS_validation");
+  if(VulkanInstance::QueryInstanceLayerSupport("VK_LAYER_KHRONOS_validation")) {
+    vk_required_instance_layers.push_back("VK_LAYER_KHRONOS_validation");
+  }
 #endif
 
   Result<std::unique_ptr<VulkanInstance>> vk_instance_result = VulkanInstance::Create(
@@ -53,6 +55,11 @@ void Instance::BuildPhysicalDeviceList() {
     if(vk_device_type != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
        vk_device_type != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
        vk_device_type != VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU) {
+      continue;
+    }
+
+    // We require VK_KHR_swapchain extensions for presentation
+    if(!vk_physical_device->QueryDeviceExtensionSupport("VK_KHR_swapchain")) {
       continue;
     }
 

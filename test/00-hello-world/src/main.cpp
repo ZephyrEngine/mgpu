@@ -104,7 +104,7 @@ int main() {
 
 done:
 //  mgpuDestroyBuffer(mgpu_render_device, mgpu_buffer);
-//  mgpuDestroyRenderDevice(mgpu_render_device);
+  mgpuDeviceDestroy(mgpu_device);
   mgpuInstanceDestroy(mgpu_instance);
   SDL_DestroyWindow(sdl_window);
   return 0;

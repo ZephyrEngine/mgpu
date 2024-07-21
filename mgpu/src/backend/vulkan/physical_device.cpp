@@ -2,6 +2,7 @@
 #include <atom/panic.hpp>
 #include <cstring>
 
+#include "device.hpp"
 #include "physical_device.hpp"
 
 namespace mgpu::vulkan {
@@ -17,7 +18,7 @@ MGPUResult PhysicalDevice::GetInfo(MGPUPhysicalDeviceInfo& physical_device_info)
 }
 
 Result<DeviceBase*> PhysicalDevice::CreateDevice() {
-  ATOM_PANIC("unimplemented")
+  return Device::Create(m_vk_physical_device);
 }
 
 void PhysicalDevice::PopulatePhysicalDeviceInfo() {
