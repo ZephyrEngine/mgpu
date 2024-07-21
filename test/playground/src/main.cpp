@@ -1,4 +1,6 @@
 
+#define VMA_IMPLEMENTATION
+
 #include <algorithm>
 #include <atom/logger/sink/console.hpp>
 #include <atom/logger/logger.hpp>

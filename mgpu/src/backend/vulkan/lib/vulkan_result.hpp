@@ -4,7 +4,7 @@
 #include <mgpu/mgpu.h>
 #include <vulkan/vulkan.h>
 
-namespace mgpu {
+namespace mgpu::vulkan {
 
 static inline MGPUResult vk_result_to_mgpu_result(VkResult vk_result) {
   switch(vk_result) {
@@ -16,4 +16,4 @@ static inline MGPUResult vk_result_to_mgpu_result(VkResult vk_result) {
   }
 }
 
-} // namespace mgpu
+} // namespace mgpu::vulkan
