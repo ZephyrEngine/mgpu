@@ -1,19 +1,24 @@
 
+#define VMA_IMPLEMENTATION
+
 #include <atom/float.hpp>
 
+#include "buffer.hpp"
 #include "device.hpp"
 
 namespace mgpu::vulkan {
 
-Device::Device(VkDevice vk_device)
-    : m_vk_device{vk_device} {
+Device::Device(VkDevice vk_device, VmaAllocator vma_allocator)
+    : m_vk_device{vk_device}
+    , m_vma_allocator{vma_allocator} {
 }
 
 Device::~Device() {
+  vmaDestroyAllocator(m_vma_allocator);
   vkDestroyDevice(m_vk_device, nullptr);
 }
 
-Result<DeviceBase*> Device::Create(VulkanPhysicalDevice& vk_physical_device) {
+Result<DeviceBase*> Device::Create(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device) {
   std::vector<const char*> vk_required_device_extensions{"VK_KHR_swapchain"};
   std::vector<const char*> vk_required_device_layers{};
 
@@ -56,7 +61,13 @@ Result<DeviceBase*> Device::Create(VulkanPhysicalDevice& vk_physical_device) {
 
   Result<VkDevice> vk_device_result = vk_physical_device.CreateLogicalDevice(vk_queue_create_infos, vk_required_device_extensions, vk_required_device_layers);
   MGPU_FORWARD_ERROR(vk_device_result.Code());
-  return new Device{vk_device_result.Unwrap()};
+
+  VkDevice vk_device = vk_device_result.Unwrap();
+
+  Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
+  MGPU_FORWARD_ERROR(vma_allocator_result.Code());
+
+  return new Device{vk_device, vma_allocator_result.Unwrap()};
 }
 
 Device::QueueFamilyIndices Device::SelectQueueFamilies(VulkanPhysicalDevice& vk_physical_device) {
@@ -121,6 +132,32 @@ Device::QueueFamilyIndices Device::SelectQueueFamilies(VulkanPhysicalDevice& vk_
   }
 
   return queue_family_indices;
+}
+
+Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device) {
+  const VmaAllocatorCreateInfo vma_create_info = {
+    .flags = 0,
+    .physicalDevice = vk_physical_device,
+    .device = vk_device,
+    .preferredLargeHeapBlockSize = 0,
+    .pAllocationCallbacks = nullptr,
+    .pDeviceMemoryCallbacks = nullptr,
+    .pHeapSizeLimit = nullptr,
+    .pVulkanFunctions = nullptr,
+    .instance = vk_instance,
+    .vulkanApiVersion = VK_API_VERSION_1_0,
+    .pTypeExternalMemoryHandleTypes = nullptr
+  };
+
+  VmaAllocator vma_allocator{};
+  if(vmaCreateAllocator(&vma_create_info, &vma_allocator) != VK_SUCCESS) {
+    return MGPU_INTERNAL_ERROR;
+  }
+  return vma_allocator;
+}
+
+Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info) {
+  return Buffer::Create(m_vk_device, m_vma_allocator, create_info);
 }
 
 }  // namespace mgpu::vulkan

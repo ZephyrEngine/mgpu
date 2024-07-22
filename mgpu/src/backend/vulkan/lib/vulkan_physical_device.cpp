@@ -72,10 +72,7 @@ bool VulkanPhysicalDevice::QueryDeviceLayerSupport(const char* layer_name) const
   };
 
   VkDevice vk_device{};
-
-  if(VkResult vk_result = vkCreateDevice(m_vk_physical_device, &create_info, nullptr, &vk_device); vk_result != VK_SUCCESS) {
-    vk_result_to_mgpu_result(vk_result);
-  }
+  MGPU_VK_FORWARD_ERROR(vkCreateDevice(m_vk_physical_device, &create_info, nullptr, &vk_device));
   return vk_device;
 }
 

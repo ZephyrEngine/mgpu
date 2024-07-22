@@ -6,9 +6,10 @@
 
 namespace mgpu {
 
-#define MGPU_FORWARD_ERROR(result_code) do { \
-  if((result_code) != MGPU_SUCCESS) { \
-    return result_code;\
+#define MGPU_FORWARD_ERROR(expression) do { \
+  const MGPUResult mgpu_result = (expression); \
+  if(mgpu_result != MGPU_SUCCESS) { \
+    return mgpu_result;\
   } \
 } while(0)
 

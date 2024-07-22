@@ -50,10 +50,7 @@ Result<std::unique_ptr<VulkanInstance>> VulkanInstance::Create(
   };
 
   VkInstance vk_instance{};
-
-  if(VkResult vk_result = vkCreateInstance(&create_info, nullptr, &vk_instance); vk_result != VK_SUCCESS) {
-    return vk_result_to_mgpu_result(vk_result);
-  }
+  MGPU_VK_FORWARD_ERROR(vkCreateInstance(&create_info, nullptr, &vk_instance));
   return std::unique_ptr<VulkanInstance>{new VulkanInstance{vk_instance}};
 }
 

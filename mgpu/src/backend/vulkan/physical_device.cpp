@@ -7,8 +7,9 @@
 
 namespace mgpu::vulkan {
 
-PhysicalDevice::PhysicalDevice(VulkanPhysicalDevice& vk_physical_device)
-    : m_vk_physical_device{vk_physical_device} {
+PhysicalDevice::PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device)
+    : m_vk_instance{vk_instance}
+    , m_vk_physical_device{vk_physical_device} {
   PopulatePhysicalDeviceInfo();
 }
 
@@ -18,7 +19,7 @@ MGPUResult PhysicalDevice::GetInfo(MGPUPhysicalDeviceInfo& physical_device_info)
 }
 
 Result<DeviceBase*> PhysicalDevice::CreateDevice() {
-  return Device::Create(m_vk_physical_device);
+  return Device::Create(m_vk_instance, m_vk_physical_device);
 }
 
 void PhysicalDevice::PopulatePhysicalDeviceInfo() {

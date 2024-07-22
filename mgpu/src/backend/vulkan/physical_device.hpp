@@ -8,7 +8,7 @@ namespace mgpu::vulkan {
 
 class PhysicalDevice final : public PhysicalDeviceBase {
   public:
-    explicit PhysicalDevice(VulkanPhysicalDevice& vk_physical_device);
+    explicit PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device);
 
     MGPUResult GetInfo(MGPUPhysicalDeviceInfo& physical_device_info) override;
     Result<DeviceBase*> CreateDevice() override;
@@ -16,6 +16,7 @@ class PhysicalDevice final : public PhysicalDeviceBase {
   private:
     void PopulatePhysicalDeviceInfo();
 
+    VkInstance m_vk_instance{};
     VulkanPhysicalDevice& m_vk_physical_device;
     MGPUPhysicalDeviceInfo m_physical_device_info{};
 };

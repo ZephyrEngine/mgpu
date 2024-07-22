@@ -16,4 +16,12 @@ static inline MGPUResult vk_result_to_mgpu_result(VkResult vk_result) {
   }
 }
 
+#define MGPU_VK_FORWARD_ERROR(expression) \
+  do { \
+    const VkResult vk_result = (expression); \
+    if(vk_result != VK_SUCCESS) { \
+      return vk_result_to_mgpu_result(vk_result); \
+    } \
+  } while(0)
+
 } // namespace mgpu::vulkan

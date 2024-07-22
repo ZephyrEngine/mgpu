@@ -66,20 +66,20 @@ int main() {
   MGPUDevice mgpu_device{};
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
 
-//#if USE_VULKAN == 1
-//  MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_VULKAN, sdl_window, &mgpu_render_device));
-//#else
-//  MGPU_CHECK(mgpuCreateRenderDevice(MGPU_BACKEND_OPENGL, sdl_window, &mgpu_render_device));
-//#endif
-//
-//  const MGPUBufferCreateInfo buffer_create_info{
-//    .size = 100 * sizeof(u32),
-//    .usage = MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER,
-//    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
-//  };
-//  MGPUBuffer mgpu_buffer{};
-//  MGPU_CHECK(mgpuCreateBuffer(mgpu_render_device, &buffer_create_info, &mgpu_buffer))
-//
+  const MGPUBufferCreateInfo buffer_create_info{
+    .size = 100 * sizeof(u32),
+    .usage = MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER,
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
+  };
+  MGPUBuffer mgpu_buffer{};
+  MGPU_CHECK(mgpuDeviceCreateBuffer(mgpu_device, &buffer_create_info, &mgpu_buffer));
+
+  void* mgpu_buffer_address = nullptr;
+  MGPU_CHECK(mgpuBufferMap(mgpu_buffer, &mgpu_buffer_address));
+  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
+
+  MGPU_CHECK(mgpuBufferFlushRange(mgpu_buffer, 10u, MGPU_WHOLE_SIZE));
+
 //  void* mgpu_buffer_address = nullptr;
 //  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
 //  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
@@ -103,7 +103,8 @@ int main() {
   }
 
 done:
-//  mgpuDestroyBuffer(mgpu_render_device, mgpu_buffer);
+  MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
+  mgpuBufferDestroy(mgpu_buffer);
   mgpuDeviceDestroy(mgpu_device);
   mgpuInstanceDestroy(mgpu_instance);
   SDL_DestroyWindow(sdl_window);

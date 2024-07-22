@@ -63,7 +63,7 @@ void Instance::BuildPhysicalDeviceList() {
       continue;
     }
 
-    m_physical_devices.push_back(new PhysicalDevice{*vk_physical_device});
+    m_physical_devices.push_back(new PhysicalDevice{m_vk_instance->Handle(), *vk_physical_device});
   }
 }
 

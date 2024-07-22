@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 
 #define MGPU_NULL_HANDLE ((void*)0u)
+#define MGPU_WHOLE_SIZE (~0ull)
 #define MGPU_MAX_PHYSICAL_DEVICE_NAME_SIZE 256u
 
 // ======================================================= //
@@ -29,6 +30,9 @@ typedef enum MGPUResult {
   MGPU_BAD_ENUM = 1,
   MGPU_OUT_OF_MEMORY = 2,
   MGPU_INTERNAL_ERROR = 3,
+  MGPU_BAD_DIMENSIONS = 4,
+  MGPU_BUFFER_NOT_HOST_VISIBLE = 5,
+  MGPU_BUFFER_NOT_MAPPED = 6,
 
   MGPU_RESERVED = -1
 } MGPUResult;
@@ -43,7 +47,7 @@ typedef enum MGPUPhysicalDeviceType {
   MGPU_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU = 2
 } MGPUPhysicalDeviceType;
 
-typedef enum MGPUBufferUsage {
+typedef enum MGPUBufferUsageBits {
   MGPU_BUFFER_USAGE_COPY_SRC = 0x00000001,
   MGPU_BUFFER_USAGE_COPY_DST = 0x00000002,
   MGPU_BUFFER_USAGE_UNIFORM_BUFFER = 0x00000010,
@@ -51,16 +55,16 @@ typedef enum MGPUBufferUsage {
   MGPU_BUFFER_USAGE_INDEX_BUFFER = 0x00000040,
   MGPU_BUFFER_USAGE_VERTEX_BUFFER = 0x00000080,
   MGPU_BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
-} MGPUBufferUsage;
+} MGPUBufferUsageBits;
 
-typedef MGPUFlags MGPUBufferUsageBits;
+typedef MGPUFlags MGPUBufferUsage;
 
-typedef enum MGPUBufferFlags {
+typedef enum MGPUBufferFlagsBits {
   MGPU_BUFFER_FLAGS_HOST_VISIBLE = 0x00000001,
   MGPU_BUFFER_FLAGS_HOST_RANDOM_ACCESS = 0x00000002
-} MGPUBufferFlags;
+} MGPUBufferFlagsBits;
 
-typedef MGPUFlags MGPUBufferFlagsBits;
+typedef MGPUFlags MGPUBufferFlags;
 
 // ======================================================= //
 //   Common structure definitions                          //
@@ -73,8 +77,8 @@ typedef MGPUFlags MGPUBufferFlagsBits;
 
 typedef struct MGPUBufferCreateInfo {
   uint64_t size;
-  MGPUBufferUsageBits usage;
-  MGPUBufferFlagsBits flags;
+  MGPUBufferUsage usage;
+  MGPUBufferFlags flags;
 } MGPUBufferCreateInfo;
 
 // ======================================================= //
@@ -104,8 +108,6 @@ const char* mgpuResultCodeToString(MGPUResult result);
 
 // MGPUInstance methods
 MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t* physical_device_count, MGPUPhysicalDevice* physical_devices);
-//MGPUResult mgpuInstanceGetPhysicalDeviceInfo(MGPUInstance instance, MGPUPhysicalDevice physical_device, MGPUPhysicalDeviceInfo* physical_device_info);
-//MGPUResult mgpuInstanceCreateDevice(MGPUInstance instance, MGPUPhysicalDevice physical_device, MGPUDevice* device);
 void mgpuInstanceDestroy(MGPUInstance instance);
 
 // MGPUPhysicalDevice methods

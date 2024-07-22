@@ -4,9 +4,11 @@
 set(SOURCES
   src/backend/vulkan/lib/vulkan_instance.cpp
   src/backend/vulkan/lib/vulkan_physical_device.cpp
+  src/backend/vulkan/buffer.cpp
   src/backend/vulkan/device.cpp
   src/backend/vulkan/instance.cpp
   src/backend/vulkan/physical_device.cpp
+  src/frontend/buffer.cpp
   src/frontend/device.cpp
   src/frontend/instance.cpp
   src/frontend/physical_device.cpp
@@ -17,6 +19,7 @@ set(HEADERS
   src/backend/vulkan/lib/vulkan_instance.hpp
   src/backend/vulkan/lib/vulkan_physical_device.hpp
   src/backend/vulkan/lib/vulkan_result.hpp
+  src/backend/vulkan/buffer.hpp
   src/backend/vulkan/device.hpp
   src/backend/vulkan/instance.hpp
   src/backend/vulkan/physical_device.hpp
