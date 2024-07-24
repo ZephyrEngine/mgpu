@@ -14,6 +14,7 @@ Device::Device(VkDevice vk_device, VmaAllocator vma_allocator)
 }
 
 Device::~Device() {
+  vkDeviceWaitIdle(m_vk_device);
   vmaDestroyAllocator(m_vma_allocator);
   vkDestroyDevice(m_vk_device, nullptr);
 }
