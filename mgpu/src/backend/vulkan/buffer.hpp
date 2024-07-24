@@ -6,6 +6,7 @@
 #include <vk_mem_alloc.h>
 
 #include "backend/buffer.hpp"
+#include "device.hpp"
 
 namespace mgpu::vulkan {
 
@@ -13,7 +14,7 @@ class Buffer final : public BufferBase {
   public:
    ~Buffer() override;
 
-    static Result<BufferBase*> Create(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUBufferCreateInfo& create_info);
+    static Result<BufferBase*> Create(Device* device, const MGPUBufferCreateInfo& create_info);
 
     [[nodiscard]] bool IsMapped() const override;
 
@@ -22,11 +23,10 @@ class Buffer final : public BufferBase {
     MGPUResult FlushRange(u64 offset, u64 size) override;
 
   private:
-    Buffer(VkDevice vk_device, VkBuffer vk_buffer, VmaAllocator vma_allocator, VmaAllocation vma_allocation, const MGPUBufferCreateInfo& create_info);
+    Buffer(Device* device, VkBuffer vk_buffer, VmaAllocation vma_allocation, const MGPUBufferCreateInfo& create_info);
 
-    VkDevice m_vk_device{};
+    Device* m_device{};
     VkBuffer m_vk_buffer{};
-    VmaAllocator m_vma_allocator{};
     VmaAllocation m_vma_allocation{};
     void* m_mapped_address{};
 };

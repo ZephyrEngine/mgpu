@@ -157,7 +157,7 @@ Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysic
 }
 
 Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info) {
-  return Buffer::Create(m_vk_device, m_vma_allocator, create_info);
+  return Buffer::Create(this, create_info);
 }
 
 }  // namespace mgpu::vulkan
