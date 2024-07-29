@@ -14,6 +14,8 @@ Device::Device(VkDevice vk_device, VmaAllocator vma_allocator)
 }
 
 Device::~Device() {
+  m_deleter_queue.Drain();
+
   vkDeviceWaitIdle(m_vk_device);
   vmaDestroyAllocator(m_vma_allocator);
   vkDestroyDevice(m_vk_device, nullptr);

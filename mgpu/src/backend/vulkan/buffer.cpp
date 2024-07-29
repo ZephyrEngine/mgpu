@@ -14,8 +14,16 @@ Buffer::Buffer(Device* device, VkBuffer vk_buffer, VmaAllocation vma_allocation,
 
 Buffer::~Buffer() {
   Unmap();
-  vkDestroyBuffer(m_device->Handle(), m_vk_buffer, nullptr);
-  vmaFreeMemory(m_device->GetVmaAllocator(), m_vma_allocation);
+
+  Device* device = m_device;
+  VkBuffer vk_buffer = m_vk_buffer;
+  VmaAllocation vma_allocation = m_vma_allocation;
+
+  // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
+  m_device->GetDeleterQueue().Schedule([device, vk_buffer, vma_allocation]() {
+    vkDestroyBuffer(device->Handle(), vk_buffer, nullptr);
+    vmaFreeMemory(device->GetVmaAllocator(), vma_allocation);
+  });
 }
 
 Result<BufferBase*> Buffer::Create(Device* device, const MGPUBufferCreateInfo& create_info) {

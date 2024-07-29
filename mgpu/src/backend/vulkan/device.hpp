@@ -9,6 +9,7 @@
 #include "backend/vulkan/lib/vulkan_physical_device.hpp"
 #include "backend/device.hpp"
 #include "common/result.hpp"
+#include "deleter_queue.hpp"
 
 namespace mgpu::vulkan {
 
@@ -28,6 +29,10 @@ class Device final : public DeviceBase {
       return m_vma_allocator;
     }
 
+    [[nodiscard]] DeleterQueue& GetDeleterQueue() {
+      return m_deleter_queue;
+    }
+
   private:
     struct QueueFamilyIndices {
       std::optional<u32> graphics_and_compute{};
@@ -41,6 +46,7 @@ class Device final : public DeviceBase {
 
     VkDevice m_vk_device{};
     VmaAllocator m_vma_allocator{};
+    DeleterQueue m_deleter_queue{};
 };
 
 }  // namespace mgpu::vulkan
