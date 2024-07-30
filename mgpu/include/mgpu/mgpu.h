@@ -18,6 +18,8 @@ typedef struct MGPUInstanceImpl* MGPUInstance;
 typedef struct MGPUPhysicalDeviceImpl* MGPUPhysicalDevice;
 typedef struct MGPUDeviceImpl* MGPUDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
+typedef struct MGPUTextureImpl* MGPUTexture;
+typedef struct MGPUTextureViewImpl* MGPUTextureView;
 
 // ======================================================= //
 //   Enumerations                                          //
@@ -32,9 +34,7 @@ typedef enum MGPUResult {
   MGPU_INTERNAL_ERROR = 3,
   MGPU_BAD_DIMENSIONS = 4,
   MGPU_BUFFER_NOT_HOST_VISIBLE = 5,
-  MGPU_BUFFER_NOT_MAPPED = 6,
-
-  MGPU_RESERVED = -1
+  MGPU_BUFFER_NOT_MAPPED = 6
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -66,10 +66,53 @@ typedef enum MGPUBufferFlagsBits {
 
 typedef MGPUFlags MGPUBufferFlags;
 
+typedef enum MGPUTextureFormat {
+  MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB = 0
+} MGPUTextureFormat;
+
+typedef enum MGPUTextureUsageBits {
+  MGPU_TEXTURE_USAGE_COPY_SRC = 0x00000001,
+  MGPU_TEXTURE_USAGE_COPY_DST = 0x00000002,
+  MGPU_TEXTURE_USAGE_SAMPLED = 0x00000004,
+  MGPU_TEXTURE_USAGE_STORAGE = 0x00000008,
+  MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT = 0x00000010
+} MGPUTextureUsageBits;
+
+typedef MGPUFlags MGPUTextureUsage;
+
+typedef enum MGPUTextureType {
+  MGPU_TEXTURE_TYPE_1D = 0,
+  MGPU_TEXTURE_TYPE_2D = 1,
+  MGPU_TEXTURE_TYPE_3D = 2
+} MGPUTextureType;
+
+typedef enum MGPUTextureAspectBits {
+  MGPU_TEXTURE_ASPECT_COLOR = 0x00000001,
+  MGPU_TEXTURE_ASPECT_DEPTH = 0x00000002,
+  MGPU_TEXTURE_ASPECT_STENCIL = 0x00000004
+} MGPUTextureAspectBits;
+
+typedef MGPUFlags MGPUTextureAspect;
+
+typedef enum MGPUTextureViewType {
+  MGPU_TEXTURE_VIEW_TYPE_1D = 0,
+  MGPU_TEXTURE_VIEW_TYPE_2D = 1,
+  MGPU_TEXTURE_VIEW_TYPE_3D = 2,
+  MGPU_TEXTURE_VIEW_TYPE_CUBE = 3,
+  MGPU_TEXTURE_VIEW_TYPE_1D_ARRAY = 4,
+  MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY = 5,
+  MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
+} MGPUTextureViewType;
+
 // ======================================================= //
 //   Common structure definitions                          //
 // ======================================================= //
 
+typedef struct MGPUExtent3D {
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth;
+} MGPUExtent3D;
 
 // ======================================================= //
 //   Object creation / descriptor structures               //
@@ -80,6 +123,25 @@ typedef struct MGPUBufferCreateInfo {
   MGPUBufferUsage usage;
   MGPUBufferFlags flags;
 } MGPUBufferCreateInfo;
+
+typedef struct MGPUTextureCreateInfo {
+  MGPUTextureFormat format;
+  MGPUTextureType type;
+  MGPUExtent3D extent;
+  uint32_t mip_count;
+  uint32_t array_layer_count;
+  MGPUTextureUsage usage;
+} MGPUTextureCreateInfo;
+
+typedef struct MGPUTextureViewCreateInfo {
+  MGPUTextureViewType type;
+  MGPUTextureFormat format;
+  MGPUTextureAspect aspect;
+  uint32_t base_mip;
+  uint32_t mip_count;
+  uint32_t base_array_layer;
+  uint32_t array_layer_count;
+} MGPUTextureViewCreateInfo;
 
 // ======================================================= //
 //   Other structure definitions                           //
@@ -116,6 +178,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
+MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo*  create_info, MGPUTexture* texture);
 void mgpuDeviceDestroy(MGPUDevice device);
 
 // MGPUBuffer methods
@@ -123,6 +186,13 @@ MGPUResult mgpuBufferMap(MGPUBuffer buffer, void** address);
 MGPUResult mgpuBufferUnmap(MGPUBuffer buffer);
 MGPUResult mgpuBufferFlushRange(MGPUBuffer buffer, uint64_t offset, uint64_t size);
 void mgpuBufferDestroy(MGPUBuffer buffer);
+
+// MGPUTexture methods
+MGPUResult mgpuTextureCreateView(MGPUTexture texture, const MGPUTextureViewCreateInfo* create_info, MGPUTextureView* texture_view);
+void mgpuTextureDestroy(MGPUTexture texture);
+
+// MGPUTextureView methods
+void mgpuTextureViewDestroy(MGPUTextureView texture_view);
 
 #ifdef __cplusplus
 }  // extern "C"
