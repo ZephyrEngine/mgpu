@@ -6,7 +6,7 @@
 
 namespace mgpu::vulkan {
 
-static inline MGPUResult vk_result_to_mgpu_result(VkResult vk_result) {
+static inline MGPUResult VkResultToMGPUResult(VkResult vk_result) {
   switch(vk_result) {
     case VK_SUCCESS:                    return MGPU_SUCCESS;
     case VK_ERROR_OUT_OF_HOST_MEMORY:   return MGPU_OUT_OF_MEMORY;
@@ -20,7 +20,7 @@ static inline MGPUResult vk_result_to_mgpu_result(VkResult vk_result) {
   do { \
     const VkResult vk_result = (expression); \
     if(vk_result != VK_SUCCESS) { \
-      return vk_result_to_mgpu_result(vk_result); \
+      return VkResultToMGPUResult(vk_result); \
     } \
   } while(0)
 

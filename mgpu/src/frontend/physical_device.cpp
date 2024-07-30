@@ -6,7 +6,8 @@
 extern "C" {
 
 MGPUResult mgpuPhysicalDeviceGetInfo(MGPUPhysicalDevice physical_device, MGPUPhysicalDeviceInfo* physical_device_info) {
-  return ((mgpu::PhysicalDeviceBase*)physical_device)->GetInfo(*physical_device_info);
+  *physical_device_info = ((mgpu::PhysicalDeviceBase*)physical_device)->Info();
+  return MGPU_SUCCESS;
 }
 
 MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MGPUDevice* device) {

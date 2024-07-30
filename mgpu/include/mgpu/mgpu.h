@@ -148,6 +148,10 @@ typedef struct MGPUTextureViewCreateInfo {
 // ======================================================= //
 
 struct MGPUPhysicalDeviceLimits {
+  uint32_t max_texture_dimension_1d;
+  uint32_t max_texture_dimension_2d;
+  uint32_t max_texture_dimension_3d;
+  uint32_t max_texture_array_layers;
 };
 
 struct MGPUPhysicalDeviceInfo {
@@ -178,7 +182,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
-MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo*  create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
 void mgpuDeviceDestroy(MGPUDevice device);
 
 // MGPUBuffer methods

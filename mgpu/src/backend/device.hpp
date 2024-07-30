@@ -6,14 +6,23 @@
 #include <atom/non_moveable.hpp>
 
 #include "backend/buffer.hpp"
+#include "backend/texture.hpp"
 
 namespace mgpu {
 
 class DeviceBase : atom::NonCopyable, atom::NonMoveable {
   public:
+    explicit DeviceBase(const MGPUPhysicalDeviceLimits& limits) : m_limits{limits} {}
+
     virtual ~DeviceBase() = default;
 
+    [[nodiscard]] const MGPUPhysicalDeviceLimits& Limits() const { return m_limits; }
+
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
+    virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
+
+  private:
+    MGPUPhysicalDeviceLimits m_limits{};
 };
 
 } // namespace mgpu

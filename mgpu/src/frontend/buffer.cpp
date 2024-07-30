@@ -2,20 +2,7 @@
 #include <mgpu/mgpu.h>
 
 #include "backend/buffer.hpp"
-
-static MGPUResult validate_buffer_host_visible(mgpu::BufferBase* buffer) {
-  if(!buffer->HostVisible()) {
-    return MGPU_BUFFER_NOT_HOST_VISIBLE;
-  }
-  return MGPU_SUCCESS;
-}
-
-static MGPUResult validate_buffer_mapped(mgpu::BufferBase* buffer) {
-  if(!buffer->IsMapped()) {
-    return MGPU_BUFFER_NOT_MAPPED;
-  }
-  return MGPU_SUCCESS;
-}
+#include "validation.hpp"
 
 extern "C" {
 

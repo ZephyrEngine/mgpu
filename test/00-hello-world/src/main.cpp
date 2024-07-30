@@ -59,9 +59,17 @@ int main() {
     ATOM_PANIC("failed to find a suitable physical device");
   }
 
-  MGPUPhysicalDeviceInfo mgpu_physical_device_info{};
-  MGPU_CHECK(mgpuPhysicalDeviceGetInfo(mgpu_physical_device, &mgpu_physical_device_info));
-  fmt::print("mgpu device: {} (type = {})\n", mgpu_physical_device_info.device_name, (int)mgpu_physical_device_info.device_type);
+  {
+    MGPUPhysicalDeviceInfo info{};
+    MGPU_CHECK(mgpuPhysicalDeviceGetInfo(mgpu_physical_device, &info));
+    fmt::print("mgpu device: {} (type = {})\n", info.device_name, (int)info.device_type);
+
+    const MGPUPhysicalDeviceLimits& limits = info.limits;
+    fmt::print("\tmax_texture_dimension_1d: {}\n", limits.max_texture_dimension_1d);
+    fmt::print("\tmax_texture_dimension_2d: {}\n", limits.max_texture_dimension_2d);
+    fmt::print("\tmax_texture_dimension_3d: {}\n", limits.max_texture_dimension_3d);
+    fmt::print("\tmax_texture_array_layers: {}\n", limits.max_texture_array_layers);
+  }
 
   MGPUDevice mgpu_device{};
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
@@ -79,6 +87,21 @@ int main() {
   fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
 
   MGPU_CHECK(mgpuBufferFlushRange(mgpu_buffer, 10u, MGPU_WHOLE_SIZE));
+
+  const MGPUTextureCreateInfo texture_create_info{
+    .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
+    .type = MGPU_TEXTURE_TYPE_2D,
+    .extent = {
+      .width = 512u,
+      .height = 512u,
+      .depth = 1u
+    },
+    .mip_count = 1u,
+    .array_layer_count = 0u,
+    .usage = MGPU_TEXTURE_USAGE_COPY_SRC | MGPU_TEXTURE_USAGE_COPY_DST | MGPU_TEXTURE_USAGE_SAMPLED
+  };
+  MGPUTexture mgpu_texture{};
+  MGPU_CHECK(mgpuDeviceCreateTexture(mgpu_device, &texture_create_info, &mgpu_texture));
 
 //  void* mgpu_buffer_address = nullptr;
 //  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
@@ -103,6 +126,7 @@ int main() {
   }
 
 done:
+  mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);
   mgpuDeviceDestroy(mgpu_device);

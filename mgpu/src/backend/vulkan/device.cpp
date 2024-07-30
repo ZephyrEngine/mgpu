@@ -4,12 +4,14 @@
 #include <atom/float.hpp>
 
 #include "buffer.hpp"
+#include "texture.hpp"
 #include "device.hpp"
 
 namespace mgpu::vulkan {
 
-Device::Device(VkDevice vk_device, VmaAllocator vma_allocator)
-    : m_vk_device{vk_device}
+Device::Device(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUPhysicalDeviceLimits& limits)
+    : DeviceBase{limits}
+    , m_vk_device{vk_device}
     , m_vma_allocator{vma_allocator} {
 }
 
@@ -21,7 +23,7 @@ Device::~Device() {
   vkDestroyDevice(m_vk_device, nullptr);
 }
 
-Result<DeviceBase*> Device::Create(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device) {
+Result<DeviceBase*> Device::Create(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device, const MGPUPhysicalDeviceLimits& limits) {
   std::vector<const char*> vk_required_device_extensions{"VK_KHR_swapchain"};
   std::vector<const char*> vk_required_device_layers{};
 
@@ -70,7 +72,7 @@ Result<DeviceBase*> Device::Create(VkInstance vk_instance, VulkanPhysicalDevice&
   Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
   MGPU_FORWARD_ERROR(vma_allocator_result.Code());
 
-  return new Device{vk_device, vma_allocator_result.Unwrap()};
+  return new Device{vk_device, vma_allocator_result.Unwrap(), limits};
 }
 
 Device::QueueFamilyIndices Device::SelectQueueFamilies(VulkanPhysicalDevice& vk_physical_device) {
@@ -161,6 +163,10 @@ Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysic
 
 Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info) {
   return Buffer::Create(this, create_info);
+}
+
+Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
+  return Texture::Create(this, create_info);
 }
 
 }  // namespace mgpu::vulkan

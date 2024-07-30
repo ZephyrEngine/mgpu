@@ -15,12 +15,12 @@ Buffer::Buffer(Device* device, VkBuffer vk_buffer, VmaAllocation vma_allocation,
 Buffer::~Buffer() {
   Unmap();
 
+  // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
+  // TODO(fleroviux): make this a little bit less verbose.
   Device* device = m_device;
   VkBuffer vk_buffer = m_vk_buffer;
   VmaAllocation vma_allocation = m_vma_allocation;
-
-  // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
-  m_device->GetDeleterQueue().Schedule([device, vk_buffer, vma_allocation]() {
+  device->GetDeleterQueue().Schedule([device, vk_buffer, vma_allocation]() {
     vkDestroyBuffer(device->Handle(), vk_buffer, nullptr);
     vmaFreeMemory(device->GetVmaAllocator(), vma_allocation);
   });
