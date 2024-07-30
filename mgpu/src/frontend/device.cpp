@@ -31,6 +31,11 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   MGPU_FORWARD_ERROR(validate_texture_array_layer_count(cxx_device->Limits(), create_info->array_layer_count));
   MGPU_FORWARD_ERROR(validate_texture_mip_count(cxx_device->Limits(), create_info->extent, create_info->mip_count));
 
+  if(create_info->usage == 0) {
+    // TODO(fleroviux): reconsider what result code this error should return.
+    return MGPU_BAD_ENUM;
+  }
+
   mgpu::Result<mgpu::TextureBase*> cxx_texture_result = cxx_device->CreateTexture(*create_info);
   MGPU_FORWARD_ERROR(cxx_texture_result.Code());
   *texture = (MGPUTexture)cxx_texture_result.Unwrap();
