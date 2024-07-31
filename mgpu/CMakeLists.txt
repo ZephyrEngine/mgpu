@@ -37,7 +37,9 @@ set(HEADERS
   src/backend/physical_device.hpp
   src/backend/texture.hpp
   src/backend/texture_view.hpp
-  src/frontend/validation.hpp
+  src/frontend/validation/buffer.hpp
+  src/frontend/validation/texture.hpp
+  src/frontend/validation/texture_view.hpp
   src/common/result.hpp
   src/common/texture.hpp
 )

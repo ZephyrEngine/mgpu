@@ -2,7 +2,8 @@
 #include <mgpu/mgpu.h>
 
 #include "backend/texture.hpp"
-#include "validation.hpp"
+#include "validation/texture.hpp"
+#include "validation/texture_view.hpp"
 
 extern "C" {
 
