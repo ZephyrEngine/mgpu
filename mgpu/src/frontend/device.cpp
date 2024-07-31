@@ -28,8 +28,8 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   MGPU_FORWARD_ERROR(validate_texture_format(create_info->format));
   MGPU_FORWARD_ERROR(validate_texture_type(create_info->type));
   MGPU_FORWARD_ERROR(validate_texture_extent(cxx_device->Limits(), create_info->type, create_info->extent));
-  MGPU_FORWARD_ERROR(validate_texture_array_layer_count(cxx_device->Limits(), create_info->array_layer_count));
   MGPU_FORWARD_ERROR(validate_texture_mip_count(cxx_device->Limits(), create_info->extent, create_info->mip_count));
+  MGPU_FORWARD_ERROR(validate_texture_array_layer_count(cxx_device->Limits(), create_info->array_layer_count));
 
   if(create_info->usage == 0) {
     // TODO(fleroviux): reconsider what result code this error should return.

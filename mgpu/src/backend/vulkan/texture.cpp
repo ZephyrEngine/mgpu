@@ -4,6 +4,7 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 #include "conversion.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 
 namespace mgpu::vulkan {
 
@@ -76,6 +77,10 @@ Result<TextureBase*> Texture::Create(Device* device, const MGPUTextureCreateInfo
   VmaAllocation vma_allocation;
   MGPU_VK_FORWARD_ERROR(vmaCreateImage(device->GetVmaAllocator(), &vk_image_create_info, &vma_alloc_info, &vk_image, &vma_allocation, nullptr));
   return new Texture{device, vk_image, vma_allocation, create_info};
+}
+
+Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& create_info) {
+  return TextureView::Create(m_device, m_vk_image, create_info);
 }
 
 }  // namespace mgpu::vulkan

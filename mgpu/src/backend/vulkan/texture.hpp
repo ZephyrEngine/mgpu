@@ -16,6 +16,10 @@ class Texture final : public TextureBase {
 
     static Result<TextureBase*> Create(Device* device, const MGPUTextureCreateInfo& create_info);
 
+    [[nodiscard]] VkImage Handle() { return m_vk_image; }
+
+    Result<TextureViewBase*> CreateView(const MGPUTextureViewCreateInfo& create_info) override;
+
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);
 

@@ -97,11 +97,23 @@ int main() {
       .depth = 1u
     },
     .mip_count = 1u,
-    .array_layer_count = 0u,
+    .array_layer_count = 6u,
     .usage = MGPU_TEXTURE_USAGE_COPY_SRC | MGPU_TEXTURE_USAGE_COPY_DST | MGPU_TEXTURE_USAGE_SAMPLED
   };
   MGPUTexture mgpu_texture{};
   MGPU_CHECK(mgpuDeviceCreateTexture(mgpu_device, &texture_create_info, &mgpu_texture));
+
+  const MGPUTextureViewCreateInfo texture_view_create_info{
+    .type = MGPU_TEXTURE_VIEW_TYPE_CUBE,
+    .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
+    .aspect = MGPU_TEXTURE_ASPECT_COLOR,
+    .base_mip = 0u,
+    .mip_count = 1u,
+    .base_array_layer = 0u,
+    .array_layer_count = 6u
+  };
+  MGPUTextureView mgpu_texture_view{};
+  MGPU_CHECK(mgpuTextureCreateView(mgpu_texture, &texture_view_create_info, &mgpu_texture_view));
 
 //  void* mgpu_buffer_address = nullptr;
 //  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
@@ -126,6 +138,7 @@ int main() {
   }
 
 done:
+  mgpuTextureViewDestroy(mgpu_texture_view);
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);

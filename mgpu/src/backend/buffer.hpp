@@ -25,7 +25,7 @@ class BufferBase : atom::NonCopyable, atom::NonMoveable {
     virtual MGPUResult FlushRange(u64 offset, u64 size) = 0;
 
   private:
-    MGPUBufferCreateInfo m_create_info{};
+    MGPUBufferCreateInfo m_create_info;
 };
 
 } // namespace mgpu

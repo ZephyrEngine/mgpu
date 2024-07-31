@@ -6,6 +6,8 @@
 #include <atom/panic.hpp>
 #include <vulkan/vulkan.h>
 
+#include "common/texture.hpp"
+
 namespace mgpu::vulkan {
 
 static inline VkBufferUsageFlags MGPUBufferUsageToVkBufferUsage(MGPUBufferUsage buffer_usage) {
@@ -36,13 +38,6 @@ static inline VkFormat MGPUTextureFormatToVkFormat(MGPUTextureFormat texture_for
   }
 }
 
-static inline MGPUTextureAspect MGPUTextureFormatToMGPUTextureAspect(MGPUTextureFormat texture_format) {
-  switch(texture_format) {
-    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return MGPU_TEXTURE_ASPECT_COLOR;
-    default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
-  }
-}
-
 static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat texture_format, MGPUTextureUsage texture_usage) {
   VkImageUsageFlags vk_image_usage{};
   if(texture_usage & MGPU_TEXTURE_USAGE_COPY_SRC) vk_image_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -57,6 +52,27 @@ static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat
     }
   }
   return vk_image_usage;
+}
+
+static inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAspect texture_aspect) {
+  VkImageAspectFlags vk_image_aspect{};
+  if(texture_aspect & MGPU_TEXTURE_ASPECT_COLOR)   vk_image_aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+  if(texture_aspect & MGPU_TEXTURE_ASPECT_DEPTH)   vk_image_aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+  if(texture_aspect & MGPU_TEXTURE_ASPECT_STENCIL) vk_image_aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+  return vk_image_aspect;
+}
+
+static inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType texture_view_type) {
+  switch(texture_view_type) {
+    case MGPU_TEXTURE_VIEW_TYPE_1D:         return VK_IMAGE_VIEW_TYPE_1D;
+    case MGPU_TEXTURE_VIEW_TYPE_2D:         return VK_IMAGE_VIEW_TYPE_2D;
+    case MGPU_TEXTURE_VIEW_TYPE_3D:         return VK_IMAGE_VIEW_TYPE_3D;
+    case MGPU_TEXTURE_VIEW_TYPE_CUBE:       return VK_IMAGE_VIEW_TYPE_CUBE;
+    case MGPU_TEXTURE_VIEW_TYPE_1D_ARRAY:   return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    case MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY:   return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    case MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    default: ATOM_PANIC("unhandled texture view type: {}", (int)texture_view_type);
+  }
 }
 
 }  // namespace mgpu::vulkan

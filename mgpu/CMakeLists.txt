@@ -17,6 +17,7 @@ set(SOURCES
   src/frontend/physical_device.cpp
   src/frontend/result.cpp
   src/frontend/texture.cpp
+  src/frontend/texture_view.cpp
 )
 
 set(HEADERS
@@ -38,6 +39,7 @@ set(HEADERS
   src/backend/texture_view.hpp
   src/frontend/validation.hpp
   src/common/result.hpp
+  src/common/texture.hpp
 )
 
 set(HEADERS_PUBLIC
