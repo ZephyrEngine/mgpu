@@ -43,6 +43,7 @@ static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat
   if(texture_usage & MGPU_TEXTURE_USAGE_COPY_SRC) vk_image_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   if(texture_usage & MGPU_TEXTURE_USAGE_COPY_DST) vk_image_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
   if(texture_usage & MGPU_TEXTURE_USAGE_SAMPLED)  vk_image_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+  if(texture_usage & MGPU_TEXTURE_USAGE_STORAGE)  vk_image_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
   if(texture_usage & MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT) {
     if(MGPUTextureFormatToMGPUTextureAspect(texture_format) & MGPU_TEXTURE_ASPECT_COLOR) {
       vk_image_usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
