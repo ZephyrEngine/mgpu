@@ -40,6 +40,14 @@ static inline MGPUResult validate_texture_type(MGPUTextureType texture_type) {
   return MGPU_BAD_ENUM;
 }
 
+static inline MGPUResult validate_texture_usage(MGPUTextureUsage texture_usage) {
+  if(texture_usage == 0) {
+    // TODO(fleroviux): reconsider what result code this error should return.
+    return MGPU_BAD_ENUM;
+  }
+  return MGPU_SUCCESS;
+}
+
 static inline MGPUResult validate_texture_aspect(MGPUTextureAspect texture_aspect) {
   if(texture_aspect == 0u) {
     // TODO(fleroviux): figure out if there a more meaningful error we should signal.

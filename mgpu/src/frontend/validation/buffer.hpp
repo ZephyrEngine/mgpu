@@ -6,6 +6,21 @@
 
 #include "backend/buffer.hpp"
 
+static inline MGPUResult validate_buffer_size(u64 buffer_size) {
+  if(buffer_size == 0u) {
+    return MGPU_BAD_DIMENSIONS;
+  }
+  return MGPU_SUCCESS;
+}
+
+static inline MGPUResult validate_buffer_usage(MGPUBufferUsage buffer_usage) {
+  if(buffer_usage == 0) {
+    // TODO(fleroviux): reconsider what result code this error should return.
+    return MGPU_BAD_ENUM;
+  }
+  return MGPU_SUCCESS;
+}
+
 static inline MGPUResult validate_buffer_host_visible(mgpu::BufferBase* buffer) {
   if(!buffer->HostVisible()) {
     return MGPU_BUFFER_NOT_HOST_VISIBLE;
