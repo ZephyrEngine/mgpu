@@ -2,6 +2,7 @@
 #include <atom/panic.hpp>
 
 #include "instance.hpp"
+#include "surface.hpp"
 
 namespace mgpu::vulkan {
 
@@ -15,8 +16,6 @@ Instance::~Instance() {
 }
 
 Result<InstanceBase*> Instance::Create() {
-  // TODO(fleroviux): enable instance extensions required for surface creation.
-
   const VkApplicationInfo app_info{
     .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
     .pNext = nullptr,
@@ -29,6 +28,10 @@ Result<InstanceBase*> Instance::Create() {
 
   std::vector<const char*> vk_required_instance_extensions{"VK_KHR_surface"};
   std::vector<const char*> vk_required_instance_layers{};
+
+#ifdef WIN32
+  vk_required_instance_extensions.push_back("VK_KHR_win32_surface");
+#endif
 
   // Enable validation layers in debug builds
 #ifndef NDEBUG
@@ -46,6 +49,10 @@ Result<InstanceBase*> Instance::Create() {
 
 Result<std::span<PhysicalDeviceBase* const>> Instance::EnumeratePhysicalDevices() {
   return std::span{(PhysicalDeviceBase* const*)m_physical_devices.data(), m_physical_devices.size()};
+}
+
+Result<SurfaceBase*> Instance::CreateSurface(const MGPUSurfaceCreateInfo& create_info) {
+  return Surface::Create(m_vk_instance->Handle(), create_info);
 }
 
 void Instance::BuildPhysicalDeviceList() {

@@ -18,6 +18,7 @@ class Instance final : public InstanceBase {
     static Result<InstanceBase*> Create();
 
     Result<std::span<PhysicalDeviceBase* const>> EnumeratePhysicalDevices() override;
+    Result<SurfaceBase*> CreateSurface(const MGPUSurfaceCreateInfo& create_info) override;
 
   private:
     explicit Instance(std::unique_ptr<VulkanInstance> vk_instance);

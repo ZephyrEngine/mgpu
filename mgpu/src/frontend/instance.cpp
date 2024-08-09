@@ -39,6 +39,13 @@ MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t*
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuInstanceCreateSurface(MGPUInstance instance, const MGPUSurfaceCreateInfo* create_info, MGPUSurface* surface) {
+  mgpu::Result<mgpu::SurfaceBase*> cxx_surface_result = ((mgpu::InstanceBase*)instance)->CreateSurface(*create_info);
+  MGPU_FORWARD_ERROR(cxx_surface_result.Code());
+  *surface = (MGPUSurface)cxx_surface_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 void mgpuInstanceDestroy(MGPUInstance instance) {
   delete (mgpu::InstanceBase*)instance;
 }

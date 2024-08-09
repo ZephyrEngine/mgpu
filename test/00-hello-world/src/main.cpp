@@ -4,6 +4,7 @@
 #include <atom/integer.hpp>
 #include <atom/panic.hpp>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 #include <optional>
 #include <vector>
 
@@ -30,6 +31,22 @@ int main() {
 
   MGPUInstance mgpu_instance{};
   MGPU_CHECK(mgpuCreateInstance(MGPU_BACKEND_TYPE_VULKAN, &mgpu_instance));
+
+  MGPUSurface mgpu_surface{};
+  {
+    SDL_SysWMinfo wm_info{};
+    SDL_GetWindowWMInfo(sdl_window, &wm_info);
+
+    const MGPUSurfaceCreateInfo surface_create_info{
+#ifdef WIN32
+      .win32 = {
+        .hinstance = wm_info.info.win.hinstance,
+        .hwnd = wm_info.info.win.window
+      }
+#endif
+    };
+    MGPU_CHECK(mgpuInstanceCreateSurface(mgpu_instance, &surface_create_info, &mgpu_surface));
+  }
 
   uint32_t mgpu_physical_device_count{};
   std::vector<MGPUPhysicalDevice> mgpu_physical_devices{};
@@ -143,6 +160,7 @@ done:
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);
   mgpuDeviceDestroy(mgpu_device);
+  mgpuSurfaceDestroy(mgpu_surface);
   mgpuInstanceDestroy(mgpu_instance);
   SDL_DestroyWindow(sdl_window);
   return 0;

@@ -4,7 +4,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <SDL2/SDL.h>
+
+#ifdef WIN32
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+#endif
 
 #define MGPU_NULL_HANDLE ((void*)0u)
 #define MGPU_WHOLE_SIZE (~0ull)
@@ -20,6 +26,8 @@ typedef struct MGPUDeviceImpl* MGPUDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
+typedef struct MGPUSurfaceImpl* MGPUSurface;
+typedef struct MGPUSwapChainImpl* MGPUSwapChain;
 
 // ======================================================= //
 //   Enumerations                                          //
@@ -107,9 +115,25 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
 
+typedef enum MGPUColorSpace {
+  MGPU_COLOR_SPACE_SRGB_NONLINEAR = 0
+} MGPUColorSpace;
+
+typedef enum MGPUPresentMode {
+  MGPU_PRESENT_MODE_IMMEDIATE = 0,
+  MGPU_PRESENT_MODE_MAILBOX = 1,
+  MGPU_PRESENT_MODE_FIFO = 2,
+  MGPU_PRESENT_MODE_FIFO_RELAXED = 3
+} MGPUPresentMode;
+
 // ======================================================= //
 //   Common structure definitions                          //
 // ======================================================= //
+
+typedef struct MGPUExtent2D {
+  uint32_t width;
+  uint32_t height;
+} MGPUExtent2D;
 
 typedef struct MGPUExtent3D {
   uint32_t width;
@@ -146,6 +170,27 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
 
+typedef struct MGPUSurfaceCreateInfo {
+#ifdef WIN32
+  struct {
+    HINSTANCE hinstance;
+    HWND hwnd;
+  } win32;
+#endif
+} MGPUSurfaceCreateInfo;
+
+typedef struct MGPUSwapChainCreateInfo {
+  // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
+  MGPUSurface surface;
+  MGPUTextureFormat format;
+  MGPUColorSpace color_space;
+  MGPUPresentMode present_mode;
+  MGPUTextureUsage usage;
+  MGPUExtent2D extent;
+  uint32_t min_texture_count;
+  MGPUSwapChain old_swap_chain;
+} MGPUSwapChainCreateInfo;
+
 // ======================================================= //
 //   Other structure definitions                           //
 // ======================================================= //
@@ -177,6 +222,7 @@ const char* mgpuResultCodeToString(MGPUResult result);
 
 // MGPUInstance methods
 MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t* physical_device_count, MGPUPhysicalDevice* physical_devices);
+MGPUResult mgpuInstanceCreateSurface(MGPUInstance instance, const MGPUSurfaceCreateInfo* create_info, MGPUSurface* surface);
 void mgpuInstanceDestroy(MGPUInstance instance);
 
 // MGPUPhysicalDevice methods
@@ -186,6 +232,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
 
 // MGPUBuffer methods
@@ -200,6 +247,12 @@ void mgpuTextureDestroy(MGPUTexture texture);
 
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
+
+// MGPUSurface methods
+void mgpuSurfaceDestroy(MGPUSurface surface);
+
+// MGPUSwapChain methods
+void mgpuSwapChainDestroy(MGPUSwapChain swap_chain);
 
 #ifdef __cplusplus
 }  // extern "C"
