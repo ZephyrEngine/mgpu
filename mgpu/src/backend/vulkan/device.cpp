@@ -3,6 +3,7 @@
 
 #include <atom/float.hpp>
 
+#include "backend/vulkan/platform/physical_device.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
 #include "device.hpp"
@@ -117,17 +118,15 @@ Device::QueueFamilyIndices Device::SelectQueueFamilies(VulkanPhysicalDevice& vk_
    *   - 1x compute + transfer + presentation (if present)
    */
   for(const auto& queue_family : vk_physical_device.EnumerateQueueFamilies()) {
-    /**
-     * TODO: we require both our graphics + compute queue and our dedicated compute queues to support presentation.
-     * But currently we do not do any checking to ensure that this is the case. From the looks of it,
-     * it seems like this might require platform dependent code (see vkGetPhysicalDeviceWin32PresentationSupportKHR() for example).
-     */
     switch(queue_family.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) {
       case VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT: {
-        queue_family_indices.graphics_and_compute = queue_family_index;
+        if(PlatformQueryPresentationSupport(vk_physical_device.Handle(), queue_family_index)) {
+          queue_family_indices.graphics_and_compute = queue_family_index;
+        }
         break;
       }
       case VK_QUEUE_COMPUTE_BIT: {
+        // TODO(fleroviux): determine if we want to require presentation support for the dedicated compute queue.
         queue_family_indices.dedicated_compute = queue_family_index;
         break;
       }

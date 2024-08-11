@@ -31,6 +31,14 @@ std::span<const VkExtensionProperties> VulkanPhysicalDevice::EnumerateDeviceExte
   return m_vk_available_device_extensions;
 }
 
+[[nodiscard]] bool VulkanPhysicalDevice::IsGPU() const {
+  const VkPhysicalDeviceType vk_device_type = m_vk_device_properties.deviceType;
+
+  return vk_device_type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU ||
+         vk_device_type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
+         vk_device_type == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+}
+
 std::span<const VkLayerProperties> VulkanPhysicalDevice::EnumerateDeviceLayers() const {
   return m_vk_available_device_layers;
 }

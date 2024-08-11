@@ -1,13 +1,6 @@
 
-#ifdef WIN32
-
-#include <windows.h> // must be included before vulkan_win32.h
-#include <vulkan/vulkan.h> // must be included before vulkan_win32.h
-#include <vulkan/vulkan_win32.h>
-
-#endif
-
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "backend/vulkan/platform/surface.hpp"
 #include "surface.hpp"
 
 namespace mgpu::vulkan {
@@ -23,22 +16,9 @@ Surface::~Surface() {
 }
 
 Result<SurfaceBase*> Surface::Create(VkInstance vk_instance, const MGPUSurfaceCreateInfo& create_info) {
-
-#ifdef WIN32
-  const VkWin32SurfaceCreateInfoKHR vk_surface_create_info{
-    .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-    .pNext = nullptr,
-    .flags = 0,
-    .hinstance = create_info.win32.hinstance,
-    .hwnd = create_info.win32.hwnd
-  };
-
-  VkSurfaceKHR vk_surface{};
-  MGPU_VK_FORWARD_ERROR(vkCreateWin32SurfaceKHR(vk_instance, &vk_surface_create_info, nullptr, &vk_surface));
-  return new Surface{vk_instance, vk_surface};
-#endif
-
-  return MGPU_INTERNAL_ERROR;
+  Result<VkSurfaceKHR> vk_surface_result = PlatformCreateSurface(vk_instance, create_info);
+  MGPU_FORWARD_ERROR(vk_surface_result.Code());
+  return new Surface{vk_instance, vk_surface_result.Unwrap()};
 }
 
 }  // namespace mgpu::vulkan

@@ -1,6 +1,7 @@
 
 #include <atom/panic.hpp>
 
+#include "backend/vulkan/platform/surface.hpp"
 #include "instance.hpp"
 #include "surface.hpp"
 
@@ -26,12 +27,11 @@ Result<InstanceBase*> Instance::Create() {
     .apiVersion = VK_API_VERSION_1_0
   };
 
-  std::vector<const char*> vk_required_instance_extensions{"VK_KHR_surface"};
+  std::vector<const char*> vk_required_instance_extensions{
+    "VK_KHR_surface",
+    PlatformGetSurfaceInstanceExtension()
+  };
   std::vector<const char*> vk_required_instance_layers{};
-
-#ifdef WIN32
-  vk_required_instance_extensions.push_back("VK_KHR_win32_surface");
-#endif
 
   // Enable validation layers in debug builds
 #ifndef NDEBUG
@@ -56,12 +56,10 @@ Result<SurfaceBase*> Instance::CreateSurface(const MGPUSurfaceCreateInfo& create
 }
 
 void Instance::BuildPhysicalDeviceList() {
+  // TODO(fleroviux): move queue family selection here so that we can skip a device if it does not meet the requirements.
   for(auto& vk_physical_device : m_vk_instance->EnumeratePhysicalDevices()) {
-    // We are only interested in GPUs, so we skip over any non-GPU devices (i.e. the CPU)
-    VkPhysicalDeviceType vk_device_type = vk_physical_device->GetProperties().deviceType;
-    if(vk_device_type != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
-       vk_device_type != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-       vk_device_type != VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU) {
+    // Vulkan may expose the system CPU as a physical device. We're only interested in GPUs though.
+    if(!vk_physical_device->IsGPU()) {
       continue;
     }
 

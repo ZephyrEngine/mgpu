@@ -21,8 +21,9 @@ class VulkanPhysicalDevice {
     VulkanPhysicalDevice(const VulkanPhysicalDevice&) = delete;
     VulkanPhysicalDevice& operator=(const VulkanPhysicalDevice&) = delete;
 
-    [[nodiscard]] const VkPhysicalDeviceProperties& GetProperties() const;
     [[nodiscard]] std::span<const VkExtensionProperties> EnumerateDeviceExtensions() const;
+    [[nodiscard]] bool IsGPU() const;
+    [[nodiscard]] const VkPhysicalDeviceProperties& GetProperties() const;
     [[nodiscard]] std::span<const VkLayerProperties> EnumerateDeviceLayers() const;
     [[nodiscard]] std::span<const VkQueueFamilyProperties> EnumerateQueueFamilies() const;
     [[nodiscard]] bool QueryDeviceExtensionSupport(const char* extension_name) const;
