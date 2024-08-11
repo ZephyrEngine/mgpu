@@ -7,14 +7,15 @@
 
 namespace mgpu::vulkan {
 
-PhysicalDevice::PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device)
+PhysicalDevice::PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device, const QueueFamilyIndices& queue_family_indices)
     : PhysicalDeviceBase{GetInfo(vk_physical_device)}
     , m_vk_instance{vk_instance}
-    , m_vk_physical_device{vk_physical_device} {
+    , m_vk_physical_device{vk_physical_device}
+    , m_queue_family_indices{queue_family_indices} {
 }
 
 Result<DeviceBase*> PhysicalDevice::CreateDevice() {
-  return Device::Create(m_vk_instance, m_vk_physical_device, Limits());
+  return Device::Create(m_vk_instance, m_vk_physical_device, m_queue_family_indices, Limits());
 }
 
 MGPUPhysicalDeviceInfo PhysicalDevice::GetInfo(VulkanPhysicalDevice& vk_physical_device) {

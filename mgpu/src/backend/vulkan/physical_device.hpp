@@ -1,6 +1,9 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
+#include <optional>
+
 #include "backend/vulkan/lib/vulkan_physical_device.hpp"
 #include "backend/physical_device.hpp"
 
@@ -8,7 +11,12 @@ namespace mgpu::vulkan {
 
 class PhysicalDevice final : public PhysicalDeviceBase {
   public:
-    explicit PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device);
+    struct QueueFamilyIndices {
+      std::optional<u32> graphics_and_compute{};
+      std::optional<u32> dedicated_compute{};
+    };
+
+    explicit PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device, const QueueFamilyIndices& queue_family_indices);
 
     Result<DeviceBase*> CreateDevice() override;
 
@@ -19,6 +27,7 @@ class PhysicalDevice final : public PhysicalDeviceBase {
 
     VkInstance m_vk_instance{};
     VulkanPhysicalDevice& m_vk_physical_device;
+    QueueFamilyIndices m_queue_family_indices;
 };
 
 }  // namespace mgpu::vulkan

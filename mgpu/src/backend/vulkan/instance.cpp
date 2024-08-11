@@ -1,6 +1,7 @@
 
 #include <atom/panic.hpp>
 
+#include "backend/vulkan/platform/physical_device.hpp"
 #include "backend/vulkan/platform/surface.hpp"
 #include "instance.hpp"
 #include "surface.hpp"
@@ -68,8 +69,77 @@ void Instance::BuildPhysicalDeviceList() {
       continue;
     }
 
-    m_physical_devices.push_back(new PhysicalDevice{m_vk_instance->Handle(), *vk_physical_device});
+    const PhysicalDevice::QueueFamilyIndices queue_family_indices = SelectQueueFamilies(*vk_physical_device);
+
+    // We require at least one graphics+compute queue family capable of presentation.
+    if(!queue_family_indices.graphics_and_compute.has_value()) {
+      continue;
+    }
+
+    m_physical_devices.push_back(new PhysicalDevice{m_vk_instance->Handle(), *vk_physical_device, queue_family_indices});
   }
+}
+
+PhysicalDevice::QueueFamilyIndices Instance::SelectQueueFamilies(VulkanPhysicalDevice& vk_physical_device) {
+  PhysicalDevice::QueueFamilyIndices queue_family_indices{};
+
+  u32 queue_family_index{0};
+
+  /**
+   * Info about queues present on the common vendors, gathered from:
+   *   http://vulkan.gpuinfo.org/listreports.php
+   *
+   * Nvidia (up until Pascal (GTX 10XX)):
+   *   - 16x graphics + compute + transfer + presentation
+   *   -  1x transfer
+   *
+   * Nvidia (from Pascal (GTX 10XX) onwards):
+   *   - 16x graphics + compute + transfer + presentation
+   *   -  2x transfer
+   *   -  8x compute + transfer + presentation (async compute?)
+   *   -  1x transfer + video decode
+   *
+   * AMD:
+   *   Seems to vary quite a bit from GPU to GPU, but usually have at least:
+   *   - 1x graphics + compute + transfer + presentation
+   *   - 1x compute + transfer + presentation (async compute?)
+   *
+   * Apple M1 (via MoltenVK):
+   *   - 1x graphics + compute + transfer + presentation
+   *
+   * Intel:
+   *   - 1x graphics + compute + transfer + presentation
+   *
+   * Furthermore the Vulkan spec guarantees that:
+   *   - If an implementation exposes any queue family which supports graphics operation, then at least one
+   *     queue family of at least one physical device exposed by the implementation must support graphics and compute operations.
+   *
+   *   - Queues which support graphics or compute commands implicitly always support transfer commands, therefore a
+   *     queue family supporting graphics or compute commands might not explicitly report transfer capabilities, despite supporting them.
+   *
+   * Given this data, we chose to allocate the following queues:
+   *   - 1x graphics + compute + transfer + presentation (required)
+   *   - 1x compute + transfer + presentation (if present)
+   */
+  for(const auto& queue_family : vk_physical_device.EnumerateQueueFamilies()) {
+    switch(queue_family.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) {
+      case VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT: {
+        if(PlatformQueryPresentationSupport(vk_physical_device.Handle(), queue_family_index)) {
+          queue_family_indices.graphics_and_compute = queue_family_index;
+        }
+        break;
+      }
+      case VK_QUEUE_COMPUTE_BIT: {
+        // TODO(fleroviux): determine if we want to require presentation support for the dedicated compute queue.
+        queue_family_indices.dedicated_compute = queue_family_index;
+        break;
+      }
+    }
+
+    queue_family_index++;
+  }
+
+  return queue_family_indices;
 }
 
 }  // namespace mgpu::vulkan
