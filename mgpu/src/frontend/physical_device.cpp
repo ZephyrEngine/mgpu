@@ -1,5 +1,6 @@
 
 #include <mgpu/mgpu.h>
+#include <algorithm>
 #include <limits>
 
 #include "backend/physical_device.hpp"
@@ -12,6 +13,8 @@ MGPUResult mgpuPhysicalDeviceGetInfo(MGPUPhysicalDevice physical_device, MGPUPhy
 }
 
 MGPUResult mgpuPhysicalDeviceEnumerateSurfaceFormats(MGPUPhysicalDevice physical_device, MGPUSurface surface, uint32_t* surface_format_count, MGPUSurfaceFormat* surface_formats) {
+  const auto max_surface_formats = (size_t)*surface_format_count;
+
   mgpu::Result<std::vector<MGPUSurfaceFormat>> surface_formats_result = ((mgpu::PhysicalDeviceBase*)physical_device)->EnumerateSurfaceFormats((mgpu::SurfaceBase*)surface);
   MGPU_FORWARD_ERROR(surface_formats_result.Code());
 
@@ -22,12 +25,18 @@ MGPUResult mgpuPhysicalDeviceEnumerateSurfaceFormats(MGPUPhysicalDevice physical
 
   *surface_format_count = surface_formats_vector.size();
   if(surface_formats != nullptr) {
-    std::memcpy(surface_formats, surface_formats_vector.data(), surface_formats_vector.size() * sizeof(MGPUSurfaceFormat));
+    const size_t copy_size = std::min(surface_formats_vector.size(), max_surface_formats);
+    std::memcpy(surface_formats, surface_formats_vector.data(), copy_size * sizeof(MGPUSurfaceFormat));
+    if(copy_size < surface_formats_vector.size()) {
+      return MGPU_INCOMPLETE;
+    }
   }
   return MGPU_SUCCESS;
 }
 
 MGPUResult mgpuPhysicalDeviceEnumerateSurfacePresentModes(MGPUPhysicalDevice physical_device, MGPUSurface surface, uint32_t* present_mode_count, MGPUPresentMode* present_modes) {
+  const auto max_present_modes = (size_t)*present_mode_count;
+
   mgpu::Result<std::vector<MGPUPresentMode>> present_modes_result = ((mgpu::PhysicalDeviceBase*)physical_device)->EnumerateSurfacePresentModes((mgpu::SurfaceBase*)surface);
   MGPU_FORWARD_ERROR(present_modes_result.Code());
 
@@ -38,7 +47,11 @@ MGPUResult mgpuPhysicalDeviceEnumerateSurfacePresentModes(MGPUPhysicalDevice phy
 
   *present_mode_count = present_modes_vector.size();
   if(present_modes != nullptr) {
-    std::memcpy(present_modes, present_modes_vector.data(), present_modes_vector.size() * sizeof(MGPUPresentMode));
+    const size_t copy_size = std::min(present_modes_vector.size(), max_present_modes);
+    std::memcpy(present_modes, present_modes_vector.data(), copy_size * sizeof(MGPUPresentMode));
+    if(copy_size < present_modes_vector.size()) {
+      return MGPU_INCOMPLETE;
+    }
   }
   return MGPU_SUCCESS;
 }
