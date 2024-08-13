@@ -91,6 +91,45 @@ int main() {
   MGPUDevice mgpu_device{};
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
 
+  // Swap Chain creation
+  {
+    uint32_t surface_format_count{};
+    std::vector<MGPUSurfaceFormat> surface_formats{};
+
+    MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfaceFormats(mgpu_physical_device, mgpu_surface, &surface_format_count, nullptr));
+    surface_formats.resize(surface_format_count);
+    MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfaceFormats(mgpu_physical_device, mgpu_surface, &surface_format_count, surface_formats.data()));
+
+    fmt::print("supported surface formats:\n");
+
+    bool got_required_surface_format = false;
+
+    for(const MGPUSurfaceFormat& surface_format : surface_formats) {
+      fmt::print("\tformat={} color_space={}\n", (int)surface_format.format, (int)surface_format.color_space);
+
+      if(surface_format.format == MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB && surface_format.color_space == MGPU_COLOR_SPACE_SRGB_NONLINEAR) {
+        got_required_surface_format = true;
+      }
+    }
+
+    if(!got_required_surface_format) {
+      ATOM_PANIC("Failed to find a suitable surface format");
+    }
+
+    uint32_t present_modes_count{};
+    std::vector<MGPUPresentMode> present_modes{};
+
+    MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfacePresentModes(mgpu_physical_device, mgpu_surface, &present_modes_count, nullptr));
+    present_modes.resize(present_modes_count);
+    MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfacePresentModes(mgpu_physical_device, mgpu_surface, &present_modes_count, present_modes.data()));
+
+    fmt::print("supported present modes:\n");
+
+    for(MGPUPresentMode present_mode : present_modes) {
+      fmt::print("\t{}\n", (int)present_mode);
+    }
+  }
+
   const MGPUBufferCreateInfo buffer_create_info{
     .size = 100 * sizeof(u32),
     .usage = MGPU_BUFFER_USAGE_COPY_DST | MGPU_BUFFER_USAGE_STORAGE_BUFFER,

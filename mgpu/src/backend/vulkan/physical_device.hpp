@@ -18,6 +18,8 @@ class PhysicalDevice final : public PhysicalDeviceBase {
 
     explicit PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_physical_device, const QueueFamilyIndices& queue_family_indices);
 
+    Result<std::vector<MGPUSurfaceFormat>> EnumerateSurfaceFormats(mgpu::SurfaceBase* surface) override;
+    Result<std::vector<MGPUPresentMode>> EnumerateSurfacePresentModes(mgpu::SurfaceBase* surface) override;
     Result<DeviceBase*> CreateDevice() override;
 
   private:
