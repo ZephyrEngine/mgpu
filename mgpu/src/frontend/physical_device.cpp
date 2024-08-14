@@ -12,6 +12,13 @@ MGPUResult mgpuPhysicalDeviceGetInfo(MGPUPhysicalDevice physical_device, MGPUPhy
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuPhysicalDeviceGetSurfaceCapabilities(MGPUPhysicalDevice physical_device, MGPUSurface surface, MGPUSurfaceCapabilities* surface_capabilities) {
+  mgpu::Result<MGPUSurfaceCapabilities> surface_capabilities_result = ((mgpu::PhysicalDeviceBase*)physical_device)->GetSurfaceCapabilities((mgpu::SurfaceBase*)surface);
+  MGPU_FORWARD_ERROR(surface_capabilities_result.Code());
+  *surface_capabilities = surface_capabilities_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuPhysicalDeviceEnumerateSurfaceFormats(MGPUPhysicalDevice physical_device, MGPUSurface surface, uint32_t* surface_format_count, MGPUSurfaceFormat* surface_formats) {
   const auto max_surface_formats = (size_t)*surface_format_count;
 

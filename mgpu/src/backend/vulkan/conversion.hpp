@@ -55,6 +55,16 @@ static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat
   return vk_image_usage;
 }
 
+static inline VkImageUsageFlags VkImageUsageToMGPUTextureUsage(VkImageUsageFlags image_usage) {
+  MGPUTextureUsage mgpu_texture_usage{};
+  if(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_SRC;
+  if(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_DST;
+  if(image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)      mgpu_texture_usage |= MGPU_TEXTURE_USAGE_SAMPLED;
+  if(image_usage & VK_IMAGE_USAGE_STORAGE_BIT)      mgpu_texture_usage |= MGPU_TEXTURE_USAGE_STORAGE;
+  if(image_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT;
+  return mgpu_texture_usage;
+}
+
 static inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAspect texture_aspect) {
   VkImageAspectFlags vk_image_aspect{};
   if(texture_aspect & MGPU_TEXTURE_ASPECT_COLOR)   vk_image_aspect |= VK_IMAGE_ASPECT_COLOR_BIT;

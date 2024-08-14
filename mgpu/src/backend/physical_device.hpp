@@ -22,6 +22,7 @@ class PhysicalDeviceBase : atom::NonCopyable, atom::NonMoveable {
     [[nodiscard]] const MGPUPhysicalDeviceInfo& Info() const { return m_info; }
     [[nodiscard]] const MGPUPhysicalDeviceLimits& Limits() const { return m_info.limits; }
 
+    virtual Result<MGPUSurfaceCapabilities> GetSurfaceCapabilities(mgpu::SurfaceBase* surface) = 0;
     virtual Result<std::vector<MGPUSurfaceFormat>> EnumerateSurfaceFormats(mgpu::SurfaceBase* surface) = 0;
     virtual Result<std::vector<MGPUPresentMode>> EnumerateSurfacePresentModes(mgpu::SurfaceBase* surface) = 0;
     virtual Result<DeviceBase*> CreateDevice() = 0;

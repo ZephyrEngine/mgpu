@@ -128,6 +128,16 @@ int main() {
     for(MGPUPresentMode present_mode : present_modes) {
       fmt::print("\t{}\n", (int)present_mode);
     }
+
+    MGPUSurfaceCapabilities surface_capabilities{};
+    MGPU_CHECK(mgpuPhysicalDeviceGetSurfaceCapabilities(mgpu_physical_device, mgpu_surface, &surface_capabilities));
+    fmt::print("surface capabilities:\n");
+    fmt::print("\tmin_texture_count={}\n", surface_capabilities.min_texture_count);
+    fmt::print("\tmax_texture_count={}\n", surface_capabilities.max_texture_count);
+    fmt::print("\tcurrent_extent=({}, {})\n", surface_capabilities.current_extent.width, surface_capabilities.current_extent.height);
+    fmt::print("\tmin_texture_extent=({}, {})\n", surface_capabilities.min_texture_extent.width, surface_capabilities.min_texture_extent.height);
+    fmt::print("\tmax_texture_extent=({}, {})\n", surface_capabilities.max_texture_extent.width, surface_capabilities.max_texture_extent.height);
+    fmt::print("\tsupported_usage={}\n", surface_capabilities.supported_usage);
   }
 
   const MGPUBufferCreateInfo buffer_create_info{

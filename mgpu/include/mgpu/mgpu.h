@@ -142,15 +142,15 @@ typedef struct MGPUExtent3D {
   uint32_t depth;
 } MGPUExtent3D;
 
-//typedef struct MGPUSurfaceCapabilities {
-//  // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
-//  uint32_t min_texture_count;
-//  uint32_t max_texture_count;
-//  MGPUExtent2D current_extent;
-//  MGPUExtent2D min_texture_extent;
-//  MGPUExtent2D max_texture_extent;
-//  MGPUTextureUsage supported_usage;
-//} MGPUSurfaceCapabilities;
+typedef struct MGPUSurfaceCapabilities {
+  // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
+  uint32_t min_texture_count;
+  uint32_t max_texture_count;
+  MGPUExtent2D current_extent;
+  MGPUExtent2D min_texture_extent;
+  MGPUExtent2D max_texture_extent;
+  MGPUTextureUsage supported_usage;
+} MGPUSurfaceCapabilities;
 
 typedef struct MGPUSurfaceFormat {
   MGPUTextureFormat format;
@@ -243,6 +243,7 @@ void mgpuInstanceDestroy(MGPUInstance instance);
 
 // MGPUPhysicalDevice methods
 MGPUResult mgpuPhysicalDeviceGetInfo(MGPUPhysicalDevice physical_device, MGPUPhysicalDeviceInfo* physical_device_info);
+MGPUResult mgpuPhysicalDeviceGetSurfaceCapabilities(MGPUPhysicalDevice physical_device, MGPUSurface surface, MGPUSurfaceCapabilities* surface_capabilities);
 MGPUResult mgpuPhysicalDeviceEnumerateSurfaceFormats(MGPUPhysicalDevice physical_device, MGPUSurface surface, uint32_t* surface_format_count, MGPUSurfaceFormat* surface_formats);
 MGPUResult mgpuPhysicalDeviceEnumerateSurfacePresentModes(MGPUPhysicalDevice physical_device, MGPUSurface surface, uint32_t* present_mode_count, MGPUPresentMode* present_modes);
 MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MGPUDevice* device);

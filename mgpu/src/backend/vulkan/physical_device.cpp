@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "conversion.hpp"
 #include "device.hpp"
 #include "physical_device.hpp"
 #include "surface.hpp"
@@ -15,6 +16,29 @@ PhysicalDevice::PhysicalDevice(VkInstance vk_instance, VulkanPhysicalDevice& vk_
     , m_vk_instance{vk_instance}
     , m_vk_physical_device{vk_physical_device}
     , m_queue_family_indices{queue_family_indices} {
+}
+
+Result<MGPUSurfaceCapabilities> PhysicalDevice::GetSurfaceCapabilities(mgpu::SurfaceBase* surface) {
+  VkSurfaceCapabilitiesKHR vk_surface_capabilities{};
+  MGPU_VK_FORWARD_ERROR(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vk_physical_device.Handle(), ((Surface*)surface)->Handle(), &vk_surface_capabilities));
+
+  return MGPUSurfaceCapabilities{
+    .min_texture_count = vk_surface_capabilities.minImageCount,
+    .max_texture_count = vk_surface_capabilities.maxImageCount,
+    .current_extent = {
+      .width = vk_surface_capabilities.currentExtent.width,
+      .height = vk_surface_capabilities.currentExtent.height,
+    },
+    .min_texture_extent = {
+      .width = vk_surface_capabilities.minImageExtent.width,
+      .height = vk_surface_capabilities.minImageExtent.height,
+    },
+    .max_texture_extent = {
+      .width = vk_surface_capabilities.maxImageExtent.width,
+      .height = vk_surface_capabilities.maxImageExtent.height,
+    },
+    .supported_usage = VkImageUsageToMGPUTextureUsage(vk_surface_capabilities.supportedUsageFlags)
+  };
 }
 
 Result<std::vector<MGPUSurfaceFormat>> PhysicalDevice::EnumerateSurfaceFormats(mgpu::SurfaceBase* surface) {
@@ -44,7 +68,7 @@ Result<std::vector<MGPUSurfaceFormat>> PhysicalDevice::EnumerateSurfaceFormats(m
     mgpu_surface_formats.emplace_back(mgpu_format, mgpu_color_space);
   }
 
-  return std::move(mgpu_surface_formats);
+  return mgpu_surface_formats;
 }
 
 Result<std::vector<MGPUPresentMode>> PhysicalDevice::EnumerateSurfacePresentModes(mgpu::SurfaceBase* surface) {
@@ -67,7 +91,7 @@ Result<std::vector<MGPUPresentMode>> PhysicalDevice::EnumerateSurfacePresentMode
     }
   }
 
-  return std::move(mgpu_present_modes);
+  return mgpu_present_modes;
 }
 
 Result<DeviceBase*> PhysicalDevice::CreateDevice() {
