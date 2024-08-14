@@ -20,15 +20,17 @@ Texture::Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation,
 }
 
 Texture::~Texture() {
-  // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
-  // TODO(fleroviux): make this a little bit less verbose.
-  Device* device = m_device;
-  VkImage vk_image = m_vk_image;
-  VmaAllocation vma_allocation = m_vma_allocation;
-  device->GetDeleterQueue().Schedule([device, vk_image, vma_allocation]() {
-    vkDestroyImage(device->Handle(), vk_image, nullptr);
-    vmaFreeMemory(device->GetVmaAllocator(), vma_allocation);
-  });
+  if(m_vma_allocation != nullptr) { // When m_vma_allocation is null the VkImage is not owned by this texture.
+    // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
+    // TODO(fleroviux): make this a little bit less verbose.
+    Device *device = m_device;
+    VkImage vk_image = m_vk_image;
+    VmaAllocation vma_allocation = m_vma_allocation;
+    device->GetDeleterQueue().Schedule([device, vk_image, vma_allocation]() {
+      vkDestroyImage(device->Handle(), vk_image, nullptr);
+      vmaFreeMemory(device->GetVmaAllocator(), vma_allocation);
+    });
+  }
 }
 
 Result<TextureBase*> Texture::Create(Device* device, const MGPUTextureCreateInfo& create_info) {
@@ -77,6 +79,10 @@ Result<TextureBase*> Texture::Create(Device* device, const MGPUTextureCreateInfo
   VmaAllocation vma_allocation;
   MGPU_VK_FORWARD_ERROR(vmaCreateImage(device->GetVmaAllocator(), &vk_image_create_info, &vma_alloc_info, &vk_image, &vma_allocation, nullptr));
   return new Texture{device, vk_image, vma_allocation, create_info};
+}
+
+Texture* Texture::FromVkImage(Device* device, const MGPUTextureCreateInfo& create_info, VkImage vk_image) {
+  return new Texture{device, vk_image, nullptr, create_info};
 }
 
 Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& create_info) {

@@ -15,6 +15,7 @@ class Texture final : public TextureBase {
    ~Texture() override;
 
     static Result<TextureBase*> Create(Device* device, const MGPUTextureCreateInfo& create_info);
+    static Texture* FromVkImage(Device* device, const MGPUTextureCreateInfo& create_info, VkImage vk_image);
 
     [[nodiscard]] VkImage Handle() { return m_vk_image; }
 
@@ -23,9 +24,9 @@ class Texture final : public TextureBase {
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);
 
-    Device* m_device{};
-    VkImage m_vk_image{};
-    VmaAllocation m_vma_allocation{};
+    Device* m_device;
+    VkImage m_vk_image;
+    VmaAllocation m_vma_allocation;
 };
 
 }  // namespace mgpu::vulkan
