@@ -57,7 +57,6 @@ Result<SurfaceBase*> Instance::CreateSurface(const MGPUSurfaceCreateInfo& create
 }
 
 void Instance::BuildPhysicalDeviceList() {
-  // TODO(fleroviux): move queue family selection here so that we can skip a device if it does not meet the requirements.
   for(auto& vk_physical_device : m_vk_instance->EnumeratePhysicalDevices()) {
     // Vulkan may expose the system CPU as a physical device. We're only interested in GPUs though.
     if(!vk_physical_device->IsGPU()) {
