@@ -4,8 +4,9 @@
 #include <atom/float.hpp>
 
 #include "buffer.hpp"
-#include "texture.hpp"
 #include "device.hpp"
+#include "swap_chain.hpp"
+#include "texture.hpp"
 
 namespace mgpu::vulkan {
 
@@ -105,6 +106,10 @@ Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info
 
 Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
   return Texture::Create(this, create_info);
+}
+
+Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {
+  return SwapChain::Create(this, create_info);
 }
 
 }  // namespace mgpu::vulkan

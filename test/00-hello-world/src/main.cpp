@@ -91,6 +91,8 @@ int main() {
   MGPUDevice mgpu_device{};
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
 
+  MGPUSwapChain mgpu_swap_chain{};
+
   // Swap Chain creation
   {
     uint32_t surface_format_count{};
@@ -138,6 +140,17 @@ int main() {
     fmt::print("\tmin_texture_extent=({}, {})\n", surface_capabilities.min_texture_extent.width, surface_capabilities.min_texture_extent.height);
     fmt::print("\tmax_texture_extent=({}, {})\n", surface_capabilities.max_texture_extent.width, surface_capabilities.max_texture_extent.height);
     fmt::print("\tsupported_usage={}\n", surface_capabilities.supported_usage);
+
+    const MGPUSwapChainCreateInfo swap_chain_create_info{
+      .surface = mgpu_surface,
+      .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
+      .color_space = MGPU_COLOR_SPACE_SRGB_NONLINEAR,
+      .present_mode = MGPU_PRESENT_MODE_FIFO,
+      .extent = surface_capabilities.current_extent,
+      .min_texture_count = 2u,
+      .old_swap_chain = nullptr
+    };
+    MGPU_CHECK(mgpuDeviceCreateSwapChain(mgpu_device, &swap_chain_create_info, &mgpu_swap_chain));
   }
 
   const MGPUBufferCreateInfo buffer_create_info{
@@ -208,6 +221,7 @@ done:
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);
+  mgpuSwapChainDestroy(mgpu_swap_chain);
   mgpuDeviceDestroy(mgpu_device);
   mgpuSurfaceDestroy(mgpu_surface);
   mgpuInstanceDestroy(mgpu_instance);

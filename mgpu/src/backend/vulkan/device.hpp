@@ -27,6 +27,7 @@ class Device final : public DeviceBase {
 
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
+    Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
 
     [[nodiscard]] VkDevice Handle() { return m_vk_device; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() { return m_vma_allocator; }

@@ -33,6 +33,14 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain) {
+  // TODO(fleroviux): implement input validation
+  mgpu::Result<mgpu::SwapChainBase*> cxx_swap_chain_result = ((mgpu::DeviceBase*)device)->CreateSwapChain(*create_info);
+  MGPU_FORWARD_ERROR(cxx_swap_chain_result.Code());
+  *swap_chain = (MGPUSwapChain)cxx_swap_chain_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 void mgpuDeviceDestroy(MGPUDevice device) {
   delete (mgpu::DeviceBase*)device;
 }
