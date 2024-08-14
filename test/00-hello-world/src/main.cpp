@@ -151,6 +151,8 @@ int main() {
       .old_swap_chain = nullptr
     };
     MGPU_CHECK(mgpuDeviceCreateSwapChain(mgpu_device, &swap_chain_create_info, &mgpu_swap_chain));
+
+    fmt::print("number of swap chain textures: {}\n", mgpuSwapChainGetNumberOfTextures(mgpu_swap_chain));
   }
 
   const MGPUBufferCreateInfo buffer_create_info{

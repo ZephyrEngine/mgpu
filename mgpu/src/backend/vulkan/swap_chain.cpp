@@ -80,4 +80,8 @@ Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCrea
   return new SwapChain{device, vk_swap_chain, create_info};
 }
 
+u32 SwapChain::GetNumberOfTextures() const {
+  return m_textures.size();
+}
+
 }  // namespace mgpu::vulkan
