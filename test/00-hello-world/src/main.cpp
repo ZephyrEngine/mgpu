@@ -92,6 +92,7 @@ int main() {
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
 
   MGPUSwapChain mgpu_swap_chain{};
+  std::vector<MGPUTexture> mgpu_swap_chain_textures{};
 
   // Swap Chain creation
   {
@@ -152,8 +153,13 @@ int main() {
     };
     MGPU_CHECK(mgpuDeviceCreateSwapChain(mgpu_device, &swap_chain_create_info, &mgpu_swap_chain));
 
-    fmt::print("number of swap chain textures: {}\n", mgpuSwapChainGetNumberOfTextures(mgpu_swap_chain));
+    u32 texture_count{};
+    MGPU_CHECK(mgpuSwapChainEnumerateTextures(mgpu_swap_chain, &texture_count, nullptr));
+    mgpu_swap_chain_textures.resize(texture_count);
+    MGPU_CHECK(mgpuSwapChainEnumerateTextures(mgpu_swap_chain, &texture_count, mgpu_swap_chain_textures.data()));
   }
+
+  fmt::print("number of swap chain textures: {}\n", mgpu_swap_chain_textures.size());
 
   const MGPUBufferCreateInfo buffer_create_info{
     .size = 100 * sizeof(u32),
@@ -207,6 +213,9 @@ int main() {
   SDL_Event sdl_event{};
 
   while(true) {
+    u32 texture_index;
+    MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
+
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {
         goto done;

@@ -46,7 +46,8 @@ typedef enum MGPUResult {
   MGPU_BUFFER_NOT_MAPPED = 7,
   MGPU_INCOMPATIBLE_TEXTURE_VIEW_TYPE = 8,
   MGPU_INCOMPATIBLE_TEXTURE_FORMAT = 9,
-  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 10
+  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 10,
+  MGPU_NOT_READY = 11
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -271,7 +272,8 @@ void mgpuTextureViewDestroy(MGPUTextureView texture_view);
 void mgpuSurfaceDestroy(MGPUSurface surface);
 
 // MGPUSwapChain methods
-uint32_t mgpuSwapChainGetNumberOfTextures(MGPUSwapChain swap_chain);
+MGPUResult mgpuSwapChainEnumerateTextures(MGPUSwapChain swap_chain, uint32_t* texture_count, MGPUTexture* textures);
+MGPUResult mgpuSwapChainAcquireNextTexture(MGPUSwapChain swap_chain, uint32_t* texture_index);
 void mgpuSwapChainDestroy(MGPUSwapChain swap_chain);
 
 #ifdef __cplusplus

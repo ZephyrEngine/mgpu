@@ -19,6 +19,7 @@ const char* mgpuResultCodeToString(MGPUResult result) {
     REGISTER(MGPU_INCOMPATIBLE_TEXTURE_VIEW_TYPE)
     REGISTER(MGPU_INCOMPATIBLE_TEXTURE_FORMAT)
     REGISTER(MGPU_INCOMPATIBLE_TEXTURE_ASPECT)
+    REGISTER(MGPU_NOT_READY)
     default: ATOM_PANIC("internal error (missing result code to string translation)")
   }
 

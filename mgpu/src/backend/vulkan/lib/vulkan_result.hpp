@@ -17,6 +17,7 @@ static inline MGPUResult VkResultToMGPUResult(VkResult vk_result) {
     case VK_ERROR_OUT_OF_HOST_MEMORY:   return MGPU_OUT_OF_MEMORY;
     case VK_ERROR_OUT_OF_DEVICE_MEMORY: return MGPU_OUT_OF_MEMORY;
     case VK_ERROR_TOO_MANY_OBJECTS:     return MGPU_OUT_OF_MEMORY;
+    case VK_NOT_READY:                  return MGPU_NOT_READY;
     default: return MGPU_INTERNAL_ERROR;
   }
 }

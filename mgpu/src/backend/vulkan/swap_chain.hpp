@@ -18,7 +18,8 @@ class SwapChain final : public SwapChainBase {
 
     [[nodiscard]] VkSwapchainKHR Handle() { return m_vk_swap_chain; }
 
-    [[nodiscard]] u32 GetNumberOfTextures() const override;
+    Result<std::span<TextureBase* const>> EnumerateTextures() override;
+    Result<u32> AcquireNextTexture() override;
 
   private:
     SwapChain(Device* device, VkSwapchainKHR vk_swap_chain, const MGPUSwapChainCreateInfo& create_info);

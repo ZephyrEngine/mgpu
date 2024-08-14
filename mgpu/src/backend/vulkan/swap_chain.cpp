@@ -80,8 +80,14 @@ Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCrea
   return new SwapChain{device, vk_swap_chain, create_info};
 }
 
-u32 SwapChain::GetNumberOfTextures() const {
-  return m_textures.size();
+Result<std::span<TextureBase* const>> SwapChain::EnumerateTextures() {
+  return std::span<TextureBase* const>{m_textures};
+}
+
+Result<u32> SwapChain::AcquireNextTexture() {
+  u32 texture_index{};
+  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, ~0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &texture_index));
+  return texture_index;
 }
 
 }  // namespace mgpu::vulkan
