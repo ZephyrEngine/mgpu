@@ -28,7 +28,7 @@ Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCrea
     .surface = ((Surface*)create_info.surface)->Handle(),
     .minImageCount = create_info.min_texture_count,
     .imageFormat = MGPUTextureFormatToVkFormat(create_info.format),
-    .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, // TODO
+    .imageColorSpace = MGPUColorSpaceToVkColorSpace(create_info.color_space),
     .imageExtent = {
       .width = create_info.extent.width,
       .height = create_info.extent.height
@@ -40,7 +40,7 @@ Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCrea
     .pQueueFamilyIndices = nullptr,
     .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
     .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-    .presentMode = VK_PRESENT_MODE_FIFO_KHR, // TODO
+    .presentMode = MGPUPresentModeToVkPresentMode(create_info.present_mode),
     .clipped = VK_TRUE,
     .oldSwapchain = nullptr
   };

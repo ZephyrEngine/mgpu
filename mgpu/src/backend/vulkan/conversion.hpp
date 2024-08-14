@@ -86,4 +86,21 @@ static inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureVi
   }
 }
 
+static inline VkColorSpaceKHR MGPUColorSpaceToVkColorSpace(MGPUColorSpace color_space) {
+  switch(color_space) {
+    case MGPU_COLOR_SPACE_SRGB_NONLINEAR: return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    default: ATOM_PANIC("unhandled color space: {}", (int)color_space);
+  }
+}
+
+static inline VkPresentModeKHR MGPUPresentModeToVkPresentMode(MGPUPresentMode present_mode) {
+  switch(present_mode) {
+    case MGPU_PRESENT_MODE_IMMEDIATE:    return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    case MGPU_PRESENT_MODE_MAILBOX:      return VK_PRESENT_MODE_MAILBOX_KHR;
+    case MGPU_PRESENT_MODE_FIFO:         return VK_PRESENT_MODE_FIFO_KHR;
+    case MGPU_PRESENT_MODE_FIFO_RELAXED: return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    default: ATOM_PANIC("unhandled present mode: {}", (int)present_mode);
+  }
+}
+
 }  // namespace mgpu::vulkan
