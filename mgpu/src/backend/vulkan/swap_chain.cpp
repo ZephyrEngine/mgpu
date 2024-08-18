@@ -86,7 +86,7 @@ Result<std::span<TextureBase* const>> SwapChain::EnumerateTextures() {
 
 Result<u32> SwapChain::AcquireNextTexture() {
   u32 texture_index{};
-  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, ~0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &texture_index));
+  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &texture_index));
   return texture_index;
 }
 
