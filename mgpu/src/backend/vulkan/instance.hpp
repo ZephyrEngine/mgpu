@@ -18,11 +18,14 @@ class Instance final : public InstanceBase {
     static Result<InstanceBase*> Create();
 
     Result<std::span<PhysicalDeviceBase* const>> EnumeratePhysicalDevices() override;
+    Result<SurfaceBase*> CreateSurface(const MGPUSurfaceCreateInfo& create_info) override;
 
   private:
     explicit Instance(std::unique_ptr<VulkanInstance> vk_instance);
 
     void BuildPhysicalDeviceList();
+
+    static PhysicalDevice::QueueFamilyIndices SelectQueueFamilies(VulkanPhysicalDevice& vk_physical_device);
 
     // TODO(fleroviux): improve lifetime management of m_vk_instance (there is an implicit dependency from m_physical_device on the instance)
     std::unique_ptr<VulkanInstance> m_vk_instance{};

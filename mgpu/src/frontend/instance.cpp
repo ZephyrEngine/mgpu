@@ -1,5 +1,6 @@
 
 #include <mgpu/mgpu.h>
+#include <algorithm>
 #include <cstring>
 #include <limits>
 
@@ -22,6 +23,8 @@ MGPUResult mgpuCreateInstance(MGPUBackendType backend_type, MGPUInstance* instan
 }
 
 MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t* physical_device_count, MGPUPhysicalDevice* physical_devices) {
+  const auto max_physical_devices = (size_t)*physical_device_count;
+
   mgpu::Result<std::span<mgpu::PhysicalDeviceBase* const>> cxx_physical_devices_result = ((mgpu::InstanceBase*)instance)->EnumeratePhysicalDevices();
 
   MGPU_FORWARD_ERROR(cxx_physical_devices_result.Code());
@@ -33,9 +36,20 @@ MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t*
 
   *physical_device_count = cxx_physical_devices.size();
   if(physical_devices != nullptr) {
-    std::memcpy(physical_devices, cxx_physical_devices.data(), cxx_physical_devices.size_bytes());
+    const size_t copy_size = std::min(cxx_physical_devices.size(), max_physical_devices);
+    std::memcpy(physical_devices, cxx_physical_devices.data(), copy_size * sizeof(MGPUPhysicalDevice));
+    if(copy_size < cxx_physical_devices.size()) {
+      return MGPU_INCOMPLETE;
+    }
   }
 
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuInstanceCreateSurface(MGPUInstance instance, const MGPUSurfaceCreateInfo* create_info, MGPUSurface* surface) {
+  mgpu::Result<mgpu::SurfaceBase*> cxx_surface_result = ((mgpu::InstanceBase*)instance)->CreateSurface(*create_info);
+  MGPU_FORWARD_ERROR(cxx_surface_result.Code());
+  *surface = (MGPUSurface)cxx_surface_result.Unwrap();
   return MGPU_SUCCESS;
 }
 

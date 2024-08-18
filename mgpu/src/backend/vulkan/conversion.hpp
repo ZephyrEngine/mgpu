@@ -55,6 +55,16 @@ static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat
   return vk_image_usage;
 }
 
+static inline VkImageUsageFlags VkImageUsageToMGPUTextureUsage(VkImageUsageFlags image_usage) {
+  MGPUTextureUsage mgpu_texture_usage{};
+  if(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_SRC;
+  if(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_DST;
+  if(image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)      mgpu_texture_usage |= MGPU_TEXTURE_USAGE_SAMPLED;
+  if(image_usage & VK_IMAGE_USAGE_STORAGE_BIT)      mgpu_texture_usage |= MGPU_TEXTURE_USAGE_STORAGE;
+  if(image_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT;
+  return mgpu_texture_usage;
+}
+
 static inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAspect texture_aspect) {
   VkImageAspectFlags vk_image_aspect{};
   if(texture_aspect & MGPU_TEXTURE_ASPECT_COLOR)   vk_image_aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
@@ -73,6 +83,23 @@ static inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureVi
     case MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY:   return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     case MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     default: ATOM_PANIC("unhandled texture view type: {}", (int)texture_view_type);
+  }
+}
+
+static inline VkColorSpaceKHR MGPUColorSpaceToVkColorSpace(MGPUColorSpace color_space) {
+  switch(color_space) {
+    case MGPU_COLOR_SPACE_SRGB_NONLINEAR: return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    default: ATOM_PANIC("unhandled color space: {}", (int)color_space);
+  }
+}
+
+static inline VkPresentModeKHR MGPUPresentModeToVkPresentMode(MGPUPresentMode present_mode) {
+  switch(present_mode) {
+    case MGPU_PRESENT_MODE_IMMEDIATE:    return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    case MGPU_PRESENT_MODE_MAILBOX:      return VK_PRESENT_MODE_MAILBOX_KHR;
+    case MGPU_PRESENT_MODE_FIFO:         return VK_PRESENT_MODE_FIFO_KHR;
+    case MGPU_PRESENT_MODE_FIFO_RELAXED: return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    default: ATOM_PANIC("unhandled present mode: {}", (int)present_mode);
   }
 }
 
