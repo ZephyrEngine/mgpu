@@ -220,6 +220,11 @@ int main() {
     // MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
+
+    for(int i = 0; i < 65536; i++) {
+      mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
+    }
+
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
 
     while(SDL_PollEvent(&sdl_event)) {

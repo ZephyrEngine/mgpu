@@ -32,7 +32,7 @@ class Device final : public DeviceBase {
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
-    MGPUResult SubmitCommandList(CommandList* command_list) override;
+    MGPUResult SubmitCommandList(const CommandList* command_list) override;
 
   private:
     explicit Device(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUPhysicalDeviceLimits& limits);

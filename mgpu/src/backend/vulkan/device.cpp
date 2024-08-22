@@ -112,8 +112,25 @@ Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& cr
   return SwapChain::Create(this, create_info);
 }
 
-MGPUResult Device::SubmitCommandList(CommandList* command_list) {
-  return MGPU_INTERNAL_ERROR;
+MGPUResult Device::SubmitCommandList(const CommandList* command_list) {
+  const CommandBase* command = command_list->GetListHead();
+  
+  while(command != nullptr) {
+    const CommandType command_type = command->m_command_type;
+
+    switch(command_type) {
+      case CommandType::Test: {
+        break;
+      }
+      default: {
+        ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
+      }
+    }
+
+    command = command->m_next;
+  }
+
+  return MGPU_SUCCESS;
 }
 
 }  // namespace mgpu::vulkan

@@ -47,7 +47,7 @@ MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* comma
 }
 
 MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
-  return ((mgpu::DeviceBase*)device)->SubmitCommandList((mgpu::CommandList*)command_list);
+  return ((mgpu::DeviceBase*)device)->SubmitCommandList((const mgpu::CommandList*)command_list);
 }
 
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain) {

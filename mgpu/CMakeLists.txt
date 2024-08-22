@@ -13,7 +13,6 @@ set(SOURCES
   src/backend/vulkan/swap_chain.cpp
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
-  src/backend/command_list.cpp
   src/frontend/buffer.cpp
   src/frontend/command_list.cpp
   src/frontend/device.cpp
@@ -53,6 +52,7 @@ set(HEADERS
   src/frontend/validation/buffer.hpp
   src/frontend/validation/texture.hpp
   src/frontend/validation/texture_view.hpp
+  src/common/bump_allocator.hpp
   src/common/result.hpp
   src/common/texture.hpp
 )

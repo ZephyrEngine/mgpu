@@ -273,6 +273,7 @@ void mgpuTextureViewDestroy(MGPUTextureView texture_view);
 
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
+void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 
 // MGPUSurface methods
