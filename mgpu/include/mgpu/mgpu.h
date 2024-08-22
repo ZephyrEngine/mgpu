@@ -254,8 +254,9 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
-MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
+MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
+MGPUResult mgpuDeviceFlush(MGPUDevice device);
 void mgpuDeviceDestroy(MGPUDevice device);
 
 // MGPUBuffer methods

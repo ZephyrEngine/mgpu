@@ -35,7 +35,6 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
 }
 
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
-  // TODO(fleroviux): since the implementation does not actually use the device at the moment, maybe remove the device parameter?
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 
   if(cxx_command_list == nullptr) {
@@ -46,16 +45,20 @@ MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* comma
   return MGPU_SUCCESS;
 }
 
-MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
-  return ((mgpu::DeviceBase*)device)->SubmitCommandList((const mgpu::CommandList*)command_list);
-}
-
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain) {
   // TODO(fleroviux): implement input validation
   mgpu::Result<mgpu::SwapChainBase*> cxx_swap_chain_result = ((mgpu::DeviceBase*)device)->CreateSwapChain(*create_info);
   MGPU_FORWARD_ERROR(cxx_swap_chain_result.Code());
   *swap_chain = (MGPUSwapChain)cxx_swap_chain_result.Unwrap();
   return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
+  return ((mgpu::DeviceBase*)device)->SubmitCommandList((const mgpu::CommandList*)command_list);
+}
+
+MGPUResult mgpuDeviceFlush(MGPUDevice device) {
+  return ((mgpu::DeviceBase*)device)->Flush();
 }
 
 void mgpuDeviceDestroy(MGPUDevice device) {

@@ -10,19 +10,21 @@
 #include <windows.h>
 #endif
 
+//#define MGPU_BUMP_ALLOC_USE_MALLOC
+
 namespace mgpu {
 
 class BumpAllocator {
   public:
     explicit BumpAllocator(size_t capacity) {
-#ifdef WIN32
+#if defined(WIN32) && !defined(MGPU_BUMP_ALLOC_USE_MALLOC)
       m_base_address = (u8*)VirtualAlloc(nullptr, capacity, MEM_COMMIT, PAGE_READWRITE);
 #else
-      m_data = (u8*)std::malloc(capacity);
+      m_base_address = (u8*)std::malloc(capacity);
 #endif
 
       if(m_base_address == nullptr) {
-        ATOM_PANIC("out of memory");
+        ATOM_PANIC("mgpu: out of memory");
       }
       m_maximum_address = m_base_address + capacity;
       Reset();
@@ -31,10 +33,10 @@ class BumpAllocator {
    ~BumpAllocator() {
       const size_t capacity = m_maximum_address - m_base_address;
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(MGPU_BUMP_ALLOC_USE_MALLOC)
       VirtualFree(m_base_address, capacity, MEM_RELEASE);
 #else
-      std::free(m_data);
+      std::free(m_base_address);
 #endif
     }
 

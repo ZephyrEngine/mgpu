@@ -9,6 +9,7 @@
 #include "backend/vulkan/lib/vulkan_physical_device.hpp"
 #include "backend/device.hpp"
 #include "common/result.hpp"
+#include "command_queue.hpp"
 #include "deleter_queue.hpp"
 #include "physical_device.hpp"
 
@@ -33,14 +34,21 @@ class Device final : public DeviceBase {
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
     MGPUResult SubmitCommandList(const CommandList* command_list) override;
+    MGPUResult Flush() override;
 
   private:
-    explicit Device(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUPhysicalDeviceLimits& limits);
+    Device(
+      VkDevice vk_device,
+      VmaAllocator vma_allocator,
+      std::unique_ptr<CommandQueue> command_queue,
+      const MGPUPhysicalDeviceLimits& limits
+    );
 
     static Result<VmaAllocator> CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device);
 
     VkDevice m_vk_device{};
     VmaAllocator m_vma_allocator{};
+    std::unique_ptr<CommandQueue> m_command_queue{};
     DeleterQueue m_deleter_queue{};
 };
 

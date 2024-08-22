@@ -24,6 +24,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
     virtual MGPUResult SubmitCommandList(const CommandList* command_list) = 0;
+    virtual MGPUResult Flush() = 0;
 
   private:
     MGPUPhysicalDeviceLimits m_limits{};

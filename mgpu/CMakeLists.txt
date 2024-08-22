@@ -5,6 +5,7 @@ set(SOURCES
   src/backend/vulkan/lib/vulkan_instance.cpp
   src/backend/vulkan/lib/vulkan_physical_device.cpp
   src/backend/vulkan/buffer.cpp
+  src/backend/vulkan/command_queue.cpp
   src/backend/vulkan/deleter_queue.cpp
   src/backend/vulkan/device.cpp
   src/backend/vulkan/instance.cpp
@@ -32,6 +33,7 @@ set(HEADERS
   src/backend/vulkan/platform/physical_device.hpp
   src/backend/vulkan/platform/surface.hpp
   src/backend/vulkan/buffer.hpp
+  src/backend/vulkan/command_queue.hpp
   src/backend/vulkan/deleter_queue.hpp
   src/backend/vulkan/device.hpp
   src/backend/vulkan/instance.hpp

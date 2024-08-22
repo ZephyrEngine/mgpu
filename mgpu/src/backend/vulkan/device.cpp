@@ -10,13 +10,19 @@
 
 namespace mgpu::vulkan {
 
-Device::Device(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUPhysicalDeviceLimits& limits)
-    : DeviceBase{limits}
+Device::Device(
+  VkDevice vk_device,
+  VmaAllocator vma_allocator,
+  std::unique_ptr<CommandQueue> command_queue,
+  const MGPUPhysicalDeviceLimits& limits
+)   : DeviceBase{limits}
     , m_vk_device{vk_device}
-    , m_vma_allocator{vma_allocator} {
+    , m_vma_allocator{vma_allocator}
+    , m_command_queue{std::move(command_queue)} {
 }
 
 Device::~Device() {
+  m_command_queue.reset(); // Ensure that command queue is destroyed before the device
   m_deleter_queue.Drain();
 
   vkDeviceWaitIdle(m_vk_device);
@@ -75,7 +81,10 @@ Result<DeviceBase*> Device::Create(
   Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
   MGPU_FORWARD_ERROR(vma_allocator_result.Code());
 
-  return new Device{vk_device, vma_allocator_result.Unwrap(), limits};
+  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices);
+  MGPU_FORWARD_ERROR(command_queue_result.Code());
+
+  return new Device{vk_device, vma_allocator_result.Unwrap(), command_queue_result.Unwrap(), limits};
 }
 
 Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device) {
@@ -113,24 +122,11 @@ Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& cr
 }
 
 MGPUResult Device::SubmitCommandList(const CommandList* command_list) {
-  const CommandBase* command = command_list->GetListHead();
-  
-  while(command != nullptr) {
-    const CommandType command_type = command->m_command_type;
+  return m_command_queue->SubmitCommandList(command_list);
+}
 
-    switch(command_type) {
-      case CommandType::Test: {
-        break;
-      }
-      default: {
-        ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
-      }
-    }
-
-    command = command->m_next;
-  }
-
-  return MGPU_SUCCESS;
+MGPUResult Device::Flush() {
+  return m_command_queue->Flush();
 }
 
 }  // namespace mgpu::vulkan

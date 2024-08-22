@@ -226,6 +226,7 @@ int main() {
     }
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
+    MGPU_CHECK(mgpuDeviceFlush(mgpu_device));
 
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {
