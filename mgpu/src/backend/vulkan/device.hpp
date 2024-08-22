@@ -25,13 +25,14 @@ class Device final : public DeviceBase {
       const MGPUPhysicalDeviceLimits& limits
     );
 
-    Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
-    Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
-    Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
-
     [[nodiscard]] VkDevice Handle() { return m_vk_device; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() { return m_vma_allocator; }
     [[nodiscard]] DeleterQueue& GetDeleterQueue() { return m_deleter_queue; }
+
+    Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
+    Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
+    Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
+    MGPUResult SubmitCommandList(CommandList* command_list) override;
 
   private:
     explicit Device(VkDevice vk_device, VmaAllocator vma_allocator, const MGPUPhysicalDeviceLimits& limits);

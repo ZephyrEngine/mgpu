@@ -13,7 +13,9 @@ set(SOURCES
   src/backend/vulkan/swap_chain.cpp
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
+  src/backend/command_list.cpp
   src/frontend/buffer.cpp
+  src/frontend/command_list.cpp
   src/frontend/device.cpp
   src/frontend/instance.cpp
   src/frontend/physical_device.cpp
@@ -40,6 +42,7 @@ set(HEADERS
   src/backend/vulkan/texture.hpp
   src/backend/vulkan/texture_view.hpp
   src/backend/buffer.hpp
+  src/backend/command_list.hpp
   src/backend/device.hpp
   src/backend/instance.hpp
   src/backend/physical_device.hpp

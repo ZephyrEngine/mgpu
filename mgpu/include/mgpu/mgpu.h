@@ -26,6 +26,7 @@ typedef struct MGPUDeviceImpl* MGPUDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
+typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
 
@@ -252,6 +253,8 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
+MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
 
@@ -267,6 +270,10 @@ void mgpuTextureDestroy(MGPUTexture texture);
 
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
+
+// MGPUCommandList methods
+MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
+void mgpuCommandListDestroy(MGPUCommandList command_list);
 
 // MGPUSurface methods
 void mgpuSurfaceDestroy(MGPUSurface surface);

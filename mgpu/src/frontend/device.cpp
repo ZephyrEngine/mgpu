@@ -1,6 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
+#include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "validation/buffer.hpp"
 #include "validation/texture.hpp"
@@ -31,6 +32,22 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   MGPU_FORWARD_ERROR(cxx_texture_result.Code());
   *texture = (MGPUTexture)cxx_texture_result.Unwrap();
   return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
+  // TODO(fleroviux): since the implementation does not actually use the device at the moment, maybe remove the device parameter?
+  mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
+
+  if(cxx_command_list == nullptr) {
+    return MGPU_OUT_OF_MEMORY;
+  }
+
+  *command_list = (MGPUCommandList)cxx_command_list;
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
+  return ((mgpu::DeviceBase*)device)->SubmitCommandList((mgpu::CommandList*)command_list);
 }
 
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain) {

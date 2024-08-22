@@ -175,6 +175,14 @@ int main() {
 
   MGPU_CHECK(mgpuBufferFlushRange(mgpu_buffer, 10u, MGPU_WHOLE_SIZE));
 
+  //  void* mgpu_buffer_address = nullptr;
+//  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
+//  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
+////  MGPU_CHECK(mgpuFlushBuffer(mgpu_render_device, mgpu_buffer, 1u, 99 * sizeof(u32)))
+////  MGPU_CHECK(mgpuUnmapBuffer(mgpu_render_device, mgpu_buffer))
+////  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
+////  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
+
   const MGPUTextureCreateInfo texture_create_info{
     .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
     .type = MGPU_TEXTURE_TYPE_2D,
@@ -202,32 +210,27 @@ int main() {
   MGPUTextureView mgpu_texture_view{};
   MGPU_CHECK(mgpuTextureCreateView(mgpu_texture, &texture_view_create_info, &mgpu_texture_view));
 
-//  void* mgpu_buffer_address = nullptr;
-//  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
-//  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
-////  MGPU_CHECK(mgpuFlushBuffer(mgpu_render_device, mgpu_buffer, 1u, 99 * sizeof(u32)))
-////  MGPU_CHECK(mgpuUnmapBuffer(mgpu_render_device, mgpu_buffer))
-////  MGPU_CHECK(mgpuMapBuffer(mgpu_render_device, mgpu_buffer, &mgpu_buffer_address))
-////  fmt::print("Buffer address: 0x{:016X}\n", (u64)mgpu_buffer_address);
+  MGPUCommandList mgpu_cmd_list{};
+  MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
   SDL_Event sdl_event{};
 
   while(true) {
-    u32 texture_index;
-    MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
+    // u32 texture_index;
+    // MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
+
+    MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
+    MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
 
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {
         goto done;
       }
     }
-
-//    MGPUFence mgpu_fence = mgpuFenceSync(mgpu_render_device);
-//    // ...
-//    mgpuWaitFence(mgpu_render_device, mgpu_fence);
   }
 
 done:
+  mgpuCommandListDestroy(mgpu_cmd_list);
   mgpuTextureViewDestroy(mgpu_texture_view);
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));

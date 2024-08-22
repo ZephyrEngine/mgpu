@@ -112,4 +112,8 @@ Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& cr
   return SwapChain::Create(this, create_info);
 }
 
+MGPUResult Device::SubmitCommandList(CommandList* command_list) {
+  return MGPU_INTERNAL_ERROR;
+}
+
 }  // namespace mgpu::vulkan
