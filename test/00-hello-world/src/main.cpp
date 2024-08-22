@@ -221,9 +221,7 @@ int main() {
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
 
-    for(int i = 0; i < 65536; i++) {
-      mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
-    }
+    mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
     MGPU_CHECK(mgpuDeviceFlush(mgpu_device));

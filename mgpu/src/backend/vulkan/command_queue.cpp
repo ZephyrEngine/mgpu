@@ -1,5 +1,6 @@
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "backend/vulkan/texture.hpp"
 #include "common/result.hpp"
 
 #include "command_queue.hpp"
@@ -80,9 +81,7 @@ MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
     const CommandType command_type = command->m_command_type;
 
     switch(command_type) {
-      case CommandType::Test: {
-        break;
-      }
+      case CommandType::Test: HandleCmdTest((TestCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
       }
@@ -122,6 +121,55 @@ MGPUResult CommandQueue::Flush() {
   MGPU_VK_FORWARD_ERROR(vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info));
 
   return MGPU_SUCCESS;
+}
+
+void CommandQueue::HandleCmdTest(const mgpu::TestCommand* command) {
+  VkImage vk_image = ((Texture*)command->m_texture)->Handle();
+
+  const VkImageSubresourceRange range{
+    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    .baseMipLevel = 0u,
+    .levelCount = 1u,
+    .baseArrayLayer = 0u,
+    .layerCount = 1u
+  };
+
+  const VkClearColorValue clear_color{
+    .float32 = {1.0f, 0.0f, 0.0f, 1.0f}
+  };
+
+  const VkImageMemoryBarrier to_transfer_dst{
+    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+    .pNext = nullptr,
+    .srcAccessMask = 0,
+    .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT, // validate that this is correct!
+    .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    .srcQueueFamilyIndex = 0,
+    .dstQueueFamilyIndex = 0,
+    .image = ((Texture*)command->m_texture)->Handle(),
+    .subresourceRange = range
+  };
+  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0u, nullptr, 0u, nullptr, 1u, &to_transfer_dst);
+
+  vkCmdClearColorImage(m_vk_cmd_buffer, vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1u, &range);
+
+  // Transition the swap chain image to the PRESENT_SRC_KHR layout required by vkQueueSubmit().
+  // We set the dstAccessMask to 0 and dstStageMask to TOP_OF_PIPE_BIT because vkQueueSubmit()
+  // will make sure to make any writes to the underlying memory visible to the presentation engine.
+  const VkImageMemoryBarrier to_present_src{
+    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+    .pNext = nullptr,
+    .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+    .dstAccessMask = 0,
+    .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    .srcQueueFamilyIndex = 0,
+    .dstQueueFamilyIndex = 0,
+    .image = vk_image,
+    .subresourceRange = range
+  };
+  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0u, nullptr, 0u, nullptr, 1u, &to_present_src);
 }
 
 }  // namespace mgpu::vulkan

@@ -30,6 +30,8 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
       VkFence vk_cmd_buffer_fence
     );
 
+    void HandleCmdTest(const TestCommand* command);
+
     VkDevice m_vk_device;
     VkQueue m_vk_queue;
     VkCommandPool m_vk_cmd_pool;
