@@ -17,6 +17,7 @@ class SwapChainBase : atom::NonCopyable, atom::NonMoveable {
 
     virtual Result<std::span<TextureBase* const>> EnumerateTextures() = 0;
     virtual Result<u32> AcquireNextTexture() = 0;
+    virtual MGPUResult Present() = 0;
 };
 
 }  // namespace mgpu

@@ -20,6 +20,7 @@ class SwapChain final : public SwapChainBase {
 
     Result<std::span<TextureBase* const>> EnumerateTextures() override;
     Result<u32> AcquireNextTexture() override;
+    MGPUResult Present() override;
 
   private:
     SwapChain(Device* device, VkSwapchainKHR vk_swap_chain, const MGPUSwapChainCreateInfo& create_info);
@@ -27,6 +28,7 @@ class SwapChain final : public SwapChainBase {
     Device* m_device;
     VkSwapchainKHR m_vk_swap_chain;
     std::vector<TextureBase*> m_textures{};
+    u32 m_acquired_texture_index{};
 };
 
 }  // namespace mgpu::vulkan

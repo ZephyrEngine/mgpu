@@ -85,9 +85,31 @@ Result<std::span<TextureBase* const>> SwapChain::EnumerateTextures() {
 }
 
 Result<u32> SwapChain::AcquireNextTexture() {
-  u32 texture_index{};
-  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &texture_index));
-  return texture_index;
+  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &m_acquired_texture_index));
+  return m_acquired_texture_index;
+}
+
+MGPUResult SwapChain::Present() {
+  // TODO(fleroviux): error out if no texture has been acquired
+  // TODO(fleroviux): wait for commands to finish via a semaphore
+
+  const VkPresentInfoKHR vk_present_info{
+    .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+    .pNext = nullptr,
+    .waitSemaphoreCount = 0u,
+    .pWaitSemaphores = nullptr,
+    .swapchainCount = 1u,
+    .pSwapchains = &m_vk_swap_chain,
+    .pImageIndices = &m_acquired_texture_index,
+    .pResults = nullptr
+  };
+
+  // !!!! BAD !!!! FIX ME
+  VkQueue vk_queue{};
+  vkGetDeviceQueue(m_device->Handle(), 0u, 0u, &vk_queue);
+
+  MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(vk_queue, &vk_present_info));
+  return MGPU_SUCCESS;
 }
 
 }  // namespace mgpu::vulkan

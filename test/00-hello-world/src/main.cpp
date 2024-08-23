@@ -147,6 +147,7 @@ int main() {
       .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
       .color_space = MGPU_COLOR_SPACE_SRGB_NONLINEAR,
       .present_mode = MGPU_PRESENT_MODE_FIFO,
+      .usage = MGPU_TEXTURE_USAGE_COPY_DST,
       .extent = surface_capabilities.current_extent,
       .min_texture_count = 2u,
       .old_swap_chain = nullptr
@@ -216,15 +217,17 @@ int main() {
   SDL_Event sdl_event{};
 
   while(true) {
-    // u32 texture_index;
-    // MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
+    u32 texture_index;
+    MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
 
     mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
+    mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_swap_chain_textures[texture_index]);
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
-    MGPU_CHECK(mgpuDeviceFlush(mgpu_device));
+    MGPU_CHECK(mgpuDeviceFlush(mgpu_device)); // TODO: automatically flush on present
+    MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
 
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {

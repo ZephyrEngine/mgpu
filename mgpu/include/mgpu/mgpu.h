@@ -283,6 +283,7 @@ void mgpuSurfaceDestroy(MGPUSurface surface);
 // MGPUSwapChain methods
 MGPUResult mgpuSwapChainEnumerateTextures(MGPUSwapChain swap_chain, uint32_t* texture_count, MGPUTexture* textures);
 MGPUResult mgpuSwapChainAcquireNextTexture(MGPUSwapChain swap_chain, uint32_t* texture_index);
+MGPUResult mgpuSwapChainPresent(MGPUSwapChain swap_chain);
 void mgpuSwapChainDestroy(MGPUSwapChain swap_chain);
 
 #ifdef __cplusplus
