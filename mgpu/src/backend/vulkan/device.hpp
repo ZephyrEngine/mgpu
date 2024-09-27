@@ -32,6 +32,7 @@ class Device final : public DeviceBase {
 
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
+    Result<RenderTargetBase*> CreateRenderTarget(const MGPURenderTargetCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
     MGPUResult SubmitCommandList(const CommandList* command_list) override;
     MGPUResult Flush() override;

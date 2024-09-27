@@ -26,6 +26,7 @@ typedef struct MGPUDeviceImpl* MGPUDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
+typedef struct MGPURenderTargetImpl* MGPURenderTarget;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -188,6 +189,11 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
 
+typedef struct MGPURenderTargetCreateInfo {
+  uint32_t attachment_count;
+  MGPUTextureView* attachments;
+} MGPURenderTargetCreateInfo;
+
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -253,6 +259,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateRenderTarget(MGPUDevice device, const MGPURenderTargetCreateInfo* create_info, MGPURenderTarget* render_target);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
@@ -271,6 +278,9 @@ void mgpuTextureDestroy(MGPUTexture texture);
 
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
+
+// MGPURenderTarget methods
+void mgpuRenderTargetDestroy(MGPURenderTarget render_target);
 
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);

@@ -14,6 +14,9 @@ class TextureViewBase : atom::NonCopyable, atom::NonMoveable {
 
     virtual ~TextureViewBase() = default;
 
+    [[nodiscard]] MGPUTextureFormat Format() const { return m_create_info.format; }
+    [[nodiscard]] MGPUTextureAspect Aspect() const { return m_create_info.aspect; }
+
   private:
     MGPUTextureViewCreateInfo m_create_info;
 };

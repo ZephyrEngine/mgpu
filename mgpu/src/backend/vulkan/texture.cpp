@@ -86,7 +86,7 @@ Texture* Texture::FromVkImage(Device* device, const MGPUTextureCreateInfo& creat
 }
 
 Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& create_info) {
-  return TextureView::Create(m_device, m_vk_image, create_info);
+  return TextureView::Create(m_device, this, create_info);
 }
 
 }  // namespace mgpu::vulkan

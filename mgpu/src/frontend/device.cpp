@@ -34,6 +34,20 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateRenderTarget(MGPUDevice device, const MGPURenderTargetCreateInfo* create_info, MGPURenderTarget* render_target) {
+  // TODO(fleroviux): implement input validation
+  // Some validation ideas:
+  // - must have at least one attachment
+  // - must have at most one depth/stencil attachment
+  // - must have at most N color attachments
+  // - all attachments must have the same dimensions
+  // - all attachments must be a (non-array?) 2D view
+  mgpu::Result<mgpu::RenderTargetBase*> cxx_render_target_result = ((mgpu::DeviceBase*)device)->CreateRenderTarget(*create_info);
+  MGPU_FORWARD_ERROR(cxx_render_target_result.Code());
+  *render_target = (MGPURenderTarget)cxx_render_target_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 

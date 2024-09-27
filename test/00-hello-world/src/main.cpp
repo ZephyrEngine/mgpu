@@ -93,6 +93,8 @@ int main() {
 
   MGPUSwapChain mgpu_swap_chain{};
   std::vector<MGPUTexture> mgpu_swap_chain_textures{};
+  std::vector<MGPUTextureView> mgpu_swap_chain_texture_views{};
+  std::vector<MGPURenderTarget> mgpu_swap_chain_render_targets{};
 
   // Swap Chain creation
   {
@@ -158,6 +160,31 @@ int main() {
     MGPU_CHECK(mgpuSwapChainEnumerateTextures(mgpu_swap_chain, &texture_count, nullptr));
     mgpu_swap_chain_textures.resize(texture_count);
     MGPU_CHECK(mgpuSwapChainEnumerateTextures(mgpu_swap_chain, &texture_count, mgpu_swap_chain_textures.data()));
+
+    for(MGPUTexture texture : mgpu_swap_chain_textures) {
+      const MGPUTextureViewCreateInfo texture_view_create_info{
+        .type = MGPU_TEXTURE_VIEW_TYPE_2D,
+        .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
+        .aspect = MGPU_TEXTURE_ASPECT_COLOR,
+        .base_mip = 0u,
+        .mip_count = 1u,
+        .base_array_layer = 0u,
+        .array_layer_count = 1u
+      };
+
+      MGPUTextureView texture_view{};
+      MGPU_CHECK(mgpuTextureCreateView(texture, &texture_view_create_info, &texture_view));
+      mgpu_swap_chain_texture_views.push_back(texture_view);
+
+      const MGPURenderTargetCreateInfo render_target_create_info{
+        .attachment_count = 1u,
+        .attachments = &texture_view
+      };
+
+      MGPURenderTarget render_target{};
+      MGPU_CHECK(mgpuDeviceCreateRenderTarget(mgpu_device, &render_target_create_info, &render_target));
+      mgpu_swap_chain_render_targets.push_back(render_target);
+    }
   }
 
   fmt::print("number of swap chain textures: {}\n", mgpu_swap_chain_textures.size());
@@ -242,6 +269,8 @@ done:
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);
+  for(MGPURenderTarget render_target : mgpu_swap_chain_render_targets) mgpuRenderTargetDestroy(render_target);
+  for(MGPUTextureView texture_view : mgpu_swap_chain_texture_views) mgpuTextureViewDestroy(texture_view);
   mgpuSwapChainDestroy(mgpu_swap_chain);
   mgpuDeviceDestroy(mgpu_device);
   mgpuSurfaceDestroy(mgpu_surface);

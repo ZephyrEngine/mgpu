@@ -5,9 +5,10 @@
 
 namespace mgpu::vulkan {
 
-TextureView::TextureView(Device* device, VkImageView vk_image_view, const MGPUTextureViewCreateInfo& create_info)
+TextureView::TextureView(Device* device, Texture* texture, VkImageView vk_image_view, const MGPUTextureViewCreateInfo& create_info)
     : TextureViewBase{create_info}
     , m_device{device}
+    , m_texture{texture}
     , m_vk_image_view{vk_image_view} {
 }
 
@@ -21,12 +22,12 @@ TextureView::~TextureView() {
   });
 }
 
-Result<TextureViewBase*> TextureView::Create(Device* device, VkImage vk_image, const MGPUTextureViewCreateInfo& create_info) {
+Result<TextureViewBase*> TextureView::Create(Device* device, Texture* texture, const MGPUTextureViewCreateInfo& create_info) {
   const VkImageViewCreateInfo vk_image_view_create_info{
     .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0,
-    .image = vk_image,
+    .image = texture->Handle(),
     .viewType = MGPUTextureViewTypeToVkImageViewType(create_info.type),
     .format = MGPUTextureFormatToVkFormat(create_info.format),
     .components = {
@@ -46,7 +47,7 @@ Result<TextureViewBase*> TextureView::Create(Device* device, VkImage vk_image, c
 
   VkImageView vk_image_view{};
   MGPU_VK_FORWARD_ERROR(vkCreateImageView(device->Handle(), &vk_image_view_create_info, nullptr, &vk_image_view));
-  return new TextureView{device, vk_image_view, create_info};
+  return new TextureView{device, texture, vk_image_view, create_info};
 }
 
 }  // namespace mgpu::vulkan
