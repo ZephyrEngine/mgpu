@@ -48,8 +48,10 @@ typedef enum MGPUResult {
   MGPU_BUFFER_NOT_MAPPED = 7,
   MGPU_INCOMPATIBLE_TEXTURE_VIEW_TYPE = 8,
   MGPU_INCOMPATIBLE_TEXTURE_FORMAT = 9,
-  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 10,
-  MGPU_NOT_READY = 11
+  MGPU_INCOMPATIBLE_TEXTURE_USAGE  = 10,
+  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 11,
+  MGPU_NOT_READY = 12,
+  MGPU_BAD_COMMAND_LIST = 13
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -287,6 +289,8 @@ void mgpuRenderTargetDestroy(MGPURenderTarget render_target);
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture);
+void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target);
+void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 
 // MGPUSurface methods

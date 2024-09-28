@@ -21,6 +21,7 @@ class TextureBase : atom::NonCopyable, atom::NonMoveable {
 
     [[nodiscard]] MGPUTextureType Type() const { return m_create_info.type; }
     [[nodiscard]] MGPUTextureFormat Format() const { return m_create_info.format; }
+    [[nodiscard]] MGPUTextureUsage Usage() const { return m_create_info.usage; }
     [[nodiscard]] MGPUExtent3D Extent() const { return m_create_info.extent; }
     [[nodiscard]] u32 MipCount() const { return m_create_info.mip_count; }
     [[nodiscard]] u32 ArrayLayerCount() const { return m_create_info.array_layer_count; }

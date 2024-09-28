@@ -1,21 +1,25 @@
 
 #include <atom/integer.hpp>
 #include <atom/panic.hpp>
-#include <atom/vector_n.hpp>
-#include <optional>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
-#include "common/limits.hpp"
 #include "conversion.hpp"
 #include "render_target.hpp"
 #include "texture_view.hpp"
 
 namespace mgpu::vulkan {
 
-RenderTarget::RenderTarget(Device* device, VkFramebuffer vk_framebuffer, VkRenderPass vk_compatible_render_pass)
-    : m_device{device}
+RenderTarget::RenderTarget(
+  Device* device,
+  const atom::Vector_N<TextureView*, limits::max_total_attachments>& attachments,
+  VkFramebuffer vk_framebuffer,
+  VkRenderPass vk_compatible_render_pass
+)   : m_device{device}
+    , m_attachments{attachments}
     , m_vk_framebuffer{vk_framebuffer}
     , m_vk_compatible_render_pass{vk_compatible_render_pass} {
+  const MGPUExtent3D extent = m_attachments[0]->GetTexture()->Extent();
+  m_extent = {.width = extent.width, .height = extent.height};
 }
 
 RenderTarget::~RenderTarget() {
@@ -121,13 +125,16 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
     render_target_extent = color_attachments[0]->GetTexture()->Extent();
   }
 
+  atom::Vector_N<TextureView*, limits::max_total_attachments> attachments{};
   atom::Vector_N<VkImageView, limits::max_total_attachments> attachment_vk_image_views{};
 
   for(size_t i = 0; i < color_attachment_count; i++) {
+    attachments.PushBack(color_attachments[i]);
     attachment_vk_image_views.PushBack(color_attachments[i]->Handle());
   }
 
   if(depth_stencil_attachment != nullptr) {
+    attachments.PushBack(depth_stencil_attachment);
     attachment_vk_image_views.PushBack(depth_stencil_attachment->Handle());
   }
 
@@ -145,7 +152,7 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
 
   VkFramebuffer vk_framebuffer{};
   MGPU_VK_FORWARD_ERROR(vkCreateFramebuffer(device->Handle(), &vk_framebuffer_create_info, nullptr, &vk_framebuffer));
-  return new RenderTarget{device, vk_framebuffer, vk_compatible_render_pass};
+  return new RenderTarget{device, attachments, vk_framebuffer, vk_compatible_render_pass};
 }
 
 } // namespace mgpu::vulkan

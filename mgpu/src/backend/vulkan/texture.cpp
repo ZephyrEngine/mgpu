@@ -9,7 +9,8 @@
 namespace mgpu::vulkan {
 
 static const VmaAllocationCreateInfo vma_alloc_info = {
-  .usage = VMA_MEMORY_USAGE_AUTO
+  .usage = VMA_MEMORY_USAGE_AUTO,
+  .flags = 0
 };
 
 Texture::Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info)

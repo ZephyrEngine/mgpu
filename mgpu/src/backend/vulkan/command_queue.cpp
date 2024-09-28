@@ -1,9 +1,15 @@
 
+#include <vector>
+
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "backend/vulkan/render_target.hpp"
 #include "backend/vulkan/texture.hpp"
 #include "common/result.hpp"
 
 #include "command_queue.hpp"
+#include "conversion.hpp"
+
+#include "texture_view.hpp"
 
 namespace mgpu::vulkan {
 
@@ -77,11 +83,19 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(VkDevice vk_device, c
 MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
   const CommandBase* command = command_list->GetListHead();
 
+  if(command_list->HasErrors()) {
+    return MGPU_BAD_COMMAND_LIST;
+  }
+
+  CommandListState state{};
+
   while(command != nullptr) {
     const CommandType command_type = command->m_command_type;
 
     switch(command_type) {
       case CommandType::Test: HandleCmdTest((TestCommand*)command); break;
+      case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, (BeginRenderPassCommand*)command); break;
+      case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
       }
@@ -170,6 +184,91 @@ void CommandQueue::HandleCmdTest(const mgpu::TestCommand* command) {
     .subresourceRange = range
   };
   vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0u, nullptr, 0u, nullptr, 1u, &to_present_src);
+}
+
+void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand* command) {
+  const auto render_target = (RenderTarget*)command->m_render_target;
+  const MGPUExtent2D render_area = render_target->Extent();
+
+  // TODO: remove hacky hardcoded barriers
+  std::vector<VkImageMemoryBarrier> image_memory_barriers{};
+  for(auto attachment : render_target->GetAttachments()) {
+    image_memory_barriers.push_back({
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = 0,
+      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .srcQueueFamilyIndex = 0,
+      .dstQueueFamilyIndex = 0,
+      .image = attachment->GetTexture()->Handle(),
+      .subresourceRange = {
+        .aspectMask = MGPUTextureAspectToVkImageAspect(attachment->Aspect()),
+        .baseMipLevel = 0u,
+        .levelCount = 1u,
+        .baseArrayLayer = 0u,
+        .layerCount = 1u
+      }
+    });
+  }
+  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0u, nullptr, 0u, nullptr, image_memory_barriers.size(), image_memory_barriers.data());
+
+  const VkClearValue clear_value{
+    .color = {.float32 = {0.0f, 1.0f, 0.0f, 1.0f}}
+  };
+
+  const VkRenderPassBeginInfo vk_render_pass_begin_info{
+    .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+    .pNext = nullptr,
+    .renderPass = render_target->GetRenderPassStub(),
+    .framebuffer = render_target->Handle(),
+    .renderArea = {
+      .offset = { .x = 0, .y = 0 },
+      .extent = { .width = render_area.width, .height = render_area.height }
+    },
+    .clearValueCount = 1u, // !!! TODO
+    .pClearValues = &clear_value, // !!! TODO
+  };
+
+  vkCmdBeginRenderPass(m_vk_cmd_buffer, &vk_render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+  state.current_render_target = render_target;
+}
+
+void CommandQueue::HandleCmdEndRenderPass(CommandListState& state) {
+  const auto render_target = (RenderTarget*)state.current_render_target;
+
+  vkCmdEndRenderPass(m_vk_cmd_buffer);
+
+  // Transition the swap chain image to the PRESENT_SRC_KHR layout required by vkQueueSubmit().
+  // We set the dstAccessMask to 0 and dstStageMask to TOP_OF_PIPE_BIT because vkQueueSubmit()
+  // will make sure to make any writes to the underlying memory visible to the presentation engine.
+  // TODO: remove hacky hardcoded barriers
+  std::vector<VkImageMemoryBarrier> image_memory_barriers{};
+  for(auto attachment : render_target->GetAttachments()) {
+    image_memory_barriers.push_back({
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .dstAccessMask = 0,
+      .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      .srcQueueFamilyIndex = 0,
+      .dstQueueFamilyIndex = 0,
+      .image = attachment->GetTexture()->Handle(),
+      .subresourceRange = {
+        .aspectMask = MGPUTextureAspectToVkImageAspect(attachment->Aspect()),
+        .baseMipLevel = 0u,
+        .levelCount = 1u,
+        .baseArrayLayer = 0u,
+        .layerCount = 1u
+      }
+    });
+  }
+  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0u, nullptr, 0u, nullptr, image_memory_barriers.size(), image_memory_barriers.data());
+
+  state.current_render_target = nullptr;
 }
 
 }  // namespace mgpu::vulkan

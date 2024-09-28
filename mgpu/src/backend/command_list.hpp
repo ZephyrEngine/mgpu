@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "backend/render_target.hpp"
 #include "backend/texture.hpp"
 #include "common/bump_allocator.hpp"
 
@@ -15,7 +16,9 @@ namespace mgpu {
 
 enum class CommandType {
   NoOp,
-  Test
+  Test,
+  BeginRenderPass,
+  EndRenderPass
 };
 
 struct CommandBase {
@@ -31,25 +34,56 @@ struct TestCommand : CommandBase {
   TextureBase* m_texture;
 };
 
+struct BeginRenderPassCommand : CommandBase {
+  explicit BeginRenderPassCommand(RenderTargetBase* render_target) : CommandBase{CommandType::BeginRenderPass}, m_render_target{render_target} {}
+
+  RenderTargetBase* m_render_target;
+};
+
+struct EndRenderPassCommand : CommandBase {
+  EndRenderPassCommand() : CommandBase{CommandType::EndRenderPass} {}
+};
+
 class CommandList : atom::NonCopyable, atom::NonMoveable {
   public:
     CommandList() {
       m_memory_chunks.emplace_back(k_chunk_size);
+      Clear();
     }
 
-    [[nodiscard]] const CommandBase* GetListHead() const {
-      return m_head;
-    }
+    [[nodiscard]] bool HasErrors() const { return m_state.has_errors || IsIncomplete(); }
+    [[nodiscard]] bool IsIncomplete() const { return m_state.inside_render_pass; }
+
+    [[nodiscard]] const CommandBase* GetListHead() const { return m_head; }
 
     void Clear() {
       m_memory_chunks[0].Reset();
       m_active_chunk = 0u;
       m_head = nullptr;
       m_tail = nullptr;
+      m_state = {};
     }
 
     void CmdTest(TextureBase* texture) {
       Push<TestCommand>(texture);
+    }
+
+    void CmdBeginRenderPass(RenderTargetBase* render_target) {
+      if(m_state.inside_render_pass) {
+        m_state.has_errors = true;
+      }
+      m_state.inside_render_pass = true;
+
+      Push<BeginRenderPassCommand>(render_target);
+    }
+
+    void CmdEndRenderPass() {
+      if(!m_state.inside_render_pass) {
+        m_state.has_errors = true;
+      }
+      m_state.inside_render_pass = false;
+
+      Push<EndRenderPassCommand>();
     }
 
   private:
@@ -82,10 +116,16 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       return address;
     }
 
+    struct State {
+      bool has_errors{false};
+      bool inside_render_pass{false};
+    };
+
     std::vector<BumpAllocator> m_memory_chunks{};
     size_t m_active_chunk{};
     CommandBase* m_head{};
     CommandBase* m_tail{};
+    State m_state;
 };
 
 }  // namespace mgpu

@@ -149,7 +149,7 @@ int main() {
       .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
       .color_space = MGPU_COLOR_SPACE_SRGB_NONLINEAR,
       .present_mode = MGPU_PRESENT_MODE_FIFO,
-      .usage = MGPU_TEXTURE_USAGE_COPY_DST,
+      .usage = MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT,
       .extent = surface_capabilities.current_extent,
       .min_texture_count = 2u,
       .old_swap_chain = nullptr
@@ -250,8 +250,11 @@ int main() {
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
 
-    mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
-    mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_swap_chain_textures[texture_index]);
+    //mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
+    //mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_swap_chain_textures[texture_index]);
+
+    mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, mgpu_swap_chain_render_targets[texture_index]);
+    mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
     MGPU_CHECK(mgpuDeviceFlush(mgpu_device)); // TODO: automatically flush on present

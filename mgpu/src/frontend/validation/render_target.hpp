@@ -22,6 +22,13 @@ inline MGPUResult validate_render_target_attachments(const MGPUPhysicalDeviceLim
     return MGPU_SUCCESS;
   };
 
+  const auto validate_attachment_texture_usage = [](mgpu::TextureViewBase* attachment) -> MGPUResult {
+    if((attachment->GetTexture()->Usage() & MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT) == 0u) {
+      return MGPU_INCOMPATIBLE_TEXTURE_USAGE;
+    }
+    return MGPU_SUCCESS;
+  };
+
   const u32 color_attachment_count = create_info.color_attachment_count;
   const auto color_attachments = (mgpu::TextureViewBase**)create_info.color_attachments;
   const auto depth_stencil_attachment = (mgpu::TextureViewBase*)create_info.depth_stencil_attachment;
@@ -46,6 +53,7 @@ inline MGPUResult validate_render_target_attachments(const MGPUPhysicalDeviceLim
     // Render target extent is defined by the Depth/Stencil attachment (if present), so we do not need to validate the extent here.
     MGPU_FORWARD_ERROR(validate_attachment_texture_aspect(depth_stencil_attachment, MGPU_TEXTURE_ASPECT_DEPTH | MGPU_TEXTURE_ASPECT_STENCIL));
     MGPU_FORWARD_ERROR(validate_attachment_texture_view_type(depth_stencil_attachment));
+    MGPU_FORWARD_ERROR(validate_attachment_texture_usage(depth_stencil_attachment));
   }
 
   for(size_t i = 0u; i < color_attachment_count; i++) {
@@ -53,6 +61,7 @@ inline MGPUResult validate_render_target_attachments(const MGPUPhysicalDeviceLim
 
     MGPU_FORWARD_ERROR(validate_attachment_texture_aspect(color_attachment, MGPU_TEXTURE_ASPECT_COLOR));
     MGPU_FORWARD_ERROR(validate_attachment_texture_view_type(color_attachment));
+    MGPU_FORWARD_ERROR(validate_attachment_texture_usage(color_attachment));
 
     MGPUExtent3D color_attachment_extent = color_attachment->GetTexture()->Extent();
     if(color_attachment_extent.width  != render_target_extent.width ||

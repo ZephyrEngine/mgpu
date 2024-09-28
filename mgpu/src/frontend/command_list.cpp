@@ -14,6 +14,14 @@ void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture) {
   ((mgpu::CommandList*)command_list)->CmdTest((mgpu::TextureBase*)texture);
 }
 
+void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target) {
+  ((mgpu::CommandList*)command_list)->CmdBeginRenderPass((mgpu::RenderTargetBase*)render_target);
+}
+
+void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list) {
+  ((mgpu::CommandList*)command_list)->CmdEndRenderPass();
+}
+
 void mgpuCommandListDestroy(MGPUCommandList command_list) {
   delete (mgpu::CommandList*)command_list;
 }

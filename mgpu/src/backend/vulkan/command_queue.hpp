@@ -30,7 +30,13 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
       VkFence vk_cmd_buffer_fence
     );
 
+    struct CommandListState {
+      RenderTargetBase* current_render_target{};
+    };
+
     void HandleCmdTest(const TestCommand* command);
+    void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand* command);
+    void HandleCmdEndRenderPass(CommandListState& state);
 
     VkDevice m_vk_device;
     VkQueue m_vk_queue;
