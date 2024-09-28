@@ -64,7 +64,11 @@ MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreat
 }
 
 MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
-  return ((mgpu::DeviceBase*)device)->SubmitCommandList((const mgpu::CommandList*)command_list);
+  const auto cxx_command_list = (const mgpu::CommandList*)command_list;
+  if(cxx_command_list->HasErrors()) {
+    return MGPU_BAD_COMMAND_LIST;
+  }
+  return ((mgpu::DeviceBase*)device)->SubmitCommandList(cxx_command_list);
 }
 
 MGPUResult mgpuDeviceFlush(MGPUDevice device) {

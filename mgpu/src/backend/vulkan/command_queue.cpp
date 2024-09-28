@@ -83,10 +83,6 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(VkDevice vk_device, c
 MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
   const CommandBase* command = command_list->GetListHead();
 
-  if(command_list->HasErrors()) {
-    return MGPU_BAD_COMMAND_LIST;
-  }
-
   CommandListState state{};
 
   while(command != nullptr) {
