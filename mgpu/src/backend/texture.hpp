@@ -8,9 +8,10 @@
 #include <atom/non_moveable.hpp>
 
 #include "common/result.hpp"
-#include "texture_view.hpp"
 
 namespace mgpu {
+
+class TextureViewBase;
 
 class TextureBase : atom::NonCopyable, atom::NonMoveable {
   public:

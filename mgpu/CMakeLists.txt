@@ -56,9 +56,11 @@ set(HEADERS
   src/backend/texture.hpp
   src/backend/texture_view.hpp
   src/frontend/validation/buffer.hpp
+  src/frontend/validation/render_target.hpp
   src/frontend/validation/texture.hpp
   src/frontend/validation/texture_view.hpp
   src/common/bump_allocator.hpp
+  src/common/limits.hpp
   src/common/result.hpp
   src/common/texture.hpp
 )

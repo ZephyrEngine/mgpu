@@ -5,21 +5,21 @@
 
 #include <atom/panic.hpp>
 
-static inline MGPUTextureAspect MGPUTextureFormatToMGPUTextureAspect(MGPUTextureFormat texture_format) {
+inline MGPUTextureAspect MGPUTextureFormatToMGPUTextureAspect(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return MGPU_TEXTURE_ASPECT_COLOR;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
-static inline bool MGPUTextureFormatIsCompressed(MGPUTextureFormat texture_format) {
+inline bool MGPUTextureFormatIsCompressed(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return false;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
-static inline bool MGPUTextureFormatIsDepthStencil(MGPUTextureFormat texture_format) {
+inline bool MGPUTextureFormatIsDepthStencil(MGPUTextureFormat texture_format) {
   // TODO(fleroviux): this possibly could be implemented via MGPUTextureFormatToMGPUTextureAspect()
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return false;
@@ -27,21 +27,21 @@ static inline bool MGPUTextureFormatIsDepthStencil(MGPUTextureFormat texture_for
   }
 }
 
-static inline size_t MGPUTextureFormatGetTexelSize(MGPUTextureFormat texture_format) {
+inline size_t MGPUTextureFormatGetTexelSize(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return sizeof(uint32_t);
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
-static inline bool MGPUTextureFormatHasAlpha(MGPUTextureFormat texture_format) {
+inline bool MGPUTextureFormatHasAlpha(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return true;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
-static inline bool MGPUTextureFormatsCompatible(MGPUTextureFormat texture_format_a, MGPUTextureFormat texture_format_b) {
+inline bool MGPUTextureFormatsCompatible(MGPUTextureFormat texture_format_a, MGPUTextureFormat texture_format_b) {
   // We follow Vulkan's rules for texture format compatibility here:
   // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#formats-compatibility-classes
 

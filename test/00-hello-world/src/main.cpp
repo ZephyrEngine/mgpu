@@ -177,8 +177,9 @@ int main() {
       mgpu_swap_chain_texture_views.push_back(texture_view);
 
       const MGPURenderTargetCreateInfo render_target_create_info{
-        .attachment_count = 1u,
-        .attachments = &texture_view
+        .color_attachment_count = 1u,
+        .color_attachments = &texture_view,
+        .depth_stencil_attachment = nullptr
       };
 
       MGPURenderTarget render_target{};

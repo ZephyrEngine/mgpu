@@ -190,8 +190,9 @@ typedef struct MGPUTextureViewCreateInfo {
 } MGPUTextureViewCreateInfo;
 
 typedef struct MGPURenderTargetCreateInfo {
-  uint32_t attachment_count;
-  MGPUTextureView* attachments;
+  uint32_t color_attachment_count;
+  MGPUTextureView* color_attachments;
+  MGPUTextureView* depth_stencil_attachment;
 } MGPURenderTargetCreateInfo;
 
 typedef struct MGPUSurfaceCreateInfo {
@@ -224,6 +225,7 @@ struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_dimension_2d;
   uint32_t max_texture_dimension_3d;
   uint32_t max_texture_array_layers;
+  uint32_t max_color_attachments;
 };
 
 struct MGPUPhysicalDeviceInfo {

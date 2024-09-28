@@ -16,7 +16,8 @@ class TextureView final : public TextureViewBase {
     static Result<TextureViewBase*> Create(Device* device, Texture* texture, const MGPUTextureViewCreateInfo& create_info);
 
     [[nodiscard]] VkImageView Handle() { return m_vk_image_view; }
-    [[nodiscard]] Texture* GetTexture() { return m_texture; }
+
+    Texture* GetTexture() override { return m_texture; }
 
   private:
     TextureView(Device* device, Texture* texture, VkImageView vk_image_view, const MGPUTextureViewCreateInfo& create_info);

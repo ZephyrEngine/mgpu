@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "common/limits.hpp"
 #include "conversion.hpp"
 #include "render_target.hpp"
 #include "texture_view.hpp"
@@ -30,18 +31,18 @@ RenderTarget::~RenderTarget() {
 }
 
 Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderTargetCreateInfo& create_info) {
-  // TODO(fleroviux): handle hard limit in a better way, and clean this up in general
+  atom::Vector_N<VkAttachmentDescription, k_max_attachments> attachment_descriptions{};
+  atom::Vector_N<VkAttachmentReference, k_max_color_attachments> color_attachment_references{};
+  VkAttachmentReference depth_stencil_attachment_reference{};
 
-  atom::Vector_N<VkAttachmentDescription, 16> attachment_descriptions{};
-  atom::Vector_N<VkAttachmentReference, 16> color_attachment_references{};
-  std::optional<VkAttachmentReference> depth_stencil_attachment_reference{};
+  const auto color_attachment_count = create_info.color_attachment_count;
+  const auto color_attachments = (TextureView**)create_info.color_attachments;
+  const auto depth_stencil_attachment = (TextureView*)create_info.depth_stencil_attachment;
 
-  for(size_t i = 0; i < create_info.attachment_count; i++) {
-    auto attachment = (TextureView*)create_info.attachments[i];
-
+  for(size_t i = 0; i < color_attachment_count; i++) {
     attachment_descriptions.PushBack({
       .flags = 0,
-      .format = MGPUTextureFormatToVkFormat(attachment->Format()),
+      .format = MGPUTextureFormatToVkFormat(color_attachments[i]->Format()),
       .samples = VK_SAMPLE_COUNT_1_BIT,
       .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
       .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -56,14 +57,29 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
       .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
 
-    if(attachment->Aspect() & MGPU_TEXTURE_ASPECT_COLOR) {
-      color_attachment_references.PushBack(vk_attachment_reference);
-    } else {
-      depth_stencil_attachment_reference = vk_attachment_reference;
-    }
+    color_attachment_references.PushBack(vk_attachment_reference);
   }
 
-  const VkSubpassDescription vk_subpass_description{
+  if(depth_stencil_attachment) {
+    attachment_descriptions.PushBack({
+      .flags = 0,
+      .format = MGPUTextureFormatToVkFormat(depth_stencil_attachment->Format()),
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    });
+
+    depth_stencil_attachment_reference = VkAttachmentReference{
+      .attachment = create_info.color_attachment_count,
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    };
+  }
+
+  VkSubpassDescription vk_subpass_description{
     .flags = 0,
     .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
     .inputAttachmentCount = 0,
@@ -71,10 +87,14 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
     .colorAttachmentCount = (u32)color_attachment_references.Size(),
     .pColorAttachments = color_attachment_references.Data(),
     .pResolveAttachments = nullptr,
-    .pDepthStencilAttachment = depth_stencil_attachment_reference.has_value() ? &depth_stencil_attachment_reference.value() : nullptr, // GROSS
+    .pDepthStencilAttachment = nullptr,
     .preserveAttachmentCount = 0,
     .pPreserveAttachments = nullptr
   };
+
+  if(depth_stencil_attachment != nullptr) {
+    vk_subpass_description.pDepthStencilAttachment = &depth_stencil_attachment_reference;
+  }
 
   const VkRenderPassCreateInfo vk_render_pass_create_info{
     .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -93,17 +113,22 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
 
   // ------------------------------------------------------- //
 
-  atom::Vector_N<VkImageView, 16> attachment_vk_image_views{};
-  MGPUExtent3D extent{};
+  MGPUExtent3D render_target_extent;
 
-  for(size_t i = 0; i < create_info.attachment_count; i++) {
-    auto attachment = (TextureView*)create_info.attachments[i];
+  if(depth_stencil_attachment != nullptr) {
+    render_target_extent = depth_stencil_attachment->GetTexture()->Extent();
+  } else {
+    render_target_extent = color_attachments[0]->GetTexture()->Extent();
+  }
 
-    attachment_vk_image_views.PushBack(attachment->Handle());
+  atom::Vector_N<VkImageView, k_max_attachments> attachment_vk_image_views{};
 
-    if(i == 0) {
-      extent = attachment->GetTexture()->Extent();
-    }
+  for(size_t i = 0; i < color_attachment_count; i++) {
+    attachment_vk_image_views.PushBack(color_attachments[i]->Handle());
+  }
+
+  if(depth_stencil_attachment != nullptr) {
+    attachment_vk_image_views.PushBack(depth_stencil_attachment->Handle());
   }
 
   const VkFramebufferCreateInfo vk_framebuffer_create_info{
@@ -113,8 +138,8 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
     .renderPass = vk_compatible_render_pass,
     .attachmentCount = (u32)attachment_vk_image_views.Size(),
     .pAttachments = attachment_vk_image_views.Data(),
-    .width = extent.width,
-    .height = extent.height,
+    .width = render_target_extent.width,
+    .height = render_target_extent.height,
     .layers = 1,
   };
 

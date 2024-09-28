@@ -10,7 +10,7 @@
 
 namespace mgpu::vulkan {
 
-static inline VkBufferUsageFlags MGPUBufferUsageToVkBufferUsage(MGPUBufferUsage buffer_usage) {
+inline VkBufferUsageFlags MGPUBufferUsageToVkBufferUsage(MGPUBufferUsage buffer_usage) {
   VkBufferUsageFlags vk_buffer_usage{};
   if(buffer_usage & MGPU_BUFFER_USAGE_COPY_SRC)        vk_buffer_usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   if(buffer_usage & MGPU_BUFFER_USAGE_COPY_DST)        vk_buffer_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -22,7 +22,7 @@ static inline VkBufferUsageFlags MGPUBufferUsageToVkBufferUsage(MGPUBufferUsage 
   return vk_buffer_usage;
 }
 
-static inline VkImageType MGPUTextureTypeToVkImageType(MGPUTextureType texture_type) {
+inline VkImageType MGPUTextureTypeToVkImageType(MGPUTextureType texture_type) {
   switch(texture_type) {
     case MGPU_TEXTURE_TYPE_1D: return VK_IMAGE_TYPE_1D;
     case MGPU_TEXTURE_TYPE_2D: return VK_IMAGE_TYPE_2D;
@@ -31,14 +31,14 @@ static inline VkImageType MGPUTextureTypeToVkImageType(MGPUTextureType texture_t
   }
 }
 
-static inline VkFormat MGPUTextureFormatToVkFormat(MGPUTextureFormat texture_format) {
+inline VkFormat MGPUTextureFormatToVkFormat(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
-static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat texture_format, MGPUTextureUsage texture_usage) {
+inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat texture_format, MGPUTextureUsage texture_usage) {
   VkImageUsageFlags vk_image_usage{};
   if(texture_usage & MGPU_TEXTURE_USAGE_COPY_SRC) vk_image_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   if(texture_usage & MGPU_TEXTURE_USAGE_COPY_DST) vk_image_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -55,7 +55,7 @@ static inline VkImageUsageFlags MGPUTextureUsageToVkImageUsage(MGPUTextureFormat
   return vk_image_usage;
 }
 
-static inline VkImageUsageFlags VkImageUsageToMGPUTextureUsage(VkImageUsageFlags image_usage) {
+inline VkImageUsageFlags VkImageUsageToMGPUTextureUsage(VkImageUsageFlags image_usage) {
   MGPUTextureUsage mgpu_texture_usage{};
   if(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_SRC;
   if(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) mgpu_texture_usage |= MGPU_TEXTURE_USAGE_COPY_DST;
@@ -65,7 +65,7 @@ static inline VkImageUsageFlags VkImageUsageToMGPUTextureUsage(VkImageUsageFlags
   return mgpu_texture_usage;
 }
 
-static inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAspect texture_aspect) {
+inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAspect texture_aspect) {
   VkImageAspectFlags vk_image_aspect{};
   if(texture_aspect & MGPU_TEXTURE_ASPECT_COLOR)   vk_image_aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
   if(texture_aspect & MGPU_TEXTURE_ASPECT_DEPTH)   vk_image_aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -73,7 +73,7 @@ static inline VkImageAspectFlags MGPUTextureAspectToVkImageAspect(MGPUTextureAsp
   return vk_image_aspect;
 }
 
-static inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType texture_view_type) {
+inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType texture_view_type) {
   switch(texture_view_type) {
     case MGPU_TEXTURE_VIEW_TYPE_1D:         return VK_IMAGE_VIEW_TYPE_1D;
     case MGPU_TEXTURE_VIEW_TYPE_2D:         return VK_IMAGE_VIEW_TYPE_2D;
@@ -86,14 +86,14 @@ static inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureVi
   }
 }
 
-static inline VkColorSpaceKHR MGPUColorSpaceToVkColorSpace(MGPUColorSpace color_space) {
+inline VkColorSpaceKHR MGPUColorSpaceToVkColorSpace(MGPUColorSpace color_space) {
   switch(color_space) {
     case MGPU_COLOR_SPACE_SRGB_NONLINEAR: return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     default: ATOM_PANIC("unhandled color space: {}", (int)color_space);
   }
 }
 
-static inline VkPresentModeKHR MGPUPresentModeToVkPresentMode(MGPUPresentMode present_mode) {
+inline VkPresentModeKHR MGPUPresentModeToVkPresentMode(MGPUPresentMode present_mode) {
   switch(present_mode) {
     case MGPU_PRESENT_MODE_IMMEDIATE:    return VK_PRESENT_MODE_IMMEDIATE_KHR;
     case MGPU_PRESENT_MODE_MAILBOX:      return VK_PRESENT_MODE_MAILBOX_KHR;

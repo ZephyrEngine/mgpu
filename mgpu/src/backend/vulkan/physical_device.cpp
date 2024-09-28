@@ -1,9 +1,11 @@
 
 #include <atom/panic.hpp>
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "common/limits.hpp"
 #include "conversion.hpp"
 #include "device.hpp"
 #include "physical_device.hpp"
@@ -126,6 +128,7 @@ MGPUPhysicalDeviceLimits PhysicalDevice::GetLimits(const VkPhysicalDeviceLimits&
   mgpu_device_limits.max_texture_dimension_2d = std::min(vk_device_limits.maxImageDimension2D, vk_device_limits.maxImageDimensionCube);
   mgpu_device_limits.max_texture_dimension_3d = vk_device_limits.maxImageDimension3D;
   mgpu_device_limits.max_texture_array_layers = vk_device_limits.maxImageArrayLayers;
+  mgpu_device_limits.max_color_attachments = std::min<u32>(vk_device_limits.maxColorAttachments, k_max_color_attachments);
   return mgpu_device_limits;
 }
 

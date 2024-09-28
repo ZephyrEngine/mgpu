@@ -6,7 +6,7 @@
 
 namespace mgpu::vulkan {
 
-static inline MGPUResult VkResultToMGPUResult(VkResult vk_result) {
+inline MGPUResult VkResultToMGPUResult(VkResult vk_result) {
   // TODO(fleroviux): handle:
   //   - VK_ERROR_DEVICE_LOST
   //   - VK_ERROR_SURFACE_LOST_KHR

@@ -3,7 +3,7 @@
 
 #include "texture.hpp"
 
-static inline MGPUResult validate_texture_view_type(MGPUTextureViewType texture_view_type) {
+inline MGPUResult validate_texture_view_type(MGPUTextureViewType texture_view_type) {
   // TODO(fleroviux): MSVC generates suboptimal code for this (GCC and Clang emit a single comparison)
   switch(texture_view_type) {
     case MGPU_TEXTURE_VIEW_TYPE_1D:
@@ -18,7 +18,7 @@ static inline MGPUResult validate_texture_view_type(MGPUTextureViewType texture_
   return MGPU_BAD_ENUM;
 }
 
-static inline MGPUResult validate_texture_supports_view_type(MGPUTextureViewType texture_view_type, mgpu::TextureBase* texture) {
+inline MGPUResult validate_texture_supports_view_type(MGPUTextureViewType texture_view_type, mgpu::TextureBase* texture) {
   const MGPUTextureType texture_type = texture->Type();
 
   switch(texture_view_type) {
@@ -54,7 +54,7 @@ static inline MGPUResult validate_texture_supports_view_type(MGPUTextureViewType
   return MGPU_SUCCESS;
 }
 
-static inline MGPUResult validate_texture_view_mip_range(mgpu::TextureBase* texture, MGPUTextureViewType texture_view_type, u32 base_mip, u32 mip_count) {
+inline MGPUResult validate_texture_view_mip_range(mgpu::TextureBase* texture, MGPUTextureViewType texture_view_type, u32 base_mip, u32 mip_count) {
   MGPU_FORWARD_ERROR(validate_texture_contains_mip_range(texture, base_mip, mip_count));
 
   switch(texture_view_type) {
@@ -71,7 +71,7 @@ static inline MGPUResult validate_texture_view_mip_range(mgpu::TextureBase* text
   return MGPU_SUCCESS;
 }
 
-static inline MGPUResult validate_texture_view_array_layer_range(mgpu::TextureBase* texture, MGPUTextureViewType texture_view_type, u32 base_array_layer, u32 array_layer_count) {
+inline MGPUResult validate_texture_view_array_layer_range(mgpu::TextureBase* texture, MGPUTextureViewType texture_view_type, u32 base_array_layer, u32 array_layer_count) {
   MGPU_FORWARD_ERROR(validate_texture_contains_array_layer_range(texture, base_array_layer, array_layer_count));
 
   switch(texture_view_type) {
