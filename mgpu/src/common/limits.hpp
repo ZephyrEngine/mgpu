@@ -3,10 +3,10 @@
 
 #include <atom/integer.hpp>
 
-namespace mgpu {
+namespace mgpu::limits {
 
-// Implementation-defined hard limits go here:
-static constexpr size_t k_max_color_attachments = 16u;
-static constexpr size_t k_max_attachments = k_max_color_attachments + 1u;
+// Hard implementation-defined resource limits
+static constexpr size_t max_color_attachments = 8u;
+static constexpr size_t max_total_attachments = max_color_attachments + 1u;
 
-} // namespace mgpu
+} // namespace mgpu::limits

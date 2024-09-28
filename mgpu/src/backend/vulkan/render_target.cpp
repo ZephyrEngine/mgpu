@@ -31,8 +31,8 @@ RenderTarget::~RenderTarget() {
 }
 
 Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderTargetCreateInfo& create_info) {
-  atom::Vector_N<VkAttachmentDescription, k_max_attachments> attachment_descriptions{};
-  atom::Vector_N<VkAttachmentReference, k_max_color_attachments> color_attachment_references{};
+  atom::Vector_N<VkAttachmentDescription, limits::max_total_attachments> attachment_descriptions{};
+  atom::Vector_N<VkAttachmentReference, limits::max_color_attachments> color_attachment_references{};
   VkAttachmentReference depth_stencil_attachment_reference{};
 
   const auto color_attachment_count = create_info.color_attachment_count;
@@ -121,7 +121,7 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
     render_target_extent = color_attachments[0]->GetTexture()->Extent();
   }
 
-  atom::Vector_N<VkImageView, k_max_attachments> attachment_vk_image_views{};
+  atom::Vector_N<VkImageView, limits::max_total_attachments> attachment_vk_image_views{};
 
   for(size_t i = 0; i < color_attachment_count; i++) {
     attachment_vk_image_views.PushBack(color_attachments[i]->Handle());
