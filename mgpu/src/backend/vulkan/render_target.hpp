@@ -3,14 +3,15 @@
 
 #include <atom/result.hpp>
 #include <atom/vector_n.hpp>
-#include <vulkan/vulkan.h>
+#include <memory>
 #include <span>
+#include <vulkan/vulkan.h>
 
-#include "backend/render_target.hpp"
 #include "common/limits.hpp"
 #include "common/result.hpp"
-#include "mgpu/mgpu.h"
 #include "device.hpp"
+#include "render_pass_cache.hpp"
+#include "render_target.hpp"
 #include "texture_view.hpp"
 
 namespace mgpu::vulkan {
@@ -31,12 +32,14 @@ class RenderTarget : public RenderTargetBase {
   private:
     RenderTarget(
       Device* device,
+      std::unique_ptr<RenderPassCache> render_pass_cache,
       const atom::Vector_N<TextureView*, limits::max_total_attachments>& attachments,
       VkFramebuffer vk_framebuffer,
       VkRenderPass vk_compatible_render_pass
     );
 
     Device* m_device;
+    std::unique_ptr<RenderPassCache> m_render_pass_cache;
     atom::Vector_N<TextureView*, limits::max_total_attachments> m_attachments;
     MGPUExtent2D m_extent;
     VkFramebuffer m_vk_framebuffer;

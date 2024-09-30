@@ -194,7 +194,7 @@ typedef struct MGPUTextureViewCreateInfo {
 typedef struct MGPURenderTargetCreateInfo {
   uint32_t color_attachment_count;
   MGPUTextureView* color_attachments;
-  MGPUTextureView* depth_stencil_attachment;
+  MGPUTextureView depth_stencil_attachment;
 } MGPURenderTargetCreateInfo;
 
 typedef struct MGPUSurfaceCreateInfo {
