@@ -5,7 +5,7 @@
 
 namespace mgpu::vulkan {
 
-RenderPassCache::RenderPassCache(Device* device, std::span<TextureView*> color_attachments, TextureView* depth_stencil_attachment)
+RenderPassCache::RenderPassCache(Device* device, std::span<TextureView* const> color_attachments, TextureView* depth_stencil_attachment)
     : m_device{device} {
   for(size_t i = 0; i < color_attachments.size(); i++) {
     m_vk_attachment_descriptions.PushBack({

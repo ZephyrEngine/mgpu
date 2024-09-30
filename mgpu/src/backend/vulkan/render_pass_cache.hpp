@@ -16,7 +16,7 @@ namespace mgpu::vulkan {
 
 class RenderPassCache : atom::NonCopyable, atom::NonMoveable {
   public:
-    RenderPassCache(Device* device, std::span<TextureView*> color_attachments, TextureView* depth_stencil_attachment);
+    RenderPassCache(Device* device, std::span<TextureView* const> color_attachments, TextureView* depth_stencil_attachment);
    ~RenderPassCache();
 
     Result<VkRenderPass> GetRenderPassStub();

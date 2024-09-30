@@ -37,7 +37,7 @@ RenderTarget::~RenderTarget() {
 }
 
 Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderTargetCreateInfo& create_info) {
-  const auto color_attachments = std::span{(TextureView**)create_info.color_attachments, create_info.color_attachment_count};
+  const std::span color_attachments{(TextureView* const*)create_info.color_attachments, create_info.color_attachment_count};
   const auto depth_stencil_attachment = (TextureView*)create_info.depth_stencil_attachment;
 
   MGPUExtent3D render_target_extent;
