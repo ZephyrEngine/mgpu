@@ -10,10 +10,6 @@ MGPUResult mgpuCommandListClear(MGPUCommandList command_list) {
   return MGPU_SUCCESS;
 }
 
-void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture) {
-  ((mgpu::CommandList*)command_list)->CmdTest((mgpu::TextureBase*)texture);
-}
-
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target) {
   ((mgpu::CommandList*)command_list)->CmdBeginRenderPass((mgpu::RenderTargetBase*)render_target);
 }

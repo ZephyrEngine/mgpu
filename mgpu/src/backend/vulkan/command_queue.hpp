@@ -34,7 +34,6 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
       RenderTargetBase* current_render_target{};
     };
 
-    void HandleCmdTest(const TestCommand* command);
     void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand* command);
     void HandleCmdEndRenderPass(CommandListState& state);
 

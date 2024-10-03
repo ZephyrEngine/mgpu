@@ -15,8 +15,6 @@
 namespace mgpu {
 
 enum class CommandType {
-  NoOp,
-  Test,
   BeginRenderPass,
   EndRenderPass
 };
@@ -26,12 +24,6 @@ struct CommandBase {
 
   CommandType m_command_type;
   CommandBase* m_next{};
-};
-
-struct TestCommand : CommandBase {
-  explicit TestCommand(TextureBase* texture) : CommandBase{CommandType::Test}, m_texture{texture} {}
-
-  TextureBase* m_texture;
 };
 
 struct BeginRenderPassCommand : CommandBase {
@@ -62,10 +54,6 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       m_head = nullptr;
       m_tail = nullptr;
       m_state = {};
-    }
-
-    void CmdTest(TextureBase* texture) {
-      Push<TestCommand>(texture);
     }
 
     void CmdBeginRenderPass(RenderTargetBase* render_target) {

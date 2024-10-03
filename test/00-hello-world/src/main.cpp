@@ -249,10 +249,6 @@ int main() {
     MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
-
-    //mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_texture);
-    //mgpuCommandListCmdTest(mgpu_cmd_list, mgpu_swap_chain_textures[texture_index]);
-
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, mgpu_swap_chain_render_targets[texture_index]);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
