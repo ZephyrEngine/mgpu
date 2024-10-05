@@ -222,19 +222,19 @@ typedef struct MGPUSwapChainCreateInfo {
 //   Other structure definitions                           //
 // ======================================================= //
 
-struct MGPUPhysicalDeviceLimits {
+typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_dimension_1d;
   uint32_t max_texture_dimension_2d;
   uint32_t max_texture_dimension_3d;
   uint32_t max_texture_array_layers;
   uint32_t max_color_attachments;
-};
+} MGPUPhysicalDeviceLimits;
 
-struct MGPUPhysicalDeviceInfo {
+typedef struct MGPUPhysicalDeviceInfo {
   char device_name[MGPU_MAX_PHYSICAL_DEVICE_NAME_SIZE];
   MGPUPhysicalDeviceType device_type;
   MGPUPhysicalDeviceLimits limits;
-};
+} MGPUPhysicalDeviceInfo;
 
 #ifdef __cplusplus
 extern "C" {
