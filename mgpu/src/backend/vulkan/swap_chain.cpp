@@ -104,9 +104,13 @@ MGPUResult SwapChain::Present() {
     .pResults = nullptr
   };
 
-  // !!!! BAD !!!! FIX ME
+  // !!!! BAD !!!! FIX HARDCODED VALUES !!!
   VkQueue vk_queue{};
+#ifdef __APPLE__
+  vkGetDeviceQueue(m_device->Handle(), 3u, 0u, &vk_queue);
+#else
   vkGetDeviceQueue(m_device->Handle(), 0u, 0u, &vk_queue);
+#endif
 
   MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(vk_queue, &vk_present_info));
   return MGPU_SUCCESS;

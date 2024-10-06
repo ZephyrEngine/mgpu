@@ -40,6 +40,11 @@ Result<DeviceBase*> Device::Create(
   std::vector<const char*> vk_required_device_extensions{"VK_KHR_swapchain"};
   std::vector<const char*> vk_required_device_layers{};
 
+  // "VK_KHR_portability_subset" device extension must be enabled if it is available. This is required for MoltenVK for example.
+  if(vk_physical_device.QueryDeviceExtensionSupport("VK_KHR_portability_subset")) {
+    vk_required_device_extensions.push_back("VK_KHR_portability_subset");
+  }
+
   // Enable validation layers in debug builds
 #ifndef NDEBUG
   if(vk_physical_device.QueryDeviceLayerSupport("VK_LAYER_KHRONOS_validation")) {

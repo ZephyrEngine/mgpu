@@ -6,10 +6,16 @@
 #include <stdbool.h>
 
 #ifdef WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+#endif
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
+#ifdef __APPLE__
+  #ifdef __OBJC__
+    @class CAMetalLayer;
+  #else
+    typedef void CAMetalLayer;
+  #endif
 #endif
 
 #define MGPU_NULL_HANDLE ((void*)0u)
@@ -203,6 +209,11 @@ typedef struct MGPUSurfaceCreateInfo {
     HINSTANCE hinstance;
     HWND hwnd;
   } win32;
+#endif
+#ifdef __APPLE__
+  struct {
+    const CAMetalLayer* metal_layer;
+  } metal;
 #endif
 } MGPUSurfaceCreateInfo;
 

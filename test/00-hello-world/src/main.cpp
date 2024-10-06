@@ -3,8 +3,8 @@
 
 #include <atom/integer.hpp>
 #include <atom/panic.hpp>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
+#include <SDL.h>
+#include <SDL_syswm.h>
 #include <optional>
 #include <vector>
 
@@ -16,6 +16,10 @@
     if(result != MGPU_SUCCESS) \
       ATOM_PANIC("MGPU error: {} ({})", "" # result_expression, mgpuResultCodeToString(result)); \
   } while(0)
+
+#ifdef SDL_VIDEO_DRIVER_COCOA
+  extern "C" CAMetalLayer* TMP_Cocoa_CreateMetalLayer(NSWindow* ns_window);
+#endif
 
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -37,14 +41,21 @@ int main() {
     SDL_SysWMinfo wm_info{};
     SDL_GetWindowWMInfo(sdl_window, &wm_info);
 
-    const MGPUSurfaceCreateInfo surface_create_info{
-#ifdef WIN32
-      .win32 = {
-        .hinstance = wm_info.info.win.hinstance,
-        .hwnd = wm_info.info.win.window
-      }
-#endif
+    MGPUSurfaceCreateInfo surface_create_info{};
+
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
+    surface_create_info.win32 = {
+      .hinstance = wm_info.info.win.hinstance,
+      .hwnd = wm_info.info.win.window
+    }
+#elif defined(SDL_VIDEO_DRIVER_COCOA)
+    surface_create_info.metal = {
+      .metal_layer = TMP_Cocoa_CreateMetalLayer(wm_info.info.cocoa.window)
     };
+#else
+  #error "Unsupported SDL video driver"
+#endif
+
     MGPU_CHECK(mgpuInstanceCreateSurface(mgpu_instance, &surface_create_info, &mgpu_surface));
   }
 

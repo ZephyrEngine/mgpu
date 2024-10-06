@@ -69,13 +69,18 @@ set(HEADERS
 
 set(HEADERS_PUBLIC
   include/mgpu/mgpu.h
-        src/frontend/render_target.cpp
 )
 
 if(WIN32)
   list(APPEND SOURCES
     src/backend/vulkan/platform/win32/physical_device.cpp
     src/backend/vulkan/platform/win32/surface.cpp
+  )
+elseif(APPLE)
+  enable_language(OBJCXX)
+  list(APPEND SOURCES
+    src/backend/vulkan/platform/metal/physical_device.cpp
+    src/backend/vulkan/platform/metal/surface.mm
   )
 else()
   message(FATAL_ERROR "Unsupported platform")
