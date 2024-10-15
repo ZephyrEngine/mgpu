@@ -164,6 +164,13 @@ typedef struct MGPUExtent3D {
   uint32_t depth;
 } MGPUExtent3D;
 
+typedef struct MGPUColor {
+  double r;
+  double g;
+  double b;
+  double a;
+} MGPUColor;
+
 typedef struct MGPUSurfaceCapabilities {
   // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
   uint32_t min_texture_count;
