@@ -23,26 +23,11 @@ class RenderPassQuery {
 
     [[nodiscard]] Key GetKey() const { return m_query_key; }
 
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetColorAttachmentConfig(size_t attachment) const {
-      return GetAttachmentConfig(attachment);
-    }
-
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetDepthAttachmentConfig() const {
-      return GetAttachmentConfig(depth_attachment);
-    }
-
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetStencilAttachmentConfig() const {
-      return GetAttachmentConfig(stencil_attachment);
-    }
-
-    void SetColorAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op) {
-      SetAttachmentConfig(attachment, load_op, store_op);
-    }
-
-    void SetDepthStencilAttachmentConfig(MGPULoadOp depth_load_op, MGPUStoreOp depth_store_op, MGPULoadOp stencil_load_op, MGPUStoreOp stencil_store_op) {
-      SetAttachmentConfig(depth_attachment, depth_load_op, depth_store_op);
-      SetAttachmentConfig(stencil_attachment, stencil_load_op, stencil_store_op);
-    }
+    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetColorAttachmentConfig(size_t attachment) const;
+    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetDepthAttachmentConfig() const;
+    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetStencilAttachmentConfig() const;
+    void SetColorAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op);
+    void SetDepthStencilAttachmentConfig(MGPULoadOp depth_load_op, MGPUStoreOp depth_store_op, MGPULoadOp stencil_load_op, MGPUStoreOp stencil_store_op);
 
   private:
     static_assert(limits::max_color_attachments <= 8u);
@@ -50,18 +35,8 @@ class RenderPassQuery {
     static constexpr int depth_attachment = 8;
     static constexpr int stencil_attachment = 9;
 
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetAttachmentConfig(size_t attachment) const {
-      const size_t bit = attachment * 2;
-      const auto load_op   = (MGPULoadOp)((m_query_key >> (bit + 1)) & 1u);
-      const auto store_op = (MGPUStoreOp)((m_query_key >>  bit     ) & 1u);
-      return std::make_pair(load_op, store_op);
-    }
-
-    void SetAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op) {
-      const size_t bit = attachment * 2;
-      m_query_key &= ~3u << bit;
-      m_query_key |= (load_op << 1 | store_op) << bit;
-    }
+    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetAttachmentConfig(size_t attachment) const;
+    void SetAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op);
 
     Key m_query_key{};
 };
