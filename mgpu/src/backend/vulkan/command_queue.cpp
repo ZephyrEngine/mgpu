@@ -164,10 +164,16 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
     .color = {.float32 = {0.0f, 1.0f, 0.0f, 1.0f}}
   };
 
+  RenderPassQuery render_pass_query{};
+  render_pass_query.SetColorAttachmentConfig(0, MGPU_LOAD_OP_CLEAR, MGPU_STORE_OP_STORE);
+
+  // TODO(fleroviux): handle failure to resolve the query to a render pass.
+  Result<VkRenderPass> vk_render_pass_result = render_target->GetRenderPass(render_pass_query);
+
   const VkRenderPassBeginInfo vk_render_pass_begin_info{
     .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
     .pNext = nullptr,
-    .renderPass = render_target->GetRenderPassStub(),
+    .renderPass = vk_render_pass_result.Unwrap(),
     .framebuffer = render_target->Handle(),
     .renderArea = {
       .offset = { .x = 0, .y = 0 },

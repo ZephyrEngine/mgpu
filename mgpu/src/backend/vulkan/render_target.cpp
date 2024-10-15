@@ -13,13 +13,11 @@ RenderTarget::RenderTarget(
   Device* device,
   std::unique_ptr<RenderPassCache> render_pass_cache,
   const atom::Vector_N<TextureView*, limits::max_total_attachments>& attachments,
-  VkFramebuffer vk_framebuffer,
-  VkRenderPass vk_compatible_render_pass
+  VkFramebuffer vk_framebuffer
 )   : m_device{device}
     , m_render_pass_cache{std::move(render_pass_cache)}
     , m_attachments{attachments}
-    , m_vk_framebuffer{vk_framebuffer}
-    , m_vk_compatible_render_pass{vk_compatible_render_pass} {
+    , m_vk_framebuffer{vk_framebuffer} {
   const MGPUExtent3D extent = m_attachments[0]->GetTexture()->Extent();
   m_extent = {.width = extent.width, .height = extent.height};
 }
@@ -29,10 +27,8 @@ RenderTarget::~RenderTarget() {
   // TODO(fleroviux): make this a little bit less verbose.
   Device* device = m_device;
   VkFramebuffer vk_framebuffer = m_vk_framebuffer;
-  VkRenderPass vk_compatible_render_pass = m_vk_compatible_render_pass;
-  device->GetDeleterQueue().Schedule([device, vk_framebuffer, vk_compatible_render_pass]() {
+  device->GetDeleterQueue().Schedule([device, vk_framebuffer]() {
     vkDestroyFramebuffer(device->Handle(), vk_framebuffer, nullptr);
-    vkDestroyRenderPass(device->Handle(), vk_compatible_render_pass, nullptr);
   });
 }
 
@@ -63,7 +59,7 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
 
   std::unique_ptr<RenderPassCache> render_pass_cache = std::make_unique<RenderPassCache>(device, color_attachments, depth_stencil_attachment);
 
-  Result<VkRenderPass> vk_render_pass_result = render_pass_cache->GetRenderPassStub();
+  Result<VkRenderPass> vk_render_pass_result = render_pass_cache->GetRenderPass(RenderPassQuery{});
   MGPU_FORWARD_ERROR(vk_render_pass_result.Code());
 
   VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap();
@@ -82,7 +78,7 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
 
   VkFramebuffer vk_framebuffer{};
   MGPU_VK_FORWARD_ERROR(vkCreateFramebuffer(device->Handle(), &vk_framebuffer_create_info, nullptr, &vk_framebuffer));
-  return new RenderTarget{device, std::move(render_pass_cache), attachments, vk_framebuffer, vk_render_pass};
+  return new RenderTarget{device, std::move(render_pass_cache), attachments, vk_framebuffer};
 }
 
 } // namespace mgpu::vulkan

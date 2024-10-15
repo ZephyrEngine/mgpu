@@ -86,6 +86,22 @@ inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType 
   }
 }
 
+inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
+  switch(load_op) {
+    case MGPU_LOAD_OP_CLEAR: return VK_ATTACHMENT_LOAD_OP_CLEAR;
+    case MGPU_LOAD_OP_LOAD:  return VK_ATTACHMENT_LOAD_OP_LOAD;
+    default: ATOM_PANIC("unhandled load op: {}", (int)load_op);
+  }
+}
+
+inline VkAttachmentStoreOp MGPUStoreOpToVkAttachmentStoreOp(MGPUStoreOp store_op) {
+  switch(store_op) {
+    case MGPU_STORE_OP_STORE:     return VK_ATTACHMENT_STORE_OP_STORE;
+    case MGPU_STORE_OP_DONT_CARE: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    default: ATOM_PANIC("unhandled store op: {}", (int)store_op);
+  }
+}
+
 inline VkColorSpaceKHR MGPUColorSpaceToVkColorSpace(MGPUColorSpace color_space) {
   switch(color_space) {
     case MGPU_COLOR_SPACE_SRGB_NONLINEAR: return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;

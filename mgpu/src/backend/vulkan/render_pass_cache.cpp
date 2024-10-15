@@ -12,8 +12,8 @@ RenderPassCache::RenderPassCache(Device* device, std::span<TextureView* const> c
       .flags = 0,
       .format = MGPUTextureFormatToVkFormat(color_attachments[i]->Format()),
       .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
       .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -31,7 +31,7 @@ RenderPassCache::RenderPassCache(Device* device, std::span<TextureView* const> c
       .flags = 0,
       .format = MGPUTextureFormatToVkFormat(depth_stencil_attachment->Format()),
       .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
       .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
       .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -75,11 +75,42 @@ RenderPassCache::RenderPassCache(Device* device, std::span<TextureView* const> c
   };
 }
 
-RenderPassCache::~RenderPassCache() = default;
+RenderPassCache::~RenderPassCache() {
+  for(const auto& [query_key, vk_render_pass] : m_query_key_to_vk_render_pass) {
+    // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
+    Device* device = m_device;
+    device->GetDeleterQueue().Schedule([device, vk_render_pass]() {
+      vkDestroyRenderPass(device->Handle(), vk_render_pass, nullptr);
+    });
+  }
+}
 
-Result<VkRenderPass> RenderPassCache::GetRenderPassStub() {
+Result<VkRenderPass> RenderPassCache::GetRenderPass(RenderPassQuery query) {
+  const auto match = m_query_key_to_vk_render_pass.find(query.GetKey());
+  if(match != m_query_key_to_vk_render_pass.end()) {
+    return match->second;
+  }
+
+  for(size_t i = 0; i < m_vk_color_attachment_references.Size(); i++) {
+    const auto [load_op, store_op] = query.GetColorAttachmentConfig(i);
+    VkAttachmentDescription& vk_attachment_description = m_vk_attachment_descriptions[i];
+    vk_attachment_description.loadOp = MGPULoadOpToVkAttachmentLoadOp(load_op);
+    vk_attachment_description.storeOp = MGPUStoreOpToVkAttachmentStoreOp(store_op);
+  }
+
+  if(m_vk_subpass_description.pDepthStencilAttachment != nullptr) {
+    VkAttachmentDescription& vk_attachment_description = m_vk_attachment_descriptions.Back();
+    const auto [depth_load_op, depth_store_op] = query.GetDepthAttachmentConfig();
+    const auto [stencil_load_op, stencil_store_op] = query.GetStencilAttachmentConfig();
+    vk_attachment_description.loadOp = MGPULoadOpToVkAttachmentLoadOp(depth_load_op);
+    vk_attachment_description.storeOp = MGPUStoreOpToVkAttachmentStoreOp(depth_store_op);
+    vk_attachment_description.stencilLoadOp = MGPULoadOpToVkAttachmentLoadOp(stencil_load_op);
+    vk_attachment_description.stencilStoreOp = MGPUStoreOpToVkAttachmentStoreOp(stencil_store_op);
+  }
+
   VkRenderPass vk_render_pass{};
   MGPU_VK_FORWARD_ERROR(vkCreateRenderPass(m_device->Handle(), &m_vk_render_pass_create_info, nullptr, &vk_render_pass));
+  m_query_key_to_vk_render_pass[query.GetKey()] = vk_render_pass;
   return vk_render_pass;
 }
 

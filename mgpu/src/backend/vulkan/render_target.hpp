@@ -25,7 +25,7 @@ class RenderTarget : public RenderTargetBase {
     static Result<RenderTargetBase*> Create(Device* device, const MGPURenderTargetCreateInfo& create_info);
 
     [[nodiscard]] VkFramebuffer Handle() { return m_vk_framebuffer; }
-    [[nodiscard]] VkRenderPass GetRenderPassStub() { return m_vk_compatible_render_pass; }
+    [[nodiscard]] Result<VkRenderPass> GetRenderPass(RenderPassQuery query) { return m_render_pass_cache->GetRenderPass(query); }
     [[nodiscard]] std::span<TextureView*> GetAttachments() { return m_attachments; }
     [[nodiscard]] MGPUExtent2D Extent() { return m_extent; }
 
@@ -34,8 +34,7 @@ class RenderTarget : public RenderTargetBase {
       Device* device,
       std::unique_ptr<RenderPassCache> render_pass_cache,
       const atom::Vector_N<TextureView*, limits::max_total_attachments>& attachments,
-      VkFramebuffer vk_framebuffer,
-      VkRenderPass vk_compatible_render_pass
+      VkFramebuffer vk_framebuffer
     );
 
     Device* m_device;
@@ -43,7 +42,6 @@ class RenderTarget : public RenderTargetBase {
     atom::Vector_N<TextureView*, limits::max_total_attachments> m_attachments;
     MGPUExtent2D m_extent;
     VkFramebuffer m_vk_framebuffer;
-    VkRenderPass m_vk_compatible_render_pass;
 };
 
 } // namespace mgpu::vulkan
