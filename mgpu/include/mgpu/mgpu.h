@@ -265,6 +265,29 @@ typedef struct MGPUPhysicalDeviceInfo {
   MGPUPhysicalDeviceLimits limits;
 } MGPUPhysicalDeviceInfo;
 
+typedef struct MGPURenderPassColorAttachment {
+  MGPUTextureView texture_view;
+  MGPULoadOp load_op;
+  MGPUStoreOp store_op;
+  MGPUColor clear_color;
+} MGPURenderPassColorAttachment;
+
+typedef struct MGPURenderPassDepthStencilAttachment {
+  MGPUTextureView texture_view;
+  MGPULoadOp depth_load_op;
+  MGPUStoreOp depth_store_op;
+  MGPULoadOp stencil_load_op;
+  MGPUStoreOp stencil_store_op;
+  float clear_depth;
+  uint32_t clear_stencil;
+} MGPURenderPassDepthStencilAttachment;
+
+typedef struct MGPURenderPassBeginInfo {
+  uint32_t color_attachment_count;
+  const MGPURenderPassColorAttachment* color_attachments;
+  const MGPURenderPassDepthStencilAttachment* depth_stencil_attachment;
+} MGPURenderPassBeginInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -317,8 +340,7 @@ void mgpuRenderTargetDestroy(MGPURenderTarget render_target);
 
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
-void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture);
-void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target);
+void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

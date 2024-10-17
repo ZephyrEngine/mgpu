@@ -5,12 +5,14 @@
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
 #include <atom/panic.hpp>
+#include <atom/vector_n.hpp>
 #include <utility>
 #include <vector>
 
 #include "backend/render_target.hpp"
 #include "backend/texture.hpp"
 #include "common/bump_allocator.hpp"
+#include "common/limits.hpp"
 
 namespace mgpu {
 
@@ -27,9 +29,52 @@ struct CommandBase {
 };
 
 struct BeginRenderPassCommand : CommandBase {
-  explicit BeginRenderPassCommand(RenderTargetBase* render_target) : CommandBase{CommandType::BeginRenderPass}, m_render_target{render_target} {}
+  struct ColorAttachment {
+    TextureViewBase* texture_view;
+    MGPULoadOp load_op;
+    MGPUStoreOp store_op;
+    MGPUColor clear_color;
+  };
 
-  RenderTargetBase* m_render_target;
+  struct DepthStencilAttachment {
+    TextureViewBase* texture_view;
+    MGPULoadOp depth_load_op;
+    MGPUStoreOp depth_store_op;
+    MGPULoadOp stencil_load_op;
+    MGPUStoreOp stencil_store_op;
+    float clear_depth;
+    uint32_t clear_stencil;
+  };
+
+  explicit BeginRenderPassCommand(const MGPURenderPassBeginInfo& begin_info) : CommandBase{CommandType::BeginRenderPass} {
+    for(size_t i = 0; i < begin_info.color_attachment_count; i++) {
+      const MGPURenderPassColorAttachment& color_attachment = begin_info.color_attachments[i];
+      m_color_attachments.PushBack({
+        .texture_view = (TextureViewBase*)color_attachment.texture_view,
+        .load_op = color_attachment.load_op,
+        .store_op = color_attachment.store_op,
+        .clear_color = color_attachment.clear_color
+      });
+    }
+
+    if(begin_info.depth_stencil_attachment != nullptr) {
+      const MGPURenderPassDepthStencilAttachment& depth_stencil_attachment = *begin_info.depth_stencil_attachment;
+      m_depth_stencil_attachment = {
+        .texture_view = (TextureViewBase*)depth_stencil_attachment.texture_view,
+        .depth_load_op = depth_stencil_attachment.depth_load_op,
+        .depth_store_op = depth_stencil_attachment.depth_store_op,
+        .stencil_load_op = depth_stencil_attachment.stencil_load_op,
+        .stencil_store_op = depth_stencil_attachment.stencil_store_op,
+        .clear_depth = depth_stencil_attachment.clear_depth,
+        .clear_stencil = depth_stencil_attachment.clear_stencil
+      };
+      m_have_depth_stencil_attachment = true;
+    }
+  }
+
+  atom::Vector_N<ColorAttachment, limits::max_color_attachments> m_color_attachments{};
+  DepthStencilAttachment m_depth_stencil_attachment;
+  bool m_have_depth_stencil_attachment{};
 };
 
 struct EndRenderPassCommand : CommandBase {
@@ -56,13 +101,13 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       m_state = {};
     }
 
-    void CmdBeginRenderPass(RenderTargetBase* render_target) {
+    void CmdBeginRenderPass(const MGPURenderPassBeginInfo& begin_info) {
       if(m_state.inside_render_pass) {
         m_state.has_errors = true;
       }
       m_state.inside_render_pass = true;
 
-      Push<BeginRenderPassCommand>(render_target);
+      Push<BeginRenderPassCommand>(begin_info);
     }
 
     void CmdEndRenderPass() {

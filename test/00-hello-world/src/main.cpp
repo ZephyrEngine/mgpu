@@ -21,6 +21,26 @@
   extern "C" CAMetalLayer* TMP_Cocoa_CreateMetalLayer(NSWindow* ns_window);
 #endif
 
+MGPUColor hsv_to_rgb(float h, float s, float v) {
+  h *= 6.0f;
+
+  const int h_i = (int)h;
+  const float f = h - h_i;
+  const float p = v * (1.0f - s);
+  const float q = v * (1.0f - s * f);
+  const float t = v * (1.0f - s * (1.0f - f));
+
+  switch(h_i) {
+    case 1: return {.r = q, .g = v, .b = p, .a = 1.0f};
+    case 2: return {.r = p, .g = v, .b = t, .a = 1.0f};
+    case 3: return {.r = p, .g = q, .b = v, .a = 1.0f};
+    case 4: return {.r = t, .g = p, .b = v, .a = 1.0f};
+    case 5: return {.r = v, .g = p, .b = q, .a = 1.0f};
+  }
+
+  return {.r = v, .g = t, .b = p, .a = 1.0f};
+}
+
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
 
@@ -255,17 +275,33 @@ int main() {
 
   SDL_Event sdl_event{};
 
+  float hue = 0.0f;
+
   while(true) {
     u32 texture_index;
     MGPU_CHECK(mgpuSwapChainAcquireNextTexture(mgpu_swap_chain, &texture_index));
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
-    mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, mgpu_swap_chain_render_targets[texture_index]);
+
+    const MGPURenderPassColorAttachment render_pass_color_attachment{
+      .texture_view = mgpu_swap_chain_texture_views[texture_index],
+      .load_op = MGPU_LOAD_OP_CLEAR,
+      .store_op = MGPU_STORE_OP_STORE,
+      .clear_color = hsv_to_rgb(hue, 1.0f, 1.0f)
+    };
+    const MGPURenderPassBeginInfo render_pass_info{
+      .color_attachment_count = 1u,
+      .color_attachments = &render_pass_color_attachment,
+      .depth_stencil_attachment = nullptr
+    };
+    mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
     MGPU_CHECK(mgpuDeviceFlush(mgpu_device)); // TODO: automatically flush on present
     MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
+
+    hue = std::fmod(hue + 0.0025f, 1.0f);
 
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {

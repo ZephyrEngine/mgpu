@@ -10,8 +10,9 @@ MGPUResult mgpuCommandListClear(MGPUCommandList command_list) {
   return MGPU_SUCCESS;
 }
 
-void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target) {
-  ((mgpu::CommandList*)command_list)->CmdBeginRenderPass((mgpu::RenderTargetBase*)render_target);
+void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info) {
+  // TODO(fleroviux): validate input data (see current render target validation code)
+  ((mgpu::CommandList*)command_list)->CmdBeginRenderPass(*begin_info);
 }
 
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list) {

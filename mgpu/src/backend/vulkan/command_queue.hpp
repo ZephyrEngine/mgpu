@@ -3,14 +3,18 @@
 
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
+#include <atom/vector_n.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
 
 #include "backend/vulkan/physical_device.hpp"
 #include "backend/command_list.hpp"
 #include "common/result.hpp"
+#include "common/limits.hpp"
 
 namespace mgpu::vulkan {
+
+class TextureView;
 
 class CommandQueue : atom::NonCopyable, atom::NonMoveable {
   public:
@@ -31,7 +35,10 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
     );
 
     struct CommandListState {
-      RenderTargetBase* current_render_target{};
+      struct RenderPass {
+        atom::Vector_N<TextureView*, limits::max_color_attachments> color_attachments{};
+        TextureView* depth_stencil_attachment{};
+      } render_pass{};
     };
 
     void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand* command);
