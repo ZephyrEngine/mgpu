@@ -88,8 +88,9 @@ inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType 
 
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
-    case MGPU_LOAD_OP_CLEAR: return VK_ATTACHMENT_LOAD_OP_CLEAR;
-    case MGPU_LOAD_OP_LOAD:  return VK_ATTACHMENT_LOAD_OP_LOAD;
+    case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;
+    case MGPU_LOAD_OP_LOAD:      return VK_ATTACHMENT_LOAD_OP_LOAD;
+    case MGPU_LOAD_OP_DONT_CARE: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     default: ATOM_PANIC("unhandled load op: {}", (int)load_op);
   }
 }

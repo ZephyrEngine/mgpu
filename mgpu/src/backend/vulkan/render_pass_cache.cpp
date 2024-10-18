@@ -1,150 +1,208 @@
 
+#include <atom/vector_n.hpp>
+
 #include "backend/vulkan/lib/vulkan_result.hpp"
 #include "conversion.hpp"
+#include "device.hpp"
 #include "render_pass_cache.hpp"
 
 namespace mgpu::vulkan {
 
-std::pair<MGPULoadOp, MGPUStoreOp> RenderPassQuery::GetColorAttachmentConfig(size_t attachment) const {
-  return GetAttachmentConfig(attachment);
+void RenderPassQuery::SetColorAttachment(size_t i, MGPUTextureFormat format, MGPULoadOp load_op, MGPUStoreOp store_op) {
+  m_color_attachment_formats[i] = format;
+  m_color_attachment_load_ops[i] = load_op;
+  m_color_attachment_store_ops[i] = store_op;
+
+  m_color_attachment_set |= 1 << i;
 }
 
-std::pair<MGPULoadOp, MGPUStoreOp> RenderPassQuery::GetDepthAttachmentConfig() const {
-  return GetAttachmentConfig(depth_attachment);
+void RenderPassQuery::SetDepthStencilAttachment(MGPUTextureFormat format, MGPULoadOp depth_load_op, MGPUStoreOp depth_store_op, MGPULoadOp stencil_load_op, MGPUStoreOp stencil_store_op) {
+  m_depth_stencil_format = format;
+  m_depth_load_op = depth_load_op;
+  m_depth_store_op = depth_store_op;
+  m_stencil_load_op = stencil_load_op;
+  m_stencil_store_op = stencil_store_op;
+
+  m_have_depth_stencil_attachment = true;
 }
 
-std::pair<MGPULoadOp, MGPUStoreOp> RenderPassQuery::GetStencilAttachmentConfig() const {
-  return GetAttachmentConfig(stencil_attachment);
-}
-
-void RenderPassQuery::SetColorAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op) {
-  SetAttachmentConfig(attachment, load_op, store_op);
-}
-
-void RenderPassQuery::SetDepthStencilAttachmentConfig(MGPULoadOp depth_load_op, MGPUStoreOp depth_store_op, MGPULoadOp stencil_load_op, MGPUStoreOp stencil_store_op) {
-  SetAttachmentConfig(depth_attachment, depth_load_op, depth_store_op);
-  SetAttachmentConfig(stencil_attachment, stencil_load_op, stencil_store_op);
-}
-
-std::pair<MGPULoadOp, MGPUStoreOp> RenderPassQuery::GetAttachmentConfig(size_t attachment) const {
-  const size_t bit = attachment * 2;
-  const auto load_op   = (MGPULoadOp)((m_query_key >> (bit + 1)) & 1u);
-  const auto store_op = (MGPUStoreOp)((m_query_key >>  bit     ) & 1u);
-  return std::make_pair(load_op, store_op);
-}
-
-void RenderPassQuery::SetAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op) {
-  const size_t bit = attachment * 2;
-  m_query_key &= ~3u << bit;
-  m_query_key |= (load_op << 1 | store_op) << bit;
-}
-
-RenderPassCache::RenderPassCache(Device* device, std::span<TextureView* const> color_attachments, TextureView* depth_stencil_attachment)
-    : m_device{device} {
-  for(size_t i = 0; i < color_attachments.size(); i++) {
-    m_vk_attachment_descriptions.PushBack({
-      .flags = 0,
-      .format = MGPUTextureFormatToVkFormat(color_attachments[i]->Format()),
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    });
-
-    m_vk_color_attachment_references.PushBack({
-      .attachment = (u32)i,
-      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    });
+[[nodiscard]] bool RenderPassQuery::operator==(const RenderPassQuery& other_query) const {
+  if(m_color_attachment_set != other_query.m_color_attachment_set) {
+    return false;
   }
 
-  if(depth_stencil_attachment) {
-    m_vk_attachment_descriptions.PushBack({
+  if(m_have_depth_stencil_attachment != other_query.m_have_depth_stencil_attachment) {
+    return false;
+  }
+
+  u32 color_attachment_set = m_color_attachment_set;
+
+  while(color_attachment_set != 0u) {
+    const size_t i = __builtin_ctz(color_attachment_set);
+
+    if(
+      m_color_attachment_formats[i] != other_query.m_color_attachment_formats[i] ||
+      m_color_attachment_load_ops[i] != other_query.m_color_attachment_load_ops[i] ||
+      m_color_attachment_store_ops[i] != other_query.m_color_attachment_store_ops[i]
+    ) {
+      return false;
+    }
+
+    color_attachment_set ^= 1 << i;
+  }
+
+  if(m_have_depth_stencil_attachment) {
+    if(
+      m_depth_stencil_format != other_query.m_depth_stencil_format ||
+      m_depth_load_op != other_query.m_depth_load_op ||
+      m_depth_store_op != other_query.m_depth_store_op ||
+      m_stencil_load_op != other_query.m_stencil_load_op ||
+      m_stencil_store_op != other_query.m_stencil_store_op
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+size_t RenderPassQuery::Hasher::operator()(const mgpu::vulkan::RenderPassQuery& query) const {
+  size_t hash = 0u;
+
+  u32 color_attachment_set = query.m_color_attachment_set;
+
+  atom::hash_combine(hash, color_attachment_set);
+
+  while(color_attachment_set != 0u) {
+    const size_t i = __builtin_ctz(color_attachment_set);
+    atom::hash_combine(hash, query.m_color_attachment_formats[i]);
+    atom::hash_combine(hash, query.m_color_attachment_load_ops[i]);
+    atom::hash_combine(hash, query.m_color_attachment_store_ops[i]);
+    color_attachment_set ^= 1 << i;
+  }
+
+  const bool have_depth_stencil_attachment = query.m_have_depth_stencil_attachment;
+
+  atom::hash_combine(hash, have_depth_stencil_attachment);
+
+  if(have_depth_stencil_attachment) {
+    atom::hash_combine(hash, query.m_depth_stencil_format);
+    atom::hash_combine(hash, query.m_depth_load_op);
+    atom::hash_combine(hash, query.m_depth_store_op);
+    atom::hash_combine(hash, query.m_stencil_load_op);
+    atom::hash_combine(hash, query.m_stencil_store_op);
+  }
+
+  return hash;
+}
+
+RenderPassCache::RenderPassCache(VkDevice vk_device, std::shared_ptr<DeleterQueue> deleter_queue)
+    : m_vk_device{vk_device}
+    , m_deleter_queue{std::move(deleter_queue)} {
+}
+
+RenderPassCache::~RenderPassCache() {
+  for(const auto& [query_key, vk_render_pass] : m_query_to_vk_render_pass) {
+    // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
+    VkDevice vk_device = m_vk_device;
+    m_deleter_queue->Schedule([vk_device, vk_render_pass]() {
+      vkDestroyRenderPass(vk_device, vk_render_pass, nullptr);
+    });
+  }
+}
+
+Result<VkRenderPass> RenderPassCache::GetRenderPass(const RenderPassQuery& query) {
+  const auto match = m_query_to_vk_render_pass.find(query);
+  if(match != m_query_to_vk_render_pass.end()) {
+    return match->second;
+  }
+
+  atom::Vector_N<VkAttachmentDescription, limits::max_total_attachments> vk_attachment_descriptions{};
+  atom::Vector_N<VkAttachmentReference, limits::max_color_attachments> vk_color_attachment_references{};
+  VkAttachmentReference vk_depth_stencil_attachment_reference;
+
+  size_t i = 0;
+  u32 color_attachment_set = query.m_color_attachment_set;
+
+  while(color_attachment_set != 0u) {
+    if(color_attachment_set & (1 << i)) {
+      vk_attachment_descriptions.PushBack({
+        .flags = 0,
+        .format = MGPUTextureFormatToVkFormat(query.m_color_attachment_formats[i]),
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = MGPULoadOpToVkAttachmentLoadOp(query.m_color_attachment_load_ops[i]),
+        .storeOp = MGPUStoreOpToVkAttachmentStoreOp(query.m_color_attachment_store_ops[i]),
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+      });
+
+      vk_color_attachment_references.PushBack({
+        .attachment = (u32)vk_color_attachment_references.Size(),
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+      });
+
+      color_attachment_set ^= 1 << i;
+    } else {
+      vk_color_attachment_references.PushBack({
+        .attachment = VK_ATTACHMENT_UNUSED,
+        .layout = VK_IMAGE_LAYOUT_UNDEFINED
+      });
+    }
+
+    i++;
+  }
+
+  const bool have_depth_stencil_attachment = query.m_have_depth_stencil_attachment;
+
+  if(have_depth_stencil_attachment) {
+    vk_attachment_descriptions.PushBack({
       .flags = 0,
-      .format = MGPUTextureFormatToVkFormat(depth_stencil_attachment->Format()),
+      .format = MGPUTextureFormatToVkFormat(query.m_depth_stencil_format),
       .samples = VK_SAMPLE_COUNT_1_BIT,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+      .loadOp = MGPULoadOpToVkAttachmentLoadOp(query.m_depth_load_op),
+      .storeOp = MGPUStoreOpToVkAttachmentStoreOp(query.m_depth_store_op),
+      .stencilLoadOp = MGPULoadOpToVkAttachmentLoadOp(query.m_stencil_load_op),
+      .stencilStoreOp = MGPUStoreOpToVkAttachmentStoreOp(query.m_stencil_store_op),
+      .initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     });
 
-    m_vk_depth_stencil_attachment_reference = VkAttachmentReference{
-      .attachment = (u32)color_attachments.size(),
+    vk_depth_stencil_attachment_reference = {
+      .attachment = (u32)vk_color_attachment_references.Size(),
       .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     };
   }
 
-  m_vk_subpass_description = {
+  const VkSubpassDescription vk_subpass_description{
     .flags = 0,
     .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
     .inputAttachmentCount = 0,
     .pInputAttachments = nullptr,
-    .colorAttachmentCount = (u32)m_vk_color_attachment_references.Size(),
-    .pColorAttachments = m_vk_color_attachment_references.Data(),
+    .colorAttachmentCount = (u32)vk_color_attachment_references.Size(),
+    .pColorAttachments = vk_color_attachment_references.Data(),
     .pResolveAttachments = nullptr,
-    .pDepthStencilAttachment = nullptr,
-    .preserveAttachmentCount = 0,
+    .pDepthStencilAttachment = have_depth_stencil_attachment ? &vk_depth_stencil_attachment_reference : nullptr,
+    .preserveAttachmentCount = 0u,
     .pPreserveAttachments = nullptr
   };
 
-  if(depth_stencil_attachment != nullptr) {
-    m_vk_subpass_description.pDepthStencilAttachment = &m_vk_depth_stencil_attachment_reference;
-  }
-
-  m_vk_render_pass_create_info = {
+  const VkRenderPassCreateInfo vk_render_pass_create_info{
     .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0,
-    .attachmentCount = (u32)m_vk_attachment_descriptions.Size(),
-    .pAttachments = m_vk_attachment_descriptions.Data(),
-    .subpassCount = 1,
-    .pSubpasses = &m_vk_subpass_description,
-    .dependencyCount = 0,
-    .pDependencies = nullptr,
+    .attachmentCount = (u32)vk_attachment_descriptions.Size(),
+    .pAttachments = vk_attachment_descriptions.Data(),
+    .subpassCount = 1u,
+    .pSubpasses = &vk_subpass_description,
+    .dependencyCount = 0u,
+    .pDependencies = nullptr
   };
-}
-
-RenderPassCache::~RenderPassCache() {
-  for(const auto& [query_key, vk_render_pass] : m_query_key_to_vk_render_pass) {
-    // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
-    Device* device = m_device;
-    device->GetDeleterQueue().Schedule([device, vk_render_pass]() {
-      vkDestroyRenderPass(device->Handle(), vk_render_pass, nullptr);
-    });
-  }
-}
-
-Result<VkRenderPass> RenderPassCache::GetRenderPass(RenderPassQuery query) {
-  const auto match = m_query_key_to_vk_render_pass.find(query.GetKey());
-  if(match != m_query_key_to_vk_render_pass.end()) {
-    return match->second;
-  }
-
-  for(size_t i = 0; i < m_vk_color_attachment_references.Size(); i++) {
-    const auto [load_op, store_op] = query.GetColorAttachmentConfig(i);
-    VkAttachmentDescription& vk_attachment_description = m_vk_attachment_descriptions[i];
-    vk_attachment_description.loadOp = MGPULoadOpToVkAttachmentLoadOp(load_op);
-    vk_attachment_description.storeOp = MGPUStoreOpToVkAttachmentStoreOp(store_op);
-  }
-
-  if(m_vk_subpass_description.pDepthStencilAttachment != nullptr) {
-    VkAttachmentDescription& vk_attachment_description = m_vk_attachment_descriptions.Back();
-    const auto [depth_load_op, depth_store_op] = query.GetDepthAttachmentConfig();
-    const auto [stencil_load_op, stencil_store_op] = query.GetStencilAttachmentConfig();
-    vk_attachment_description.loadOp = MGPULoadOpToVkAttachmentLoadOp(depth_load_op);
-    vk_attachment_description.storeOp = MGPUStoreOpToVkAttachmentStoreOp(depth_store_op);
-    vk_attachment_description.stencilLoadOp = MGPULoadOpToVkAttachmentLoadOp(stencil_load_op);
-    vk_attachment_description.stencilStoreOp = MGPUStoreOpToVkAttachmentStoreOp(stencil_store_op);
-  }
 
   VkRenderPass vk_render_pass{};
-  MGPU_VK_FORWARD_ERROR(vkCreateRenderPass(m_device->Handle(), &m_vk_render_pass_create_info, nullptr, &vk_render_pass));
-  m_query_key_to_vk_render_pass[query.GetKey()] = vk_render_pass;
+  MGPU_VK_FORWARD_ERROR(vkCreateRenderPass(m_vk_device, &vk_render_pass_create_info, nullptr, &vk_render_pass));
+  m_query_to_vk_render_pass[query] = vk_render_pass;
   return vk_render_pass;
 }
 

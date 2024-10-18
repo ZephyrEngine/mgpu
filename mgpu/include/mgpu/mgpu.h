@@ -127,10 +127,10 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
 
-// TODO(fleroviux): consider exposing VK_ATTACHMENT_LOAD_OP_DONT_CARE via an MGPU_LOAD_OP_DONT_CARE option?
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
-  MGPU_LOAD_OP_CLEAR = 1
+  MGPU_LOAD_OP_CLEAR = 1,
+  MGPU_LOAD_OP_DONT_CARE = 2
 } MGPULoadOp;
 
 typedef enum MGPUStoreOp {

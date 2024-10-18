@@ -11,11 +11,9 @@ namespace mgpu::vulkan {
 
 RenderTarget::RenderTarget(
   Device* device,
-  std::unique_ptr<RenderPassCache> render_pass_cache,
   const atom::Vector_N<TextureView*, limits::max_total_attachments>& attachments,
   VkFramebuffer vk_framebuffer
 )   : m_device{device}
-    , m_render_pass_cache{std::move(render_pass_cache)}
     , m_attachments{attachments}
     , m_vk_framebuffer{vk_framebuffer} {
   const MGPUExtent3D extent = m_attachments[0]->GetTexture()->Extent();
@@ -44,22 +42,24 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
     render_target_extent = color_attachments[0]->GetTexture()->Extent();
   }
 
+  RenderPassQuery render_pass_query{};
   atom::Vector_N<TextureView*, limits::max_total_attachments> attachments{};
   atom::Vector_N<VkImageView, limits::max_total_attachments> attachment_vk_image_views{};
 
-  for(auto color_attachment : color_attachments) {
+  for(size_t i = 0; i < color_attachments.size(); i++) {
+    const auto color_attachment = color_attachments[i];
     attachments.PushBack(color_attachment);
     attachment_vk_image_views.PushBack(color_attachment->Handle());
+    render_pass_query.SetColorAttachment(i, color_attachment->Format(), MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE);
   }
 
   if(depth_stencil_attachment != nullptr) {
     attachments.PushBack(depth_stencil_attachment);
     attachment_vk_image_views.PushBack(depth_stencil_attachment->Handle());
+    render_pass_query.SetDepthStencilAttachment(depth_stencil_attachment->Format(), MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE, MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE);
   }
 
-  std::unique_ptr<RenderPassCache> render_pass_cache = std::make_unique<RenderPassCache>(device, color_attachments, depth_stencil_attachment);
-
-  Result<VkRenderPass> vk_render_pass_result = render_pass_cache->GetRenderPass(RenderPassQuery{});
+  Result<VkRenderPass> vk_render_pass_result = device->GetRenderPassCache().GetRenderPass(render_pass_query);
   MGPU_FORWARD_ERROR(vk_render_pass_result.Code());
 
   VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap();
@@ -78,7 +78,7 @@ Result<RenderTargetBase*> RenderTarget::Create(Device* device, const MGPURenderT
 
   VkFramebuffer vk_framebuffer{};
   MGPU_VK_FORWARD_ERROR(vkCreateFramebuffer(device->Handle(), &vk_framebuffer_create_info, nullptr, &vk_framebuffer));
-  return new RenderTarget{device, std::move(render_pass_cache), attachments, vk_framebuffer};
+  return new RenderTarget{device, attachments, vk_framebuffer};
 }
 
 } // namespace mgpu::vulkan
