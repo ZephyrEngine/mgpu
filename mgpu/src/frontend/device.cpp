@@ -4,7 +4,6 @@
 #include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "validation/buffer.hpp"
-#include "validation/render_target.hpp"
 #include "validation/texture.hpp"
 
 extern "C" {
@@ -32,15 +31,6 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   mgpu::Result<mgpu::TextureBase*> cxx_texture_result = cxx_device->CreateTexture(*create_info);
   MGPU_FORWARD_ERROR(cxx_texture_result.Code());
   *texture = (MGPUTexture)cxx_texture_result.Unwrap();
-  return MGPU_SUCCESS;
-}
-
-MGPUResult mgpuDeviceCreateRenderTarget(MGPUDevice device, const MGPURenderTargetCreateInfo* create_info, MGPURenderTarget* render_target) {
-  MGPU_FORWARD_ERROR(validate_render_target_attachments(((mgpu::DeviceBase*)device)->Limits(), *create_info));
-
-  mgpu::Result<mgpu::RenderTargetBase*> cxx_render_target_result = ((mgpu::DeviceBase*)device)->CreateRenderTarget(*create_info);
-  MGPU_FORWARD_ERROR(cxx_render_target_result.Code());
-  *render_target = (MGPURenderTarget)cxx_render_target_result.Unwrap();
   return MGPU_SUCCESS;
 }
 

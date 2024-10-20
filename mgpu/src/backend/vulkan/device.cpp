@@ -5,7 +5,6 @@
 
 #include "buffer.hpp"
 #include "device.hpp"
-#include "render_target.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 
@@ -129,10 +128,6 @@ Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info
 
 Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
   return Texture::Create(this, create_info);
-}
-
-Result<RenderTargetBase*> Device::CreateRenderTarget(const MGPURenderTargetCreateInfo& create_info) {
-  return RenderTarget::Create(this, create_info);
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

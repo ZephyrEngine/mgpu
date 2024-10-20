@@ -125,7 +125,6 @@ int main() {
   MGPUSwapChain mgpu_swap_chain{};
   std::vector<MGPUTexture> mgpu_swap_chain_textures{};
   std::vector<MGPUTextureView> mgpu_swap_chain_texture_views{};
-  std::vector<MGPURenderTarget> mgpu_swap_chain_render_targets{};
 
   // Swap Chain creation
   {
@@ -206,16 +205,6 @@ int main() {
       MGPUTextureView texture_view{};
       MGPU_CHECK(mgpuTextureCreateView(texture, &texture_view_create_info, &texture_view));
       mgpu_swap_chain_texture_views.push_back(texture_view);
-
-      const MGPURenderTargetCreateInfo render_target_create_info{
-        .color_attachment_count = 1u,
-        .color_attachments = &texture_view,
-        .depth_stencil_attachment = nullptr
-      };
-
-      MGPURenderTarget render_target{};
-      MGPU_CHECK(mgpuDeviceCreateRenderTarget(mgpu_device, &render_target_create_info, &render_target));
-      mgpu_swap_chain_render_targets.push_back(render_target);
     }
   }
 
@@ -318,7 +307,6 @@ done:
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));
   mgpuBufferDestroy(mgpu_buffer);
-  for(MGPURenderTarget render_target : mgpu_swap_chain_render_targets) mgpuRenderTargetDestroy(render_target);
   for(MGPUTextureView texture_view : mgpu_swap_chain_texture_views) mgpuTextureViewDestroy(texture_view);
   mgpuSwapChainDestroy(mgpu_swap_chain);
   mgpuDeviceDestroy(mgpu_device);

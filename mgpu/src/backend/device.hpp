@@ -7,7 +7,6 @@
 
 #include "backend/buffer.hpp"
 #include "backend/command_list.hpp"
-#include "backend/render_target.hpp"
 #include "backend/swap_chain.hpp"
 #include "backend/texture.hpp"
 
@@ -23,7 +22,6 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
 
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
-    virtual Result<RenderTargetBase*> CreateRenderTarget(const MGPURenderTargetCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
     virtual MGPUResult SubmitCommandList(const CommandList* command_list) = 0;
     virtual MGPUResult Flush() = 0;

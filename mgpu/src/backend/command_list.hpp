@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "backend/render_target.hpp"
 #include "backend/texture.hpp"
 #include "common/bump_allocator.hpp"
 #include "common/limits.hpp"
