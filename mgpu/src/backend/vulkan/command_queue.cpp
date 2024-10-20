@@ -162,8 +162,10 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
 
   for(const auto& color_attachment : command.m_color_attachments) {
     const auto texture_view = (TextureView*)color_attachment.texture_view;
-    vk_attachment_image_views.PushBack(texture_view->Handle());
-    state.render_pass.color_attachments.PushBack(texture_view);
+    if(texture_view != nullptr) {
+      vk_attachment_image_views.PushBack(texture_view->Handle());
+      state.render_pass.color_attachments.PushBack(texture_view);
+    }
   }
   if(have_depth_stencil_attachment) {
     const auto texture_view = (TextureView*)command.m_depth_stencil_attachment.texture_view;
@@ -171,8 +173,18 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
     state.render_pass.depth_stencil_attachment = texture_view;
   }
 
-  const TextureViewBase* canonical_texture_view = have_depth_stencil_attachment ? command.m_depth_stencil_attachment.texture_view : command.m_color_attachments.Front().texture_view;
-  const MGPUExtent3D canonical_texture_extent = ((TextureView*)canonical_texture_view)->GetTexture()->Extent();
+  MGPUExtent3D texture_dimensions;
+
+  if(have_depth_stencil_attachment) {
+    texture_dimensions = command.m_depth_stencil_attachment.texture_view->GetTexture()->Extent();
+  } else {
+    for(const auto& color_attachment : command.m_color_attachments) {
+      if(color_attachment.texture_view != nullptr) {
+        texture_dimensions = color_attachment.texture_view->GetTexture()->Extent();
+        break;
+      }
+    }
+  }
 
   const VkFramebufferCreateInfo vk_framebuffer_create_info{
     .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -181,8 +193,8 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
     .renderPass = vk_render_pass,
     .attachmentCount = (u32)vk_attachment_image_views.Size(),
     .pAttachments = vk_attachment_image_views.Data(),
-    .width = canonical_texture_extent.width,
-    .height = canonical_texture_extent.height,
+    .width = texture_dimensions.width,
+    .height = texture_dimensions.height,
     .layers = 1u
   };
 
@@ -195,17 +207,19 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
   // Begin the render pass
   atom::Vector_N<VkClearValue, limits::max_total_attachments> vk_clear_values{};
   for(const auto& color_attachment : command.m_color_attachments) {
-    // TODO(fleroviux): implement code paths for unsigned and signed integer texture formats
-    vk_clear_values.PushBack({
-      .color = {
-        .float32 = {
-          (float)color_attachment.clear_color.r,
-          (float)color_attachment.clear_color.g,
-          (float)color_attachment.clear_color.b,
-          (float)color_attachment.clear_color.a
+    if(color_attachment.texture_view != nullptr) {
+      // TODO(fleroviux): implement code paths for unsigned and signed integer texture formats
+      vk_clear_values.PushBack({
+        .color = {
+          .float32 = {
+            (float)color_attachment.clear_color.r,
+            (float)color_attachment.clear_color.g,
+            (float)color_attachment.clear_color.b,
+            (float)color_attachment.clear_color.a
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   if(have_depth_stencil_attachment) {
@@ -224,7 +238,7 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
     .framebuffer = vk_framebuffer,
     .renderArea = {
       .offset = { .x = 0, .y = 0 },
-      .extent = { .width = canonical_texture_extent.width, .height = canonical_texture_extent.height }
+      .extent = { .width = texture_dimensions.width, .height = texture_dimensions.height }
     },
     .clearValueCount = (u32)vk_clear_values.Size(),
     .pClearValues = vk_clear_values.Data()

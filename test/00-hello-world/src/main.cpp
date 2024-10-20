@@ -283,15 +283,17 @@ int main() {
 
     MGPU_CHECK(mgpuCommandListClear(mgpu_cmd_list));
 
-    const MGPURenderPassColorAttachment render_pass_color_attachment{
-      .texture_view = mgpu_swap_chain_texture_views[texture_index],
-      .load_op = MGPU_LOAD_OP_CLEAR,
-      .store_op = MGPU_STORE_OP_STORE,
-      .clear_color = hsv_to_rgb(hue, 1.0f, 1.0f)
+    const MGPURenderPassColorAttachment render_pass_color_attachments[1] {
+      {
+        .texture_view = mgpu_swap_chain_texture_views[texture_index],
+        .load_op = MGPU_LOAD_OP_CLEAR,
+        .store_op = MGPU_STORE_OP_STORE,
+        .clear_color = hsv_to_rgb(hue, 1.0f, 1.0f)
+      }
     };
     const MGPURenderPassBeginInfo render_pass_info{
       .color_attachment_count = 1u,
-      .color_attachments = &render_pass_color_attachment,
+      .color_attachments = render_pass_color_attachments,
       .depth_stencil_attachment = nullptr
     };
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);

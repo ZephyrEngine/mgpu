@@ -126,6 +126,11 @@ Result<VkRenderPass> RenderPassCache::GetRenderPass(const RenderPassQuery& query
 
   while(color_attachment_set != 0u) {
     if(color_attachment_set & (1 << i)) {
+      vk_color_attachment_references.PushBack({
+        .attachment = (u32)vk_attachment_descriptions.Size(),
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+      });
+
       vk_attachment_descriptions.PushBack({
         .flags = 0,
         .format = MGPUTextureFormatToVkFormat(query.m_color_attachment_formats[i]),
@@ -136,11 +141,6 @@ Result<VkRenderPass> RenderPassCache::GetRenderPass(const RenderPassQuery& query
         .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-      });
-
-      vk_color_attachment_references.PushBack({
-        .attachment = (u32)vk_color_attachment_references.Size(),
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
       });
 
       color_attachment_set ^= 1 << i;
