@@ -257,6 +257,7 @@ typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_dimension_3d;
   uint32_t max_texture_array_layers;
   uint32_t max_color_attachments;
+  uint32_t max_attachment_dimension;
 } MGPUPhysicalDeviceLimits;
 
 typedef struct MGPUPhysicalDeviceInfo {

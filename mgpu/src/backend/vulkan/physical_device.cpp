@@ -129,6 +129,7 @@ MGPUPhysicalDeviceLimits PhysicalDevice::GetLimits(const VkPhysicalDeviceLimits&
   mgpu_device_limits.max_texture_dimension_3d = vk_device_limits.maxImageDimension3D;
   mgpu_device_limits.max_texture_array_layers = vk_device_limits.maxImageArrayLayers;
   mgpu_device_limits.max_color_attachments = std::min<u32>(vk_device_limits.maxColorAttachments, limits::max_color_attachments);
+  mgpu_device_limits.max_attachment_dimension = std::min(vk_device_limits.maxFramebufferWidth, vk_device_limits.maxFramebufferHeight);
   return mgpu_device_limits;
 }
 
