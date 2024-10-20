@@ -27,7 +27,8 @@ Device::Device(
 }
 
 Device::~Device() {
-  m_command_queue.reset(); // Ensure that command queue is destroyed before the device
+  m_command_queue.reset();     // HACK: ensure that command queue is destroyed before the device
+  m_render_pass_cache.reset(); // HACK: ensure that render pass cache is destroyed before the device
   m_deleter_queue->Drain();
 
   vkDeviceWaitIdle(m_vk_device);
