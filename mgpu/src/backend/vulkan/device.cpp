@@ -94,7 +94,7 @@ Result<DeviceBase*> Device::Create(
   Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
   MGPU_FORWARD_ERROR(vma_allocator_result.Code()); // TODO(fleroviux): this leaks memory
 
-  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices, render_pass_cache);
+  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices, deleter_queue, render_pass_cache);
   MGPU_FORWARD_ERROR(command_queue_result.Code()); // TODO(fleroviux): this leaks memory
 
   return new Device{vk_device, vma_allocator_result.Unwrap(), deleter_queue, command_queue_result.Unwrap(), render_pass_cache, limits};

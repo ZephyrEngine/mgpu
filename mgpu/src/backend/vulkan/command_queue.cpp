@@ -4,7 +4,6 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
 #include "command_queue.hpp"
-#include "conversion.hpp"
 #include "texture_view.hpp"
 
 namespace mgpu::vulkan {
@@ -17,12 +16,14 @@ CommandQueue::CommandQueue(
   VkCommandPool vk_cmd_pool,
   VkCommandBuffer vk_cmd_buffer,
   VkFence vk_cmd_buffer_fence,
+  std::shared_ptr<DeleterQueue> deleter_queue,
   std::shared_ptr<RenderPassCache> render_pass_cache
 )   : m_vk_device{vk_device}
     , m_vk_queue{vk_queue}
     , m_vk_cmd_pool{vk_cmd_pool}
     , m_vk_cmd_buffer{vk_cmd_buffer}
     , m_vk_cmd_buffer_fence{vk_cmd_buffer_fence}
+    , m_deleter_queue{std::move(deleter_queue)}
     , m_render_pass_cache{std::move(render_pass_cache)} {
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -44,6 +45,7 @@ CommandQueue::~CommandQueue() {
 Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
   VkDevice vk_device,
   const PhysicalDevice::QueueFamilyIndices& queue_family_indices,
+  std::shared_ptr<DeleterQueue> deleter_queue,
   std::shared_ptr<RenderPassCache> render_pass_cache
 ) {
   const u32 queue_family_index = queue_family_indices.graphics_and_compute.value();
@@ -79,7 +81,7 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
   };
   MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
 
-  return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence, std::move(render_pass_cache)}};
+  return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence, std::move(deleter_queue), std::move(render_pass_cache)}};
 }
 
 MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
@@ -245,8 +247,11 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
   };
   vkCmdBeginRenderPass(m_vk_cmd_buffer, &vk_render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-  // Destroy temporary render pass and framebuffer at the end of the frame.
-  // TODO
+  // Destroy temporary framebuffer at the end of the frame.
+  VkDevice vk_device = m_vk_device;
+  m_deleter_queue->Schedule([vk_device, vk_framebuffer]() {
+    vkDestroyFramebuffer(vk_device, vk_framebuffer, nullptr);
+  });
 }
 
 void CommandQueue::HandleCmdEndRenderPass(CommandListState& state) {

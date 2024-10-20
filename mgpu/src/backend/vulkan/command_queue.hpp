@@ -11,6 +11,7 @@
 #include "backend/command_list.hpp"
 #include "common/result.hpp"
 #include "common/limits.hpp"
+#include "deleter_queue.hpp"
 #include "render_pass_cache.hpp"
 
 namespace mgpu::vulkan {
@@ -24,6 +25,7 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
     static Result<std::unique_ptr<CommandQueue>> Create(
       VkDevice vk_device,
       const PhysicalDevice::QueueFamilyIndices& queue_family_indices,
+      std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
 
@@ -37,6 +39,7 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
       VkCommandPool vk_cmd_pool,
       VkCommandBuffer vk_cmd_buffer,
       VkFence vk_cmd_buffer_fence,
+      std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
 
@@ -55,6 +58,7 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
     VkCommandPool m_vk_cmd_pool;
     VkCommandBuffer m_vk_cmd_buffer;
     VkFence m_vk_cmd_buffer_fence;
+    std::shared_ptr<DeleterQueue> m_deleter_queue;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
 };
 
