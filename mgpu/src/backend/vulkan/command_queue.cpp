@@ -138,6 +138,7 @@ MGPUResult CommandQueue::Flush() {
 
 void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
   const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
+  const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
 
   RenderPassQuery render_pass_query{};
 
@@ -149,8 +150,6 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
   }
 
   if(have_depth_stencil_attachment) {
-    const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
-
     render_pass_query.SetDepthStencilAttachment(
       depth_stencil_attachment.texture_view->Format(),
       depth_stencil_attachment.depth_load_op, depth_stencil_attachment.depth_store_op,
@@ -170,7 +169,7 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
     }
   }
   if(have_depth_stencil_attachment) {
-    const auto texture_view = (TextureView*)command.m_depth_stencil_attachment.texture_view;
+    const auto texture_view = (TextureView*)depth_stencil_attachment.texture_view;
     vk_attachment_image_views.PushBack(texture_view->Handle());
     state.render_pass.depth_stencil_attachment = texture_view;
   }
@@ -178,7 +177,7 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
   MGPUExtent3D texture_dimensions;
 
   if(have_depth_stencil_attachment) {
-    texture_dimensions = command.m_depth_stencil_attachment.texture_view->GetTexture()->Extent();
+    texture_dimensions = depth_stencil_attachment.texture_view->GetTexture()->Extent();
   } else {
     for(const auto& color_attachment : command.m_color_attachments) {
       if(color_attachment.texture_view != nullptr) {
@@ -221,16 +220,28 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
           }
         }
       });
+
+      ((Texture*)color_attachment.texture_view->GetTexture())->TransitionState({
+        .m_image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .m_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .m_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+      }, m_vk_cmd_buffer);
     }
   }
 
   if(have_depth_stencil_attachment) {
     vk_clear_values.PushBack({
       .depthStencil = {
-        .depth = command.m_depth_stencil_attachment.clear_depth,
-        .stencil = command.m_depth_stencil_attachment.clear_stencil
+        .depth = depth_stencil_attachment.clear_depth,
+        .stencil = depth_stencil_attachment.clear_stencil
       }
     });
+
+    ((Texture*)depth_stencil_attachment.texture_view->GetTexture())->TransitionState({
+      .m_image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      .m_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+      .m_pipeline_stages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+    }, m_vk_cmd_buffer);
   }
 
   const VkRenderPassBeginInfo vk_render_pass_begin_info{

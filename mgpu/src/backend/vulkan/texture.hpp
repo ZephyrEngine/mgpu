@@ -12,6 +12,14 @@ namespace mgpu::vulkan {
 
 class Texture final : public TextureBase {
   public:
+    struct State {
+      VkImageLayout m_image_layout{VK_IMAGE_LAYOUT_UNDEFINED};
+      VkAccessFlags m_access{VK_ACCESS_NONE};
+      VkPipelineStageFlagBits m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+
+      bool operator==(const State& other_state) const;
+    };
+
    ~Texture() override;
 
     static Result<TextureBase*> Create(Device* device, const MGPUTextureCreateInfo& create_info);
@@ -21,12 +29,15 @@ class Texture final : public TextureBase {
 
     Result<TextureViewBase*> CreateView(const MGPUTextureViewCreateInfo& create_info) override;
 
+    void TransitionState(const State& new_state, VkCommandBuffer vk_command_buffer);
+
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);
 
     Device* m_device;
     VkImage m_vk_image;
     VmaAllocation m_vma_allocation;
+    State m_state{};
 };
 
 }  // namespace mgpu::vulkan

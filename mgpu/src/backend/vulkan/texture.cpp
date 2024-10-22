@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "common/texture.hpp"
 #include "conversion.hpp"
 #include "texture.hpp"
 #include "texture_view.hpp"
@@ -12,6 +13,12 @@ static const VmaAllocationCreateInfo vma_alloc_info = {
   .usage = VMA_MEMORY_USAGE_AUTO,
   .flags = 0
 };
+
+bool Texture::State::operator==(const State& other_state) const {
+  return m_image_layout == other_state.m_image_layout &&
+         m_access == other_state.m_access &&
+         m_pipeline_stages == other_state.m_pipeline_stages;
+}
 
 Texture::Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info)
     : TextureBase{create_info}
@@ -88,6 +95,35 @@ Texture* Texture::FromVkImage(Device* device, const MGPUTextureCreateInfo& creat
 
 Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& create_info) {
   return TextureView::Create(m_device, this, create_info);
+}
+
+void Texture::TransitionState(const State& new_state, VkCommandBuffer vk_command_buffer) {
+  if(new_state == m_state) {
+    return;
+  }
+
+  const VkImageMemoryBarrier vk_image_memory_barrier{
+    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+    .pNext = nullptr,
+    .srcAccessMask = m_state.m_access,
+    .dstAccessMask = new_state.m_access,
+    .oldLayout = m_state.m_image_layout,
+    .newLayout = new_state.m_image_layout,
+    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    .image = m_vk_image,
+    .subresourceRange = {
+      .aspectMask = MGPUTextureAspectToVkImageAspect(MGPUTextureFormatToMGPUTextureAspect(Format())),
+      .baseMipLevel = 0u,
+      .levelCount = MipCount(),
+      .baseArrayLayer = 0u,
+      .layerCount = ArrayLayerCount()
+    }
+  };
+
+  vkCmdPipelineBarrier(vk_command_buffer, m_state.m_pipeline_stages, new_state.m_pipeline_stages, 0, 0u, nullptr, 0u, nullptr, 1u, &vk_image_memory_barrier);
+
+  m_state = new_state;
 }
 
 }  // namespace mgpu::vulkan
