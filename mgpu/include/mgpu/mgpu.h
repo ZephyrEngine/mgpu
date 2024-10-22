@@ -32,7 +32,6 @@ typedef struct MGPUDeviceImpl* MGPUDevice;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
-typedef struct MGPURenderTargetImpl* MGPURenderTarget;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -127,10 +126,10 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
 
-// TODO(fleroviux): consider exposing VK_ATTACHMENT_LOAD_OP_DONT_CARE via an MGPU_LOAD_OP_DONT_CARE option?
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
-  MGPU_LOAD_OP_CLEAR = 1
+  MGPU_LOAD_OP_CLEAR = 1,
+  MGPU_LOAD_OP_DONT_CARE = 2
 } MGPULoadOp;
 
 typedef enum MGPUStoreOp {
@@ -215,12 +214,6 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
 
-typedef struct MGPURenderTargetCreateInfo {
-  uint32_t color_attachment_count;
-  const MGPUTextureView* color_attachments;
-  MGPUTextureView depth_stencil_attachment;
-} MGPURenderTargetCreateInfo;
-
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -257,6 +250,7 @@ typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_dimension_3d;
   uint32_t max_texture_array_layers;
   uint32_t max_color_attachments;
+  uint32_t max_attachment_dimension;
 } MGPUPhysicalDeviceLimits;
 
 typedef struct MGPUPhysicalDeviceInfo {
@@ -264,6 +258,29 @@ typedef struct MGPUPhysicalDeviceInfo {
   MGPUPhysicalDeviceType device_type;
   MGPUPhysicalDeviceLimits limits;
 } MGPUPhysicalDeviceInfo;
+
+typedef struct MGPURenderPassColorAttachment {
+  MGPUTextureView texture_view;
+  MGPULoadOp load_op;
+  MGPUStoreOp store_op;
+  MGPUColor clear_color;
+} MGPURenderPassColorAttachment;
+
+typedef struct MGPURenderPassDepthStencilAttachment {
+  MGPUTextureView texture_view;
+  MGPULoadOp depth_load_op;
+  MGPUStoreOp depth_store_op;
+  MGPULoadOp stencil_load_op;
+  MGPUStoreOp stencil_store_op;
+  float clear_depth;
+  uint32_t clear_stencil;
+} MGPURenderPassDepthStencilAttachment;
+
+typedef struct MGPURenderPassBeginInfo {
+  uint32_t color_attachment_count;
+  const MGPURenderPassColorAttachment* color_attachments;
+  const MGPURenderPassDepthStencilAttachment* depth_stencil_attachment;
+} MGPURenderPassBeginInfo;
 
 #ifdef __cplusplus
 extern "C" {
@@ -292,7 +309,6 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 // MGPUDevice methods
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
-MGPUResult mgpuDeviceCreateRenderTarget(MGPUDevice device, const MGPURenderTargetCreateInfo* create_info, MGPURenderTarget* render_target);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
@@ -312,13 +328,9 @@ void mgpuTextureDestroy(MGPUTexture texture);
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
 
-// MGPURenderTarget methods
-void mgpuRenderTargetDestroy(MGPURenderTarget render_target);
-
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
-void mgpuCommandListCmdTest(MGPUCommandList command_list, MGPUTexture texture);
-void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, MGPURenderTarget render_target);
+void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

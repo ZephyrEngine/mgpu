@@ -1,14 +1,9 @@
 
-#include <vector>
+#include <atom/panic.hpp>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
-#include "backend/vulkan/render_target.hpp"
-#include "backend/vulkan/texture.hpp"
-#include "common/result.hpp"
 
 #include "command_queue.hpp"
-#include "conversion.hpp"
-
 #include "texture_view.hpp"
 
 namespace mgpu::vulkan {
@@ -20,12 +15,16 @@ CommandQueue::CommandQueue(
   VkQueue vk_queue,
   VkCommandPool vk_cmd_pool,
   VkCommandBuffer vk_cmd_buffer,
-  VkFence vk_cmd_buffer_fence
+  VkFence vk_cmd_buffer_fence,
+  std::shared_ptr<DeleterQueue> deleter_queue,
+  std::shared_ptr<RenderPassCache> render_pass_cache
 )   : m_vk_device{vk_device}
     , m_vk_queue{vk_queue}
     , m_vk_cmd_pool{vk_cmd_pool}
     , m_vk_cmd_buffer{vk_cmd_buffer}
-    , m_vk_cmd_buffer_fence{vk_cmd_buffer_fence} {
+    , m_vk_cmd_buffer_fence{vk_cmd_buffer_fence}
+    , m_deleter_queue{std::move(deleter_queue)}
+    , m_render_pass_cache{std::move(render_pass_cache)} {
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
     .pNext = nullptr,
@@ -43,7 +42,12 @@ CommandQueue::~CommandQueue() {
   vkDestroyCommandPool(m_vk_device, m_vk_cmd_pool, nullptr);
 }
 
-Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(VkDevice vk_device, const PhysicalDevice::QueueFamilyIndices& queue_family_indices) {
+Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
+  VkDevice vk_device,
+  const PhysicalDevice::QueueFamilyIndices& queue_family_indices,
+  std::shared_ptr<DeleterQueue> deleter_queue,
+  std::shared_ptr<RenderPassCache> render_pass_cache
+) {
   const u32 queue_family_index = queue_family_indices.graphics_and_compute.value();
 
   VkQueue vk_queue{};
@@ -68,16 +72,16 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(VkDevice vk_device, c
     .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
     .commandBufferCount = 1u
   };
-  MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer));
+  MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer)); // TODO(fleroviux): this leaks memory
 
   const VkFenceCreateInfo vk_fence_create_info{
     .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0
   };
-  MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence));
+  MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
 
-  return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence}};
+  return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence, std::move(deleter_queue), std::move(render_pass_cache)}};
 }
 
 MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
@@ -89,7 +93,7 @@ MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
     const CommandType command_type = command->m_command_type;
 
     switch(command_type) {
-      case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, (BeginRenderPassCommand*)command); break;
+      case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, *(BeginRenderPassCommand*)command); break;
       case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -132,95 +136,128 @@ MGPUResult CommandQueue::Flush() {
   return MGPU_SUCCESS;
 }
 
-void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand* command) {
-  const auto render_target = (RenderTarget*)command->m_render_target;
-  const MGPUExtent2D render_area = render_target->Extent();
+void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
+  const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
 
-  // TODO: remove hacky hardcoded barriers
-  std::vector<VkImageMemoryBarrier> image_memory_barriers{};
-  for(auto attachment : render_target->GetAttachments()) {
-    image_memory_barriers.push_back({
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .pNext = nullptr,
-      .srcAccessMask = 0,
-      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .srcQueueFamilyIndex = 0,
-      .dstQueueFamilyIndex = 0,
-      .image = attachment->GetTexture()->Handle(),
-      .subresourceRange = {
-        .aspectMask = MGPUTextureAspectToVkImageAspect(attachment->Aspect()),
-        .baseMipLevel = 0u,
-        .levelCount = 1u,
-        .baseArrayLayer = 0u,
-        .layerCount = 1u
+  RenderPassQuery render_pass_query{};
+
+  for(size_t i = 0; i < command.m_color_attachments.Size(); i++) {
+    const auto& color_attachment = command.m_color_attachments[i];
+    if(color_attachment.texture_view != nullptr) {
+      render_pass_query.SetColorAttachment(i, color_attachment.texture_view->Format(), color_attachment.load_op, color_attachment.store_op);
+    }
+  }
+
+  if(have_depth_stencil_attachment) {
+    const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
+
+    render_pass_query.SetDepthStencilAttachment(
+      depth_stencil_attachment.texture_view->Format(),
+      depth_stencil_attachment.depth_load_op, depth_stencil_attachment.depth_store_op,
+      depth_stencil_attachment.stencil_load_op, depth_stencil_attachment.stencil_store_op);
+  }
+
+  VkRenderPass vk_render_pass = m_render_pass_cache->GetRenderPass(render_pass_query).Unwrap(); // TODO(fleroviux): handle failure
+
+  // Create a temporary framebuffer
+  atom::Vector_N<VkImageView, limits::max_total_attachments> vk_attachment_image_views{};
+
+  for(const auto& color_attachment : command.m_color_attachments) {
+    const auto texture_view = (TextureView*)color_attachment.texture_view;
+    if(texture_view != nullptr) {
+      vk_attachment_image_views.PushBack(texture_view->Handle());
+      state.render_pass.color_attachments.PushBack(texture_view);
+    }
+  }
+  if(have_depth_stencil_attachment) {
+    const auto texture_view = (TextureView*)command.m_depth_stencil_attachment.texture_view;
+    vk_attachment_image_views.PushBack(texture_view->Handle());
+    state.render_pass.depth_stencil_attachment = texture_view;
+  }
+
+  MGPUExtent3D texture_dimensions;
+
+  if(have_depth_stencil_attachment) {
+    texture_dimensions = command.m_depth_stencil_attachment.texture_view->GetTexture()->Extent();
+  } else {
+    for(const auto& color_attachment : command.m_color_attachments) {
+      if(color_attachment.texture_view != nullptr) {
+        texture_dimensions = color_attachment.texture_view->GetTexture()->Extent();
+        break;
+      }
+    }
+  }
+
+  const VkFramebufferCreateInfo vk_framebuffer_create_info{
+    .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .renderPass = vk_render_pass,
+    .attachmentCount = (u32)vk_attachment_image_views.Size(),
+    .pAttachments = vk_attachment_image_views.Data(),
+    .width = texture_dimensions.width,
+    .height = texture_dimensions.height,
+    .layers = 1u
+  };
+
+  VkFramebuffer vk_framebuffer{};
+  if(vkCreateFramebuffer(m_vk_device, &vk_framebuffer_create_info, nullptr, &vk_framebuffer) != VK_SUCCESS) {
+    // TODO(fleroviux): report error to user
+    ATOM_PANIC("failed to create VkFramebuffer");
+  }
+
+  // Begin the render pass
+  atom::Vector_N<VkClearValue, limits::max_total_attachments> vk_clear_values{};
+  for(const auto& color_attachment : command.m_color_attachments) {
+    if(color_attachment.texture_view != nullptr) {
+      // TODO(fleroviux): implement code paths for unsigned and signed integer texture formats
+      vk_clear_values.PushBack({
+        .color = {
+          .float32 = {
+            (float)color_attachment.clear_color.r,
+            (float)color_attachment.clear_color.g,
+            (float)color_attachment.clear_color.b,
+            (float)color_attachment.clear_color.a
+          }
+        }
+      });
+    }
+  }
+
+  if(have_depth_stencil_attachment) {
+    vk_clear_values.PushBack({
+      .depthStencil = {
+        .depth = command.m_depth_stencil_attachment.clear_depth,
+        .stencil = command.m_depth_stencil_attachment.clear_stencil
       }
     });
   }
-  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0u, nullptr, 0u, nullptr, image_memory_barriers.size(), image_memory_barriers.data());
-
-  const VkClearValue clear_value{
-    .color = {.float32 = {0.0f, 1.0f, 0.0f, 1.0f}}
-  };
-
-  RenderPassQuery render_pass_query{};
-  render_pass_query.SetColorAttachmentConfig(0, MGPU_LOAD_OP_CLEAR, MGPU_STORE_OP_STORE);
-
-  // TODO(fleroviux): handle failure to resolve the query to a render pass.
-  Result<VkRenderPass> vk_render_pass_result = render_target->GetRenderPass(render_pass_query);
 
   const VkRenderPassBeginInfo vk_render_pass_begin_info{
     .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
     .pNext = nullptr,
-    .renderPass = vk_render_pass_result.Unwrap(),
-    .framebuffer = render_target->Handle(),
+    .renderPass = vk_render_pass,
+    .framebuffer = vk_framebuffer,
     .renderArea = {
       .offset = { .x = 0, .y = 0 },
-      .extent = { .width = render_area.width, .height = render_area.height }
+      .extent = { .width = texture_dimensions.width, .height = texture_dimensions.height }
     },
-    .clearValueCount = 1u, // !!! TODO
-    .pClearValues = &clear_value, // !!! TODO
+    .clearValueCount = (u32)vk_clear_values.Size(),
+    .pClearValues = vk_clear_values.Data()
   };
-
   vkCmdBeginRenderPass(m_vk_cmd_buffer, &vk_render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-  state.current_render_target = render_target;
+  // Destroy temporary framebuffer at the end of the frame.
+  VkDevice vk_device = m_vk_device;
+  m_deleter_queue->Schedule([vk_device, vk_framebuffer]() {
+    vkDestroyFramebuffer(vk_device, vk_framebuffer, nullptr);
+  });
 }
 
 void CommandQueue::HandleCmdEndRenderPass(CommandListState& state) {
-  const auto render_target = (RenderTarget*)state.current_render_target;
-
   vkCmdEndRenderPass(m_vk_cmd_buffer);
 
-  // Transition the swap chain image to the PRESENT_SRC_KHR layout required by vkQueueSubmit().
-  // We set the dstAccessMask to 0 and dstStageMask to TOP_OF_PIPE_BIT because vkQueueSubmit()
-  // will make sure to make any writes to the underlying memory visible to the presentation engine.
-  // TODO: remove hacky hardcoded barriers
-  std::vector<VkImageMemoryBarrier> image_memory_barriers{};
-  for(auto attachment : render_target->GetAttachments()) {
-    image_memory_barriers.push_back({
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .pNext = nullptr,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = 0,
-      .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-      .srcQueueFamilyIndex = 0,
-      .dstQueueFamilyIndex = 0,
-      .image = attachment->GetTexture()->Handle(),
-      .subresourceRange = {
-        .aspectMask = MGPUTextureAspectToVkImageAspect(attachment->Aspect()),
-        .baseMipLevel = 0u,
-        .levelCount = 1u,
-        .baseArrayLayer = 0u,
-        .layerCount = 1u
-      }
-    });
-  }
-  vkCmdPipelineBarrier(m_vk_cmd_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0u, nullptr, 0u, nullptr, image_memory_barriers.size(), image_memory_barriers.data());
-
-  state.current_render_target = nullptr;
+  state.render_pass = {};
 }
 
 }  // namespace mgpu::vulkan

@@ -1,61 +1,63 @@
 
 #pragma once
 
+#include <mgpu/mgpu.h>
+#include <atom/bit.hpp>
+#include <atom/hash.hpp>
 #include <atom/integer.hpp>
-#include <atom/non_copyable.hpp>
-#include <atom/non_moveable.hpp>
-#include <atom/vector_n.hpp>
-#include <span>
+#include <memory>
 #include <unordered_map>
-#include <utility>
 #include <vulkan/vulkan.h>
 
 #include "common/limits.hpp"
 #include "common/result.hpp"
-#include "device.hpp"
-#include "texture_view.hpp"
+#include "deleter_queue.hpp"
 
 namespace mgpu::vulkan {
 
-class RenderPassQuery {
-  public:
-    using Key = u32;
+struct RenderPassQuery {
+  struct Hasher {
+    size_t operator()(const RenderPassQuery& query) const;
+  };
 
-    [[nodiscard]] Key GetKey() const { return m_query_key; }
+  void SetColorAttachment(size_t i, MGPUTextureFormat format, MGPULoadOp load_op, MGPUStoreOp store_op);
 
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetColorAttachmentConfig(size_t attachment) const;
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetDepthAttachmentConfig() const;
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetStencilAttachmentConfig() const;
-    void SetColorAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op);
-    void SetDepthStencilAttachmentConfig(MGPULoadOp depth_load_op, MGPUStoreOp depth_store_op, MGPULoadOp stencil_load_op, MGPUStoreOp stencil_store_op);
+  void SetDepthStencilAttachment(
+    MGPUTextureFormat format,
+    MGPULoadOp depth_load_op,
+    MGPUStoreOp depth_store_op,
+    MGPULoadOp stencil_load_op,
+    MGPUStoreOp stencil_store_op
+  );
 
-  private:
-    static_assert(limits::max_color_attachments <= 8u);
+  [[nodiscard]] bool operator==(const RenderPassQuery& other_query) const;
 
-    static constexpr int depth_attachment = 8;
-    static constexpr int stencil_attachment = 9;
+  u32 m_color_attachment_set{};
+  MGPUTextureFormat m_color_attachment_formats[limits::max_color_attachments];
+  MGPULoadOp m_color_attachment_load_ops[limits::max_color_attachments];
+  MGPUStoreOp m_color_attachment_store_ops[limits::max_color_attachments];
 
-    [[nodiscard]] std::pair<MGPULoadOp, MGPUStoreOp> GetAttachmentConfig(size_t attachment) const;
-    void SetAttachmentConfig(size_t attachment, MGPULoadOp load_op, MGPUStoreOp store_op);
+  bool m_have_depth_stencil_attachment{};
+  MGPUTextureFormat m_depth_stencil_format;
+  MGPULoadOp m_depth_load_op;
+  MGPUStoreOp m_depth_store_op;
+  MGPULoadOp m_stencil_load_op;
+  MGPUStoreOp m_stencil_store_op;
 
-    Key m_query_key{};
+  static_assert(limits::max_color_attachments <= atom::bit::number_of_bits<decltype(m_color_attachment_set)>());
 };
 
-class RenderPassCache : atom::NonCopyable, atom::NonMoveable {
+class RenderPassCache {
   public:
-    RenderPassCache(Device* device, std::span<TextureView* const> color_attachments, TextureView* depth_stencil_attachment);
+    RenderPassCache(VkDevice vk_device, std::shared_ptr<DeleterQueue> deleter_queue);
    ~RenderPassCache();
 
-    Result<VkRenderPass> GetRenderPass(RenderPassQuery query);
+    Result<VkRenderPass> GetRenderPass(const RenderPassQuery& query);
 
   private:
-    Device* m_device;
-    atom::Vector_N<VkAttachmentDescription, limits::max_total_attachments> m_vk_attachment_descriptions{};
-    atom::Vector_N<VkAttachmentReference, limits::max_color_attachments> m_vk_color_attachment_references{};
-    VkAttachmentReference m_vk_depth_stencil_attachment_reference{};
-    VkSubpassDescription m_vk_subpass_description{};
-    VkRenderPassCreateInfo m_vk_render_pass_create_info{};
-    std::unordered_map<RenderPassQuery::Key, VkRenderPass> m_query_key_to_vk_render_pass{};
+    VkDevice m_vk_device;
+    std::shared_ptr<DeleterQueue> m_deleter_queue;
+    std::unordered_map<RenderPassQuery, VkRenderPass, RenderPassQuery::Hasher> m_query_to_vk_render_pass{};
 };
 
 } // namespace mgpu::vulkan

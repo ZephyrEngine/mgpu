@@ -4,7 +4,6 @@
 #include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "validation/buffer.hpp"
-#include "validation/render_target.hpp"
 #include "validation/texture.hpp"
 
 extern "C" {
@@ -25,22 +24,13 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   MGPU_FORWARD_ERROR(validate_texture_format(create_info->format));
   MGPU_FORWARD_ERROR(validate_texture_type(create_info->type));
   MGPU_FORWARD_ERROR(validate_texture_usage(create_info->usage));
-  MGPU_FORWARD_ERROR(validate_texture_extent(cxx_device->Limits(), create_info->type, create_info->extent));
+  MGPU_FORWARD_ERROR(validate_texture_extent(cxx_device->Limits(), create_info->type, create_info->extent, create_info->usage));
   MGPU_FORWARD_ERROR(validate_texture_mip_count(create_info->extent, create_info->mip_count));
   MGPU_FORWARD_ERROR(validate_texture_array_layer_count(cxx_device->Limits(), create_info->array_layer_count));
 
   mgpu::Result<mgpu::TextureBase*> cxx_texture_result = cxx_device->CreateTexture(*create_info);
   MGPU_FORWARD_ERROR(cxx_texture_result.Code());
   *texture = (MGPUTexture)cxx_texture_result.Unwrap();
-  return MGPU_SUCCESS;
-}
-
-MGPUResult mgpuDeviceCreateRenderTarget(MGPUDevice device, const MGPURenderTargetCreateInfo* create_info, MGPURenderTarget* render_target) {
-  MGPU_FORWARD_ERROR(validate_render_target_attachments(((mgpu::DeviceBase*)device)->Limits(), *create_info));
-
-  mgpu::Result<mgpu::RenderTargetBase*> cxx_render_target_result = ((mgpu::DeviceBase*)device)->CreateRenderTarget(*create_info);
-  MGPU_FORWARD_ERROR(cxx_render_target_result.Code());
-  *render_target = (MGPURenderTarget)cxx_render_target_result.Unwrap();
   return MGPU_SUCCESS;
 }
 

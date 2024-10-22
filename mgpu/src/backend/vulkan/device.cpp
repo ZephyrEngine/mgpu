@@ -5,7 +5,6 @@
 
 #include "buffer.hpp"
 #include "device.hpp"
-#include "render_target.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 
@@ -14,17 +13,22 @@ namespace mgpu::vulkan {
 Device::Device(
   VkDevice vk_device,
   VmaAllocator vma_allocator,
+  std::shared_ptr<DeleterQueue> deleter_queue,
   std::unique_ptr<CommandQueue> command_queue,
+  std::shared_ptr<RenderPassCache> render_pass_cache,
   const MGPUPhysicalDeviceLimits& limits
 )   : DeviceBase{limits}
     , m_vk_device{vk_device}
     , m_vma_allocator{vma_allocator}
-    , m_command_queue{std::move(command_queue)} {
+    , m_deleter_queue{std::move(deleter_queue)}
+    , m_command_queue{std::move(command_queue)}
+    , m_render_pass_cache{std::move(render_pass_cache)} {
 }
 
 Device::~Device() {
-  m_command_queue.reset(); // Ensure that command queue is destroyed before the device
-  m_deleter_queue.Drain();
+  m_command_queue.reset();     // HACK: ensure that command queue is destroyed before the device
+  m_render_pass_cache.reset(); // HACK: ensure that render pass cache is destroyed before the device
+  m_deleter_queue->Drain();
 
   vkDeviceWaitIdle(m_vk_device);
   vmaDestroyAllocator(m_vma_allocator);
@@ -84,13 +88,16 @@ Result<DeviceBase*> Device::Create(
 
   VkDevice vk_device = vk_device_result.Unwrap();
 
+  std::shared_ptr<DeleterQueue> deleter_queue = std::make_shared<DeleterQueue>();
+  std::shared_ptr<RenderPassCache> render_pass_cache = std::make_shared<RenderPassCache>(vk_device, deleter_queue);
+
   Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
-  MGPU_FORWARD_ERROR(vma_allocator_result.Code());
+  MGPU_FORWARD_ERROR(vma_allocator_result.Code()); // TODO(fleroviux): this leaks memory
 
-  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices);
-  MGPU_FORWARD_ERROR(command_queue_result.Code());
+  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices, deleter_queue, render_pass_cache);
+  MGPU_FORWARD_ERROR(command_queue_result.Code()); // TODO(fleroviux): this leaks memory
 
-  return new Device{vk_device, vma_allocator_result.Unwrap(), command_queue_result.Unwrap(), limits};
+  return new Device{vk_device, vma_allocator_result.Unwrap(), deleter_queue, command_queue_result.Unwrap(), render_pass_cache, limits};
 }
 
 Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device) {
@@ -121,10 +128,6 @@ Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info
 
 Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
   return Texture::Create(this, create_info);
-}
-
-Result<RenderTargetBase*> Device::CreateRenderTarget(const MGPURenderTargetCreateInfo& create_info) {
-  return RenderTarget::Create(this, create_info);
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

@@ -11,7 +11,6 @@ set(SOURCES
   src/backend/vulkan/instance.cpp
   src/backend/vulkan/physical_device.cpp
   src/backend/vulkan/render_pass_cache.cpp
-  src/backend/vulkan/render_target.cpp
   src/backend/vulkan/surface.cpp
   src/backend/vulkan/swap_chain.cpp
   src/backend/vulkan/texture.cpp
@@ -21,7 +20,6 @@ set(SOURCES
   src/frontend/device.cpp
   src/frontend/instance.cpp
   src/frontend/physical_device.cpp
-  src/frontend/render_target.cpp
   src/frontend/result.cpp
   src/frontend/surface.cpp
   src/frontend/swap_chain.cpp
@@ -42,7 +40,6 @@ set(HEADERS
   src/backend/vulkan/instance.hpp
   src/backend/vulkan/physical_device.hpp
   src/backend/vulkan/render_pass_cache.hpp
-  src/backend/vulkan/render_target.hpp
   src/backend/vulkan/surface.hpp
   src/backend/vulkan/swap_chain.hpp
   src/backend/vulkan/texture.hpp
@@ -52,13 +49,11 @@ set(HEADERS
   src/backend/device.hpp
   src/backend/instance.hpp
   src/backend/physical_device.hpp
-  src/backend/render_target.hpp
   src/backend/surface.hpp
   src/backend/swap_chain.hpp
   src/backend/texture.hpp
   src/backend/texture_view.hpp
   src/frontend/validation/buffer.hpp
-  src/frontend/validation/render_target.hpp
   src/frontend/validation/texture.hpp
   src/frontend/validation/texture_view.hpp
   src/common/bump_allocator.hpp

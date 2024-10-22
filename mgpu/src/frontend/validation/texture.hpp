@@ -56,29 +56,34 @@ inline MGPUResult validate_texture_aspect(MGPUTextureAspect texture_aspect) {
   return MGPU_SUCCESS;
 }
 
-inline MGPUResult validate_texture_extent(const MGPUPhysicalDeviceLimits& limits, MGPUTextureType texture_type, const MGPUExtent3D& texture_extent) {
+inline MGPUResult validate_texture_extent(const MGPUPhysicalDeviceLimits& limits, MGPUTextureType texture_type, const MGPUExtent3D& texture_extent, MGPUTextureUsage texture_usage) {
   const u32 width = texture_extent.width;
   const u32 height = texture_extent.height;
   const u32 depth = texture_extent.depth;
+  const u32 max_width_height = std::max(width, height);
+  const u32 max_dimension = std::max(max_width_height, depth);
+
+  // A texture can only be eligible for rendering, if its width and height do not exceed the maximum render attachment dimension.
+  if(texture_usage & MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT && max_width_height > limits.max_attachment_dimension) {
+    return MGPU_BAD_DIMENSIONS;
+  }
 
   // The Vulkan spec demands that for 1D textures height and depth are set to one and for 2D textures depth is set to one.
   switch(texture_type) {
     case MGPU_TEXTURE_TYPE_1D: {
-      if(width == 0u || height != 1u || depth != 1u || width > limits.max_texture_dimension_1d) {
+      if(width == 0u || height != 1u || depth != 1u || max_dimension > limits.max_texture_dimension_1d) {
         return MGPU_BAD_DIMENSIONS;
       }
       return MGPU_SUCCESS;
     }
     case MGPU_TEXTURE_TYPE_2D: {
-      const u32 limit = limits.max_texture_dimension_2d;
-      if(width == 0u || height == 0u || depth != 1u || width > limit || height > limit) {
+      if(width == 0u || height == 0u || depth != 1u || max_dimension > limits.max_texture_dimension_2d) {
         return MGPU_BAD_DIMENSIONS;
       }
       return MGPU_SUCCESS;
     }
     case MGPU_TEXTURE_TYPE_3D: {
-      const u32 limit = limits.max_texture_dimension_3d;
-      if(width == 0u || height == 0u || depth == 0u || width > limit || height > limit || depth > limit) {
+      if(width == 0u || height == 0u || depth == 0u || max_dimension > limits.max_texture_dimension_3d) {
         return MGPU_BAD_DIMENSIONS;
       }
       return MGPU_SUCCESS;
