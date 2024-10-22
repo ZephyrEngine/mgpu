@@ -11,7 +11,19 @@ MGPUResult mgpuCommandListClear(MGPUCommandList command_list) {
 }
 
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info) {
-  // TODO(fleroviux): validate input data (see current render target validation code)
+  /**
+   * TODO(fleroviux): validate begin_info.
+   *
+   * Some ideas for validation:
+   *  - Must have at least one attachment
+   *  - Must not have more than the allowed number of color attachments
+   *  - All attachments must have the same dimensions
+   *  - All attachments must have RENDER_ATTACHMENT usage
+   *  - All attachments must be of type MGPU_TEXTURE_VIEW_TYPE_2D (or MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY, if we support layers in the future)
+   *  - All color attachments must have a format with color aspect
+   *  - The depth/stencil attachment must have a format with a depth or stencil aspect
+   */
+
   ((mgpu::CommandList*)command_list)->CmdBeginRenderPass(*begin_info);
 }
 
