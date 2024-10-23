@@ -98,6 +98,7 @@ Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& cr
 }
 
 void Texture::TransitionState(const State& new_state, VkCommandBuffer vk_command_buffer) {
+  // TODO(fleroviux): this breaks render-pass to render-pass synchronization
   if(new_state == m_state) {
     return;
   }
