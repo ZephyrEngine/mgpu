@@ -30,7 +30,6 @@ class Device final : public DeviceBase {
     [[nodiscard]] VkDevice Handle() { return m_vk_device; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() { return m_vma_allocator; }
     [[nodiscard]] DeleterQueue& GetDeleterQueue() { return *m_deleter_queue; }
-    [[nodiscard]] RenderPassCache& GetRenderPassCache() { return *m_render_pass_cache; }
 
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
