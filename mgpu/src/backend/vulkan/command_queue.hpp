@@ -17,6 +17,7 @@
 namespace mgpu::vulkan {
 
 class TextureView;
+class SwapChain;
 
 class CommandQueue : atom::NonCopyable, atom::NonMoveable {
   public:
@@ -28,6 +29,9 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
       std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
+
+    void SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore);
+    MGPUResult Present(SwapChain* swap_chain, u32 texture_index);
 
     MGPUResult SubmitCommandList(const CommandList* command_list);
     MGPUResult Flush();
@@ -60,6 +64,7 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
     VkFence m_vk_cmd_buffer_fence;
     std::shared_ptr<DeleterQueue> m_deleter_queue;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
+    VkSemaphore m_vk_swap_chain_acquire_semaphore{};
 };
 
 }  // namespace mgpu::vulkan

@@ -85,35 +85,22 @@ Result<std::span<TextureBase* const>> SwapChain::EnumerateTextures() {
 }
 
 Result<u32> SwapChain::AcquireNextTexture() {
-  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, VK_NULL_HANDLE, VK_NULL_HANDLE, &m_acquired_texture_index));
+  const VkSemaphoreCreateInfo vk_semaphore_create_info{
+    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0
+  };
+  VkSemaphore vk_semaphore{};
+  MGPU_VK_FORWARD_ERROR(vkCreateSemaphore(m_device->Handle(), &vk_semaphore_create_info, nullptr, &vk_semaphore));
+  m_device->GetCommandQueue().SetSwapChainAcquireSemaphore(vk_semaphore);
+
+  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, vk_semaphore, VK_NULL_HANDLE, &m_acquired_texture_index));
   return m_acquired_texture_index;
 }
 
 MGPUResult SwapChain::Present() {
   // TODO(fleroviux): error out if no texture has been acquired
-  // TODO(fleroviux): wait for commands to finish via a semaphore
-
-  const VkPresentInfoKHR vk_present_info{
-    .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-    .pNext = nullptr,
-    .waitSemaphoreCount = 0u,
-    .pWaitSemaphores = nullptr,
-    .swapchainCount = 1u,
-    .pSwapchains = &m_vk_swap_chain,
-    .pImageIndices = &m_acquired_texture_index,
-    .pResults = nullptr
-  };
-
-  // !!!! BAD !!!! FIX HARDCODED VALUES !!!
-  VkQueue vk_queue{};
-#ifdef __APPLE__
-  vkGetDeviceQueue(m_device->Handle(), 3u, 0u, &vk_queue);
-#else
-  vkGetDeviceQueue(m_device->Handle(), 0u, 0u, &vk_queue);
-#endif
-
-  MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(vk_queue, &vk_present_info));
-  return MGPU_SUCCESS;
+  return m_device->GetCommandQueue().Present(this, m_acquired_texture_index);
 }
 
 }  // namespace mgpu::vulkan

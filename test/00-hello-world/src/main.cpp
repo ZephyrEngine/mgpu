@@ -289,7 +289,7 @@ int main() {
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuDeviceSubmitCommandList(mgpu_device, mgpu_cmd_list));
-    MGPU_CHECK(mgpuDeviceFlush(mgpu_device)); // TODO: automatically flush on present
+    // MGPU_CHECK(mgpuDeviceFlush(mgpu_device));
     MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
 
     hue = std::fmod(hue + 0.0025f, 1.0f);

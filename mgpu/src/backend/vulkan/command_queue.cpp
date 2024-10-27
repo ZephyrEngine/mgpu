@@ -4,6 +4,7 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
 #include "command_queue.hpp"
+#include "swap_chain.hpp"
 #include "texture_view.hpp"
 
 namespace mgpu::vulkan {
@@ -84,6 +85,45 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
   return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence, std::move(deleter_queue), std::move(render_pass_cache)}};
 }
 
+void CommandQueue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
+  m_vk_swap_chain_acquire_semaphore = vk_swap_chain_acquire_semaphore;
+}
+
+MGPUResult CommandQueue::Present(SwapChain* swap_chain, u32 texture_index) {
+  VkSwapchainKHR vk_swap_chain = swap_chain->Handle();
+  VkSemaphore vk_swap_chain_acquire_semaphore = m_vk_swap_chain_acquire_semaphore;
+
+  VkPresentInfoKHR vk_present_info{
+    .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+    .pNext = nullptr,
+    .waitSemaphoreCount = 1u,
+    .pWaitSemaphores = &vk_swap_chain_acquire_semaphore,
+    .swapchainCount = 1u,
+    .pSwapchains = &vk_swap_chain,
+    .pImageIndices = &texture_index,
+    .pResults = nullptr
+  };
+
+  // TODO(fleroviux): clean this up and ensure that the barrier is correct.
+  ((Texture*)swap_chain->EnumerateTextures().Unwrap()[texture_index])->TransitionState({
+    .m_image_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    .m_access = VK_ACCESS_TRANSFER_READ_BIT,
+    .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
+  }, m_vk_cmd_buffer);
+  Flush();
+
+  MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(m_vk_queue, &vk_present_info));
+
+  // Delete the temporary semaphore at the next opportunity.
+  VkDevice vk_device = m_vk_device;
+  m_deleter_queue->Schedule([vk_device, vk_swap_chain_acquire_semaphore]() {
+    vkDestroySemaphore(vk_device,vk_swap_chain_acquire_semaphore, nullptr);
+  });
+  m_vk_swap_chain_acquire_semaphore = nullptr;
+
+  return MGPU_SUCCESS;
+}
+
 MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
   const CommandBase* command = command_list->GetListHead();
 
@@ -107,17 +147,28 @@ MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
 }
 
 MGPUResult CommandQueue::Flush() {
-  const VkSubmitInfo vk_submit_info{
+  const VkPipelineStageFlags vk_wait_dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+  VkSubmitInfo vk_submit_info{
     .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
     .pNext = nullptr,
     .waitSemaphoreCount = 0u,
     .pWaitSemaphores = nullptr,
-    .pWaitDstStageMask = nullptr,
+    .pWaitDstStageMask = &vk_wait_dst_stage_mask,
     .commandBufferCount = 1u,
     .pCommandBuffers = &m_vk_cmd_buffer,
     .signalSemaphoreCount = 0u,
     .pSignalSemaphores = nullptr
   };
+
+  VkSemaphore vk_swap_chain_acquire_semaphore = m_vk_swap_chain_acquire_semaphore;
+  if(vk_swap_chain_acquire_semaphore) {
+    vk_submit_info.waitSemaphoreCount = 1u;
+    vk_submit_info.pWaitSemaphores = &vk_swap_chain_acquire_semaphore;
+
+    vk_submit_info.signalSemaphoreCount = 1u;
+    vk_submit_info.pSignalSemaphores = &vk_swap_chain_acquire_semaphore;
+  }
 
   MGPU_VK_FORWARD_ERROR(vkEndCommandBuffer(m_vk_cmd_buffer));
   MGPU_VK_FORWARD_ERROR(vkQueueSubmit(m_vk_queue, 1u, &vk_submit_info, m_vk_cmd_buffer_fence));
