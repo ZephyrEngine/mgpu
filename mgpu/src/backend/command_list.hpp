@@ -88,6 +88,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     }
 
     [[nodiscard]] bool HasErrors() const { return m_state.has_errors || IsIncomplete(); }
+    [[nodiscard]] bool HasGraphicsCommands() const { return m_state.has_graphics_commands; }
     [[nodiscard]] bool IsIncomplete() const { return m_state.inside_render_pass; }
 
     [[nodiscard]] const CommandBase* GetListHead() const { return m_head; }
@@ -105,6 +106,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
         m_state.has_errors = true;
       }
       m_state.inside_render_pass = true;
+      m_state.has_graphics_commands = true;
 
       Push<BeginRenderPassCommand>(begin_info);
     }
@@ -150,6 +152,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
 
     struct State {
       bool has_errors{false};
+      bool has_graphics_commands{false};
       bool inside_render_pass{false};
     };
 

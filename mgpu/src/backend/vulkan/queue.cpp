@@ -3,7 +3,7 @@
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
-#include "command_queue.hpp"
+#include "queue.hpp"
 #include "swap_chain.hpp"
 #include "texture_view.hpp"
 
@@ -11,7 +11,7 @@ namespace mgpu::vulkan {
 
 // TODO(fleroviux): keep multiple command buffers around to a) avoid stalling and b) allow submission of multiple, smaller command buffers.
 
-CommandQueue::CommandQueue(
+Queue::Queue(
   VkDevice vk_device,
   VkQueue vk_queue,
   VkCommandPool vk_cmd_pool,
@@ -35,7 +35,7 @@ CommandQueue::CommandQueue(
   vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info);
 }
 
-CommandQueue::~CommandQueue() {
+Queue::~Queue() {
   Flush();
 
   vkDestroyFence(m_vk_device, m_vk_cmd_buffer_fence, nullptr);
@@ -43,14 +43,12 @@ CommandQueue::~CommandQueue() {
   vkDestroyCommandPool(m_vk_device, m_vk_cmd_pool, nullptr);
 }
 
-Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
+Result<std::unique_ptr<Queue>> Queue::Create(
   VkDevice vk_device,
-  const PhysicalDevice::QueueFamilyIndices& queue_family_indices,
+  u32 queue_family_index,
   std::shared_ptr<DeleterQueue> deleter_queue,
   std::shared_ptr<RenderPassCache> render_pass_cache
 ) {
-  const u32 queue_family_index = queue_family_indices.graphics_and_compute.value();
-
   VkQueue vk_queue{};
   vkGetDeviceQueue(vk_device, queue_family_index, 0u, &vk_queue);
 
@@ -82,14 +80,22 @@ Result<std::unique_ptr<CommandQueue>> CommandQueue::Create(
   };
   MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
 
-  return std::unique_ptr<CommandQueue>{new CommandQueue{vk_device, vk_queue, vk_cmd_pool, vk_cmd_buffer, vk_cmd_buffer_fence, std::move(deleter_queue), std::move(render_pass_cache)}};
+  return std::unique_ptr<Queue>{new Queue{
+    vk_device,
+    vk_queue,
+    vk_cmd_pool,
+    vk_cmd_buffer,
+    vk_cmd_buffer_fence,
+    std::move(deleter_queue),
+    std::move(render_pass_cache)
+  }};
 }
 
-void CommandQueue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
+void Queue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
   m_vk_swap_chain_acquire_semaphore = vk_swap_chain_acquire_semaphore;
 }
 
-MGPUResult CommandQueue::Present(SwapChain* swap_chain, u32 texture_index) {
+MGPUResult Queue::Present(SwapChain* swap_chain, u32 texture_index) {
   VkSwapchainKHR vk_swap_chain = swap_chain->Handle();
   VkSemaphore vk_swap_chain_acquire_semaphore = m_vk_swap_chain_acquire_semaphore;
 
@@ -124,7 +130,7 @@ MGPUResult CommandQueue::Present(SwapChain* swap_chain, u32 texture_index) {
   return MGPU_SUCCESS;
 }
 
-MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
+MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
   const CommandBase* command = command_list->GetListHead();
 
   CommandListState state{};
@@ -146,7 +152,7 @@ MGPUResult CommandQueue::SubmitCommandList(const CommandList* command_list) {
   return MGPU_SUCCESS;
 }
 
-MGPUResult CommandQueue::Flush() {
+MGPUResult Queue::Flush() {
   const VkPipelineStageFlags vk_wait_dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
   VkSubmitInfo vk_submit_info{
@@ -187,7 +193,7 @@ MGPUResult CommandQueue::Flush() {
   return MGPU_SUCCESS;
 }
 
-void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
+void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
   const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
   const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
 
@@ -316,7 +322,7 @@ void CommandQueue::HandleCmdBeginRenderPass(CommandListState& state, const Begin
   });
 }
 
-void CommandQueue::HandleCmdEndRenderPass(CommandListState& state) {
+void Queue::HandleCmdEndRenderPass(CommandListState& state) {
   vkCmdEndRenderPass(m_vk_cmd_buffer);
 
   state.render_pass = {};

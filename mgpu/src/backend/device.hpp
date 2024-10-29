@@ -7,6 +7,7 @@
 
 #include "backend/buffer.hpp"
 #include "backend/command_list.hpp"
+#include "backend/queue.hpp"
 #include "backend/swap_chain.hpp"
 #include "backend/texture.hpp"
 
@@ -20,11 +21,10 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
 
     [[nodiscard]] const MGPUPhysicalDeviceLimits& Limits() const { return m_limits; }
 
+    virtual QueueBase* GetQueue(MGPUQueueType queue_type) = 0;
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
-    virtual MGPUResult SubmitCommandList(const CommandList* command_list) = 0;
-    virtual MGPUResult Flush() = 0;
 
   private:
     MGPUPhysicalDeviceLimits m_limits{};

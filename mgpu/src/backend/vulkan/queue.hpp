@@ -1,14 +1,13 @@
 
 #pragma once
 
-#include <atom/non_copyable.hpp>
-#include <atom/non_moveable.hpp>
 #include <atom/vector_n.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
 
 #include "backend/vulkan/physical_device.hpp"
 #include "backend/command_list.hpp"
+#include "backend/queue.hpp"
 #include "common/result.hpp"
 #include "common/limits.hpp"
 #include "deleter_queue.hpp"
@@ -19,13 +18,13 @@ namespace mgpu::vulkan {
 class TextureView;
 class SwapChain;
 
-class CommandQueue : atom::NonCopyable, atom::NonMoveable {
+class Queue final : public QueueBase {
   public:
-   ~CommandQueue();
+   ~Queue() override;
 
-    static Result<std::unique_ptr<CommandQueue>> Create(
+    static Result<std::unique_ptr<Queue>> Create(
       VkDevice vk_device,
-      const PhysicalDevice::QueueFamilyIndices& queue_family_indices,
+      u32 queue_family_index,
       std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
@@ -33,11 +32,11 @@ class CommandQueue : atom::NonCopyable, atom::NonMoveable {
     void SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore);
     MGPUResult Present(SwapChain* swap_chain, u32 texture_index);
 
-    MGPUResult SubmitCommandList(const CommandList* command_list);
-    MGPUResult Flush();
+    MGPUResult SubmitCommandList(const CommandList* command_list) override;
+    MGPUResult Flush() override;
 
   private:
-    CommandQueue(
+    Queue(
       VkDevice vk_device,
       VkQueue vk_queue,
       VkCommandPool vk_cmd_pool,

@@ -14,19 +14,19 @@ Device::Device(
   VkDevice vk_device,
   VmaAllocator vma_allocator,
   std::shared_ptr<DeleterQueue> deleter_queue,
-  std::unique_ptr<CommandQueue> command_queue,
+  Queues&& queues,
   std::shared_ptr<RenderPassCache> render_pass_cache,
   const MGPUPhysicalDeviceLimits& limits
 )   : DeviceBase{limits}
     , m_vk_device{vk_device}
     , m_vma_allocator{vma_allocator}
     , m_deleter_queue{std::move(deleter_queue)}
-    , m_command_queue{std::move(command_queue)}
+    , m_queues{std::move(queues)}
     , m_render_pass_cache{std::move(render_pass_cache)} {
 }
 
 Device::~Device() {
-  m_command_queue.reset();     // HACK: ensure that command queue is destroyed before the device
+  m_queues = {};               // HACK: ensure that the queues is destroyed before the device
   m_render_pass_cache.reset(); // HACK: ensure that render pass cache is destroyed before the device
   m_deleter_queue->Drain();
 
@@ -94,10 +94,22 @@ Result<DeviceBase*> Device::Create(
   Result<VmaAllocator> vma_allocator_result = CreateVmaAllocator(vk_instance, vk_physical_device.Handle(), vk_device);
   MGPU_FORWARD_ERROR(vma_allocator_result.Code()); // TODO(fleroviux): this leaks memory
 
-  Result<std::unique_ptr<CommandQueue>> command_queue_result = CommandQueue::Create(vk_device, queue_family_indices, deleter_queue, render_pass_cache);
-  MGPU_FORWARD_ERROR(command_queue_result.Code()); // TODO(fleroviux): this leaks memory
+  std::unique_ptr<Queue> graphics_compute_queue{};
+  std::unique_ptr<Queue> async_compute_queue{};
 
-  return new Device{vk_device, vma_allocator_result.Unwrap(), deleter_queue, command_queue_result.Unwrap(), render_pass_cache, limits};
+  Result<std::unique_ptr<Queue>> graphics_compute_queue_result = Queue::Create(
+    vk_device, queue_family_indices.graphics_and_compute.value(), deleter_queue, render_pass_cache);
+  MGPU_FORWARD_ERROR(graphics_compute_queue_result.Code()); // TODO(fleroviux): this leaks memory
+  graphics_compute_queue = graphics_compute_queue_result.Unwrap();
+
+  if(queue_family_indices.dedicated_compute.has_value()) {
+    Result<std::unique_ptr<Queue>> async_compute_queue_result = Queue::Create(
+      vk_device, queue_family_indices.dedicated_compute.value(), deleter_queue, render_pass_cache);
+    MGPU_FORWARD_ERROR(async_compute_queue_result.Code()); // TODO(fleroviux): this leaks memory
+    async_compute_queue = async_compute_queue_result.Unwrap();
+  }
+
+  return new Device{vk_device, vma_allocator_result.Unwrap(), deleter_queue, Queues{std::move(graphics_compute_queue), std::move(async_compute_queue)}, render_pass_cache, limits};
 }
 
 Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device) {
@@ -122,6 +134,19 @@ Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysic
   return vma_allocator;
 }
 
+QueueBase* Device::GetQueue(MGPUQueueType queue_type) {
+  switch(queue_type) {
+    case MGPU_QUEUE_TYPE_GRAPHICS_COMPUTE: return m_queues.graphics_compute.get();
+    case MGPU_QUEUE_TYPE_ASYNC_COMPUTE: {
+      if(m_queues.async_compute) {
+        return m_queues.async_compute.get();
+      }
+      return m_queues.graphics_compute.get();
+    }
+  }
+  return nullptr;
+}
+
 Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info) {
   return Buffer::Create(this, create_info);
 }
@@ -132,14 +157,6 @@ Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_i
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {
   return SwapChain::Create(this, create_info);
-}
-
-MGPUResult Device::SubmitCommandList(const CommandList* command_list) {
-  return m_command_queue->SubmitCommandList(command_list);
-}
-
-MGPUResult Device::Flush() {
-  return m_command_queue->Flush();
 }
 
 }  // namespace mgpu::vulkan

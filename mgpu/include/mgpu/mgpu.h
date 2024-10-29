@@ -29,6 +29,7 @@
 typedef struct MGPUInstanceImpl* MGPUInstance;
 typedef struct MGPUPhysicalDeviceImpl* MGPUPhysicalDevice;
 typedef struct MGPUDeviceImpl* MGPUDevice;
+typedef struct MGPUQueueImpl* MGPUQueue;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
@@ -62,6 +63,11 @@ typedef enum MGPUResult {
 typedef enum MGPUBackendType {
   MGPU_BACKEND_TYPE_VULKAN = 0
 } MGPUBackend;
+
+typedef enum MGPUQueueType {
+  MGPU_QUEUE_TYPE_GRAPHICS_COMPUTE = 0,
+  MGPU_QUEUE_TYPE_ASYNC_COMPUTE = 1
+} MGPUQueueType;
 
 typedef enum MGPUPhysicalDeviceType {
   MGPU_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU = 0,
@@ -307,13 +313,16 @@ MGPUResult mgpuPhysicalDeviceEnumerateSurfacePresentModes(MGPUPhysicalDevice phy
 MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MGPUDevice* device);
 
 // MGPUDevice methods
+MGPUQueue mgpuDeviceGetQueue(MGPUDevice device, MGPUQueueType queue_type);
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
-MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list);
-MGPUResult mgpuDeviceFlush(MGPUDevice device);
 void mgpuDeviceDestroy(MGPUDevice device);
+
+// MGPUQueue methods
+MGPUResult mgpuQueueSubmitCommandList(MGPUQueue queue, MGPUCommandList command_list);
+MGPUResult mgpuQueueFlush(MGPUQueue queue);
 
 // MGPUBuffer methods
 MGPUResult mgpuBufferMap(MGPUBuffer buffer, void** address);

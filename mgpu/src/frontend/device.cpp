@@ -8,6 +8,10 @@
 
 extern "C" {
 
+MGPUQueue mgpuDeviceGetQueue(MGPUDevice device, MGPUQueueType queue_type) {
+  return (MGPUQueue)((mgpu::DeviceBase*)device)->GetQueue(queue_type);
+}
+
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer) {
   MGPU_FORWARD_ERROR(validate_buffer_size(create_info->size));
   MGPU_FORWARD_ERROR(validate_buffer_usage(create_info->usage));
@@ -51,18 +55,6 @@ MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreat
   MGPU_FORWARD_ERROR(cxx_swap_chain_result.Code());
   *swap_chain = (MGPUSwapChain)cxx_swap_chain_result.Unwrap();
   return MGPU_SUCCESS;
-}
-
-MGPUResult mgpuDeviceSubmitCommandList(MGPUDevice device, MGPUCommandList command_list) {
-  const auto cxx_command_list = (const mgpu::CommandList*)command_list;
-  if(cxx_command_list->HasErrors()) {
-    return MGPU_BAD_COMMAND_LIST;
-  }
-  return ((mgpu::DeviceBase*)device)->SubmitCommandList(cxx_command_list);
-}
-
-MGPUResult mgpuDeviceFlush(MGPUDevice device) {
-  return ((mgpu::DeviceBase*)device)->Flush();
 }
 
 void mgpuDeviceDestroy(MGPUDevice device) {
