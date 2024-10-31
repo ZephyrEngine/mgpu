@@ -38,6 +38,13 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module) {
+  mgpu::Result<mgpu::ShaderModuleBase*> cxx_shader_module_result = ((mgpu::DeviceBase*)device)->CreateShaderModule(spirv_code, spirv_byte_size);
+  MGPU_FORWARD_ERROR(cxx_shader_module_result.Code());
+  *shader_module = (MGPUShaderModule)cxx_shader_module_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 

@@ -5,6 +5,7 @@
 
 #include "buffer.hpp"
 #include "device.hpp"
+#include "shader_module.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 
@@ -153,6 +154,10 @@ Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info
 
 Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
   return Texture::Create(this, create_info);
+}
+
+Result<ShaderModuleBase*> Device::CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) {
+  return ShaderModule::Create(this, spirv_code, spirv_byte_size);
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

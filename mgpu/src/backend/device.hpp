@@ -2,16 +2,17 @@
 #pragma once
 
 #include <mgpu/mgpu.h>
+#include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
 
-#include "backend/buffer.hpp"
-#include "backend/command_list.hpp"
-#include "backend/queue.hpp"
-#include "backend/swap_chain.hpp"
-#include "backend/texture.hpp"
-
 namespace mgpu {
+
+class QueueBase;
+class BufferBase;
+class TextureBase;
+class ShaderModuleBase;
+class SwapChainBase;
 
 class DeviceBase : atom::NonCopyable, atom::NonMoveable {
   public:
@@ -24,6 +25,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual QueueBase* GetQueue(MGPUQueueType queue_type) = 0;
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
+    virtual Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
 
   private:

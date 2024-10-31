@@ -8,6 +8,9 @@
 #include <optional>
 #include <vector>
 
+#include "shader/triangle.frag.h"
+#include "shader/triangle.vert.h"
+
 #undef main
 
 #define MGPU_CHECK(result_expression) \
@@ -259,6 +262,11 @@ int main() {
   MGPUTextureView mgpu_texture_view{};
   MGPU_CHECK(mgpuTextureCreateView(mgpu_texture, &texture_view_create_info, &mgpu_texture_view));
 
+  MGPUShaderModule mgpu_vert_shader{};
+  MGPUShaderModule mgpu_frag_shader{};
+  MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_vert, sizeof(triangle_vert), &mgpu_vert_shader));
+  MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_frag, sizeof(triangle_frag), &mgpu_frag_shader));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -305,6 +313,8 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuShaderModuleDestroy(mgpu_frag_shader);
+  mgpuShaderModuleDestroy(mgpu_vert_shader);
   mgpuTextureViewDestroy(mgpu_texture_view);
   mgpuTextureDestroy(mgpu_texture);
   MGPU_CHECK(mgpuBufferUnmap(mgpu_buffer));

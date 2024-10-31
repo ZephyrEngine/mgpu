@@ -11,6 +11,7 @@ set(SOURCES
   src/backend/vulkan/physical_device.cpp
   src/backend/vulkan/queue.cpp
   src/backend/vulkan/render_pass_cache.cpp
+  src/backend/vulkan/shader_module.cpp
   src/backend/vulkan/surface.cpp
   src/backend/vulkan/swap_chain.cpp
   src/backend/vulkan/texture.cpp
@@ -22,6 +23,7 @@ set(SOURCES
   src/frontend/physical_device.cpp
   src/frontend/queue.cpp
   src/frontend/result.cpp
+  src/frontend/shader_module.cpp
   src/frontend/surface.cpp
   src/frontend/swap_chain.cpp
   src/frontend/texture.cpp
@@ -41,6 +43,7 @@ set(HEADERS
   src/backend/vulkan/physical_device.hpp
   src/backend/vulkan/queue.hpp
   src/backend/vulkan/render_pass_cache.hpp
+  src/backend/vulkan/shader_module.hpp
   src/backend/vulkan/surface.hpp
   src/backend/vulkan/swap_chain.hpp
   src/backend/vulkan/texture.hpp
@@ -51,6 +54,7 @@ set(HEADERS
   src/backend/instance.hpp
   src/backend/physical_device.hpp
   src/backend/queue.hpp
+  src/backend/shader_module.hpp
   src/backend/surface.hpp
   src/backend/swap_chain.hpp
   src/backend/texture.hpp
