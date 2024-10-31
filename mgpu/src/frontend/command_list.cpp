@@ -31,6 +31,10 @@ void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list) {
   ((mgpu::CommandList*)command_list)->CmdEndRenderPass();
 }
 
+void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program) {
+  ((mgpu::CommandList*)command_list)->CmdUseShaderProgram((mgpu::ShaderProgramBase*)shader_program);
+}
+
 void mgpuCommandListDestroy(MGPUCommandList command_list) {
   delete (mgpu::CommandList*)command_list;
 }

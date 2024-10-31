@@ -141,6 +141,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
     switch(command_type) {
       case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, *(BeginRenderPassCommand*)command); break;
       case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
+      case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
       }
@@ -326,6 +327,10 @@ void Queue::HandleCmdEndRenderPass(CommandListState& state) {
   vkCmdEndRenderPass(m_vk_cmd_buffer);
 
   state.render_pass = {};
+}
+
+void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command) {
+
 }
 
 }  // namespace mgpu::vulkan

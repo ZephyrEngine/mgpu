@@ -6,12 +6,15 @@
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
 
+#include "common/result.hpp"
+
 namespace mgpu {
 
 class QueueBase;
 class BufferBase;
 class TextureBase;
 class ShaderModuleBase;
+class ShaderProgramBase;
 class SwapChainBase;
 
 class DeviceBase : atom::NonCopyable, atom::NonMoveable {
@@ -26,6 +29,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
     virtual Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) = 0;
+    virtual Result<ShaderProgramBase*> CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
 
   private:

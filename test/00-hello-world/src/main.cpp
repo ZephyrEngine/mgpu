@@ -267,6 +267,13 @@ int main() {
   MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_vert, sizeof(triangle_vert), &mgpu_vert_shader));
   MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_frag, sizeof(triangle_frag), &mgpu_frag_shader));
 
+  MGPUShaderProgramCreateInfo shader_program_create_info{
+    .vertex = mgpu_vert_shader,
+    .fragment = mgpu_frag_shader
+  };
+  MGPUShaderProgram mgpu_shader_program{};
+  MGPU_CHECK(mgpuDeviceCreateShaderProgram(mgpu_device, &shader_program_create_info, &mgpu_shader_program));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -296,6 +303,7 @@ int main() {
       .depth_stencil_attachment = nullptr
     };
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
+    mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, mgpu_cmd_list));
@@ -313,6 +321,7 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuShaderProgramDestroy(mgpu_shader_program);
   mgpuShaderModuleDestroy(mgpu_frag_shader);
   mgpuShaderModuleDestroy(mgpu_vert_shader);
   mgpuTextureViewDestroy(mgpu_texture_view);

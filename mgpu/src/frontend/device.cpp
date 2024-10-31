@@ -45,6 +45,14 @@ MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program) {
+  // TODO(fleroviux): validate that the pipeline stage combination is valid.
+  mgpu::Result<mgpu::ShaderProgramBase*> cxx_shader_program_result = ((mgpu::DeviceBase*)device)->CreateShaderProgram(*create_info);
+  MGPU_FORWARD_ERROR(cxx_shader_program_result.Code());
+  *shader_program = (MGPUShaderProgram)cxx_shader_program_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 

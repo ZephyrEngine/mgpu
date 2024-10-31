@@ -6,6 +6,7 @@
 #include "buffer.hpp"
 #include "device.hpp"
 #include "shader_module.hpp"
+#include "shader_program.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 
@@ -158,6 +159,10 @@ Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_i
 
 Result<ShaderModuleBase*> Device::CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) {
   return ShaderModule::Create(this, spirv_code, spirv_byte_size);
+}
+
+Result<ShaderProgramBase*> Device::CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) {
+  return new ShaderProgram(create_info);
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

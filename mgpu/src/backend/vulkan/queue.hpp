@@ -51,10 +51,16 @@ class Queue final : public QueueBase {
         atom::Vector_N<TextureView*, limits::max_color_attachments> color_attachments{};
         TextureView* depth_stencil_attachment{};
       } render_pass{};
+
+      struct Pipeline {
+        bool require_switch{};
+        ShaderProgramBase* shader_program{};
+      };
     };
 
     void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command);
     void HandleCmdEndRenderPass(CommandListState& state);
+    void HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command);
 
     VkDevice m_vk_device;
     VkQueue m_vk_queue;

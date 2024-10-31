@@ -41,6 +41,7 @@ class Device final : public DeviceBase {
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
     Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) override;
+    Result<ShaderProgramBase*> CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
 
   private:

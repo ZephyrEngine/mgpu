@@ -9,15 +9,18 @@
 #include <utility>
 #include <vector>
 
-#include "backend/texture.hpp"
 #include "common/bump_allocator.hpp"
 #include "common/limits.hpp"
 
 namespace mgpu {
 
+class ShaderProgramBase;
+class TextureViewBase;
+
 enum class CommandType {
   BeginRenderPass,
-  EndRenderPass
+  EndRenderPass,
+  UseShaderProgram
 };
 
 struct CommandBase {
@@ -80,6 +83,15 @@ struct EndRenderPassCommand : CommandBase {
   EndRenderPassCommand() : CommandBase{CommandType::EndRenderPass} {}
 };
 
+struct UseShaderProgramCommand : CommandBase {
+  explicit UseShaderProgramCommand(ShaderProgramBase* shader_program)
+      : CommandBase{CommandType::UseShaderProgram}
+      , m_shader_program{shader_program} {
+  }
+
+  ShaderProgramBase* m_shader_program;
+};
+
 class CommandList : atom::NonCopyable, atom::NonMoveable {
   public:
     CommandList() {
@@ -88,7 +100,6 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     }
 
     [[nodiscard]] bool HasErrors() const { return m_state.has_errors || IsIncomplete(); }
-    [[nodiscard]] bool HasGraphicsCommands() const { return m_state.has_graphics_commands; }
     [[nodiscard]] bool IsIncomplete() const { return m_state.inside_render_pass; }
 
     [[nodiscard]] const CommandBase* GetListHead() const { return m_head; }
@@ -106,18 +117,18 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
         m_state.has_errors = true;
       }
       m_state.inside_render_pass = true;
-      m_state.has_graphics_commands = true;
-
       Push<BeginRenderPassCommand>(begin_info);
     }
 
     void CmdEndRenderPass() {
-      if(!m_state.inside_render_pass) {
-        m_state.has_errors = true;
-      }
+      ErrorUnlessInsideRenderPass();
       m_state.inside_render_pass = false;
-
       Push<EndRenderPassCommand>();
+    }
+
+    void CmdUseShaderProgram(ShaderProgramBase* shader_program) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseShaderProgramCommand>(shader_program);
     }
 
   private:
@@ -136,6 +147,10 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       }
     }
 
+    void ErrorUnlessInsideRenderPass() {
+      m_state.has_errors |= !m_state.inside_render_pass;
+    }
+
     void* AllocateCommandMemory(size_t number_of_bytes) {
       void* address = m_memory_chunks[m_active_chunk].Allocate(number_of_bytes);
 
@@ -152,7 +167,6 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
 
     struct State {
       bool has_errors{false};
-      bool has_graphics_commands{false};
       bool inside_render_pass{false};
     };
 
