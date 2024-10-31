@@ -20,7 +20,8 @@ class TextureViewBase;
 enum class CommandType {
   BeginRenderPass,
   EndRenderPass,
-  UseShaderProgram
+  UseShaderProgram,
+  Draw
 };
 
 struct CommandBase {
@@ -92,6 +93,21 @@ struct UseShaderProgramCommand : CommandBase {
   ShaderProgramBase* m_shader_program;
 };
 
+struct DrawCommand : CommandBase {
+  DrawCommand(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
+      : CommandBase{CommandType::Draw}
+      , m_vertex_count{vertex_count}
+      , m_instance_count{instance_count}
+      , m_first_vertex{first_vertex}
+      , m_first_instance{first_instance} {
+  }
+
+  u32 m_vertex_count;
+  u32 m_instance_count;
+  u32 m_first_vertex;
+  u32 m_first_instance;
+};
+
 class CommandList : atom::NonCopyable, atom::NonMoveable {
   public:
     CommandList() {
@@ -129,6 +145,12 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdUseShaderProgram(ShaderProgramBase* shader_program) {
       ErrorUnlessInsideRenderPass();
       Push<UseShaderProgramCommand>(shader_program);
+    }
+
+    void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
+      // TODO: validate that enough state is bound for the draw.
+      ErrorUnlessInsideRenderPass();
+      Push<DrawCommand>(vertex_count, instance_count, first_vertex, first_instance);
     }
 
   private:

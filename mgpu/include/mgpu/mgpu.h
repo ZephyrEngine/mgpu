@@ -358,6 +358,7 @@ MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
+void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 
 // MGPUSurface methods

@@ -304,6 +304,7 @@ int main() {
     };
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
     mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
+    mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, mgpu_cmd_list));

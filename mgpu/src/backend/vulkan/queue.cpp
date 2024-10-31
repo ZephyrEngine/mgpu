@@ -142,6 +142,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, *(BeginRenderPassCommand*)command); break;
       case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
       case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
+      case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
       }
@@ -330,7 +331,14 @@ void Queue::HandleCmdEndRenderPass(CommandListState& state) {
 }
 
 void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command) {
+  if(state.render_pass.pipeline.shader_program != command.m_shader_program) {
+    state.render_pass.pipeline.shader_program = command.m_shader_program;
+    state.render_pass.pipeline.require_switch = true;
+  }
+}
 
+void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
+  vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
 }
 
 }  // namespace mgpu::vulkan
