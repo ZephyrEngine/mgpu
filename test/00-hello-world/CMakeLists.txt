@@ -4,8 +4,6 @@ set(SOURCES
 )
 
 set(HEADERS
-  src/shader/triangle.frag.h
-  src/shader/triangle.vert.h
 )
 
 set(LIBRARIES

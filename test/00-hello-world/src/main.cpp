@@ -8,9 +8,6 @@
 #include <optional>
 #include <vector>
 
-#include "shader/triangle.frag.h"
-#include "shader/triangle.vert.h"
-
 #undef main
 
 #define MGPU_CHECK(result_expression) \
