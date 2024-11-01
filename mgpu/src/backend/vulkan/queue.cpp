@@ -4,6 +4,8 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
 #include "queue.hpp"
+#include "shader_module.hpp"
+#include "shader_program.hpp"
 #include "swap_chain.hpp"
 #include "texture_view.hpp"
 
@@ -335,6 +337,187 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     state.render_pass.pipeline.shader_program = command.m_shader_program;
     state.render_pass.pipeline.require_switch = true;
   }
+
+  // TODO: redo this total hack
+
+  const VkPipelineLayoutCreateInfo vk_pipeline_layout_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .setLayoutCount = 0u,
+    .pSetLayouts = nullptr,
+    .pushConstantRangeCount = 0u,
+    .pPushConstantRanges = nullptr
+  };
+  VkPipelineLayout vk_pipeline_layout{};
+  if(vkCreatePipelineLayout(m_vk_device, &vk_pipeline_layout_create_info, nullptr, &vk_pipeline_layout) != VK_SUCCESS) {
+    ATOM_PANIC("failed to create pipeline layout?");
+  }
+
+  const VkPipelineShaderStageCreateInfo vk_shader_stages[2]{
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0u,
+      .stage = VK_SHADER_STAGE_VERTEX_BIT,
+      .module = ((ShaderModule*)((ShaderProgram*)command.m_shader_program)->GetCreateInfo().vertex)->Handle(),
+      .pName = "main",
+      .pSpecializationInfo = nullptr
+    },
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0u,
+      .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .module = ((ShaderModule*)((ShaderProgram*)command.m_shader_program)->GetCreateInfo().fragment)->Handle(),
+      .pName = "main",
+      .pSpecializationInfo = nullptr
+    }
+  };
+
+  const VkPipelineVertexInputStateCreateInfo vk_vertex_input_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .vertexBindingDescriptionCount = 0u,
+    .pVertexBindingDescriptions = nullptr,
+    .vertexAttributeDescriptionCount = 0u,
+    .pVertexAttributeDescriptions = nullptr
+  };
+
+  const VkPipelineInputAssemblyStateCreateInfo vk_input_assembly_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    .primitiveRestartEnable = VK_FALSE
+  };
+
+  const VkViewport vk_viewport{
+    .x = 0.f,
+    .y = 0.f,
+    .width = 1600.f,
+    .height = 900.f,
+    .minDepth = 0.f,
+    .maxDepth = 1.f
+  };
+
+  const VkRect2D vk_scissor{
+    .offset = {.x = 0, .y = 0},
+    .extent = {.width = 0x7FFFFFFF, .height = 0x7FFFFFFF}
+  };
+
+  const VkPipelineViewportStateCreateInfo vk_viewport_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .viewportCount = 1u,
+    .pViewports = &vk_viewport,
+    .scissorCount = 1u,
+    .pScissors = &vk_scissor
+  };
+
+  const VkPipelineRasterizationStateCreateInfo vk_rasterization_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .depthClampEnable = VK_FALSE,
+    .rasterizerDiscardEnable = VK_FALSE,
+    .polygonMode = VK_POLYGON_MODE_FILL,
+    .cullMode = VK_CULL_MODE_FRONT_BIT,
+    .frontFace = VK_FRONT_FACE_CLOCKWISE,
+    .depthBiasEnable = VK_FALSE,
+    .depthBiasConstantFactor = 0.f,
+    .depthBiasClamp = 0.f,
+    .depthBiasSlopeFactor = 0.f,
+    .lineWidth = 1.f
+  };
+
+  const VkPipelineMultisampleStateCreateInfo vk_multisample_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    .sampleShadingEnable = VK_FALSE,
+    .minSampleShading = 0.f,
+    .pSampleMask = nullptr,
+    .alphaToCoverageEnable = VK_FALSE,
+    .alphaToOneEnable = VK_FALSE
+  };
+
+  const VkPipelineDepthStencilStateCreateInfo vk_depth_stencil_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .depthTestEnable = VK_FALSE,
+    .depthWriteEnable = VK_FALSE,
+    .depthCompareOp = VK_COMPARE_OP_ALWAYS,
+    .depthBoundsTestEnable = VK_FALSE,
+    .stencilTestEnable = VK_FALSE,
+    .front = {},
+    .back = {},
+    .minDepthBounds = 0.f,
+    .maxDepthBounds = 1.f
+  };
+
+  const VkPipelineColorBlendAttachmentState vk_color_blend_attachment_state{
+    .blendEnable = VK_FALSE,
+    .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+    .dstColorBlendFactor = VK_BLEND_FACTOR_ONE,
+    .colorBlendOp = VK_BLEND_OP_ADD,
+    .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+    .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+    .alphaBlendOp = VK_BLEND_OP_ADD,
+    .colorWriteMask = 0b1111
+  };
+
+  const VkPipelineColorBlendStateCreateInfo vk_color_blend_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .logicOpEnable = VK_FALSE,
+    .logicOp = VK_LOGIC_OP_AND,
+    .attachmentCount = 1u,
+    .pAttachments = &vk_color_blend_attachment_state,
+    .blendConstants = {0.f, 0.f, 0.f, 0.f}
+  };
+
+  RenderPassQuery render_pass_query{};
+  render_pass_query.SetColorAttachment(0u, MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB, MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE);
+
+  Result<VkRenderPass> vk_render_pass_result = m_render_pass_cache->GetRenderPass(render_pass_query);
+  VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap(); // TODO: handle error
+
+  const VkGraphicsPipelineCreateInfo vk_graphics_pipeline_create_info{
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .stageCount = 2u,
+    .pStages = vk_shader_stages,
+    .pVertexInputState = &vk_vertex_input_state_create_info,
+    .pInputAssemblyState = &vk_input_assembly_state_create_info,
+    .pTessellationState = nullptr,
+    .pViewportState = &vk_viewport_state_create_info,
+    .pRasterizationState = &vk_rasterization_state_create_info,
+    .pMultisampleState = &vk_multisample_state_create_info,
+    .pDepthStencilState = &vk_depth_stencil_state_create_info,
+    .pColorBlendState = &vk_color_blend_state_create_info,
+    .pDynamicState = nullptr,
+    .layout = vk_pipeline_layout,
+    .renderPass = vk_render_pass,
+    .subpass = 0,
+    .basePipelineHandle = VK_NULL_HANDLE,
+    .basePipelineIndex = 0
+  };
+
+  VkPipeline vk_pipeline{};
+  if(vkCreateGraphicsPipelines(m_vk_device, VK_NULL_HANDLE, 1u, &vk_graphics_pipeline_create_info, nullptr, &vk_pipeline) != VK_SUCCESS) {
+    ATOM_PANIC("failed to create graphics pipeline?");
+  }
+
+  // TODO: at least fix the fucking memory leak
+
+  vkCmdBindPipeline(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline);
 }
 
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {

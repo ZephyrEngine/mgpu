@@ -24,31 +24,11 @@
   extern "C" CAMetalLayer* TMP_Cocoa_CreateMetalLayer(NSWindow* ns_window);
 #endif
 
-MGPUColor hsv_to_rgb(float h, float s, float v) {
-  h *= 6.0f;
-
-  const int h_i = (int)h;
-  const float f = h - h_i;
-  const float p = v * (1.0f - s);
-  const float q = v * (1.0f - s * f);
-  const float t = v * (1.0f - s * (1.0f - f));
-
-  switch(h_i) {
-    case 1: return {.r = q, .g = v, .b = p, .a = 1.0f};
-    case 2: return {.r = p, .g = v, .b = t, .a = 1.0f};
-    case 3: return {.r = p, .g = q, .b = v, .a = 1.0f};
-    case 4: return {.r = t, .g = p, .b = v, .a = 1.0f};
-    case 5: return {.r = v, .g = p, .b = q, .a = 1.0f};
-  }
-
-  return {.r = v, .g = t, .b = p, .a = 1.0f};
-}
-
 int main() {
   SDL_Init(SDL_INIT_VIDEO);
 
   SDL_Window* sdl_window = SDL_CreateWindow(
-    "test-00-hello-world",
+    "test-01-hello-triangle",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     1600,
@@ -110,18 +90,6 @@ int main() {
     ATOM_PANIC("failed to find a suitable physical device");
   }
 
-  {
-    MGPUPhysicalDeviceInfo info{};
-    MGPU_CHECK(mgpuPhysicalDeviceGetInfo(mgpu_physical_device, &info));
-    fmt::print("mgpu device: {} (type = {})\n", info.device_name, (int)info.device_type);
-
-    const MGPUPhysicalDeviceLimits& limits = info.limits;
-    fmt::print("\tmax_texture_dimension_1d: {}\n", limits.max_texture_dimension_1d);
-    fmt::print("\tmax_texture_dimension_2d: {}\n", limits.max_texture_dimension_2d);
-    fmt::print("\tmax_texture_dimension_3d: {}\n", limits.max_texture_dimension_3d);
-    fmt::print("\tmax_texture_array_layers: {}\n", limits.max_texture_array_layers);
-  }
-
   MGPUDevice mgpu_device{};
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(mgpu_physical_device, &mgpu_device));
 
@@ -138,13 +106,9 @@ int main() {
     surface_formats.resize(surface_format_count);
     MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfaceFormats(mgpu_physical_device, mgpu_surface, &surface_format_count, surface_formats.data()));
 
-    fmt::print("supported surface formats:\n");
-
     bool got_required_surface_format = false;
 
     for(const MGPUSurfaceFormat& surface_format : surface_formats) {
-      fmt::print("\tformat={} color_space={}\n", (int)surface_format.format, (int)surface_format.color_space);
-
       if(surface_format.format == MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB && surface_format.color_space == MGPU_COLOR_SPACE_SRGB_NONLINEAR) {
         got_required_surface_format = true;
       }
@@ -161,21 +125,8 @@ int main() {
     present_modes.resize(present_modes_count);
     MGPU_CHECK(mgpuPhysicalDeviceEnumerateSurfacePresentModes(mgpu_physical_device, mgpu_surface, &present_modes_count, present_modes.data()));
 
-    fmt::print("supported present modes:\n");
-
-    for(MGPUPresentMode present_mode : present_modes) {
-      fmt::print("\t{}\n", (int)present_mode);
-    }
-
     MGPUSurfaceCapabilities surface_capabilities{};
     MGPU_CHECK(mgpuPhysicalDeviceGetSurfaceCapabilities(mgpu_physical_device, mgpu_surface, &surface_capabilities));
-    fmt::print("surface capabilities:\n");
-    fmt::print("\tmin_texture_count={}\n", surface_capabilities.min_texture_count);
-    fmt::print("\tmax_texture_count={}\n", surface_capabilities.max_texture_count);
-    fmt::print("\tcurrent_extent=({}, {})\n", surface_capabilities.current_extent.width, surface_capabilities.current_extent.height);
-    fmt::print("\tmin_texture_extent=({}, {})\n", surface_capabilities.min_texture_extent.width, surface_capabilities.min_texture_extent.height);
-    fmt::print("\tmax_texture_extent=({}, {})\n", surface_capabilities.max_texture_extent.width, surface_capabilities.max_texture_extent.height);
-    fmt::print("\tsupported_usage={}\n", surface_capabilities.supported_usage);
 
     const MGPUSwapChainCreateInfo swap_chain_create_info{
       .surface = mgpu_surface,
@@ -211,7 +162,17 @@ int main() {
     }
   }
 
-  fmt::print("number of swap chain textures: {}\n", mgpu_swap_chain_textures.size());
+  MGPUShaderModule mgpu_vert_shader{};
+  MGPUShaderModule mgpu_frag_shader{};
+  MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_vert, sizeof(triangle_vert), &mgpu_vert_shader));
+  MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_frag, sizeof(triangle_frag), &mgpu_frag_shader));
+
+  MGPUShaderProgramCreateInfo shader_program_create_info{
+    .vertex = mgpu_vert_shader,
+    .fragment = mgpu_frag_shader
+  };
+  MGPUShaderProgram mgpu_shader_program{};
+  MGPU_CHECK(mgpuDeviceCreateShaderProgram(mgpu_device, &shader_program_create_info, &mgpu_shader_program));
 
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
@@ -219,8 +180,6 @@ int main() {
   MGPUQueue mgpu_queue = mgpuDeviceGetQueue(mgpu_device, MGPU_QUEUE_TYPE_GRAPHICS_COMPUTE);
 
   SDL_Event sdl_event{};
-
-  float hue = 0.0f;
 
   while(true) {
     u32 texture_index;
@@ -233,7 +192,7 @@ int main() {
         .texture_view = mgpu_swap_chain_texture_views[texture_index],
         .load_op = MGPU_LOAD_OP_CLEAR,
         .store_op = MGPU_STORE_OP_STORE,
-        .clear_color = hsv_to_rgb(hue, 1.0f, 1.0f)
+        .clear_color = {.r = 0.3f, .g = 0.f, .b = 0.9f, .a = 1.f}
       }
     };
     const MGPURenderPassBeginInfo render_pass_info{
@@ -242,13 +201,12 @@ int main() {
       .depth_stencil_attachment = nullptr
     };
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
+    mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
+    mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, mgpu_cmd_list));
-    // MGPU_CHECK(mgpuQueueFlush(mgpu_queue));
     MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
-
-    hue = std::fmod(hue + 0.0025f, 1.0f);
 
     while(SDL_PollEvent(&sdl_event)) {
       if(sdl_event.type == SDL_QUIT) {
@@ -259,6 +217,9 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuShaderProgramDestroy(mgpu_shader_program);
+  mgpuShaderModuleDestroy(mgpu_frag_shader);
+  mgpuShaderModuleDestroy(mgpu_vert_shader);
   for(MGPUTextureView texture_view : mgpu_swap_chain_texture_views) mgpuTextureViewDestroy(texture_view);
   mgpuSwapChainDestroy(mgpu_swap_chain);
   mgpuDeviceDestroy(mgpu_device);
