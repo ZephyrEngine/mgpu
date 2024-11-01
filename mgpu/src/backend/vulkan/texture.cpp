@@ -10,8 +10,8 @@
 namespace mgpu::vulkan {
 
 static const VmaAllocationCreateInfo vma_alloc_info = {
-  .usage = VMA_MEMORY_USAGE_AUTO,
-  .flags = 0
+  .flags = 0,
+  .usage = VMA_MEMORY_USAGE_AUTO
 };
 
 bool Texture::State::operator==(const State& other_state) const {

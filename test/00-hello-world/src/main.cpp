@@ -67,7 +67,7 @@ int main() {
     surface_create_info.win32 = {
       .hinstance = wm_info.info.win.hinstance,
       .hwnd = wm_info.info.win.window
-    }
+    };
 #elif defined(SDL_VIDEO_DRIVER_COCOA)
     surface_create_info.metal = {
       .metal_layer = TMP_Cocoa_CreateMetalLayer(wm_info.info.cocoa.window)
