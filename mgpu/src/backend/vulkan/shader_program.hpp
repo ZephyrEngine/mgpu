@@ -10,11 +10,11 @@
 
 namespace mgpu::vulkan {
 
-class ShaderProgram : public ShaderProgramBase {
+class ShaderProgram final : public ShaderProgramBase {
   public:
     explicit ShaderProgram(const MGPUShaderProgramCreateInfo& create_info);
 
-    [[nodiscard]] std::span<const VkPipelineShaderStageCreateInfo> GetShaderStages() {
+    [[nodiscard]] std::span<const VkPipelineShaderStageCreateInfo> GetVkShaderStages() {
       return m_vk_shader_stages;
     }
 

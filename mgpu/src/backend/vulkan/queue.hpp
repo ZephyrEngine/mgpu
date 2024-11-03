@@ -16,6 +16,8 @@
 namespace mgpu::vulkan {
 
 class TextureView;
+class ShaderProgram;
+class RasterizerState;
 class SwapChain;
 
 class Queue final : public QueueBase {
@@ -51,17 +53,18 @@ class Queue final : public QueueBase {
         atom::Vector_N<TextureView*, limits::max_color_attachments> color_attachments{};
         TextureView* depth_stencil_attachment{};
 
-        struct Pipeline {
-          bool require_switch{};
-          ShaderProgramBase* shader_program{};
-        } pipeline{};
+        ShaderProgram* shader_program{};
+        RasterizerState* rasterizer_state{};
       } render_pass{};
     };
 
     void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command);
     void HandleCmdEndRenderPass(CommandListState& state);
     void HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command);
+    void HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
+
+    void BindGraphicsPipeline(const CommandListState& state);
 
     VkDevice m_vk_device;
     VkQueue m_vk_queue;

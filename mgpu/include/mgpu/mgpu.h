@@ -36,6 +36,7 @@ typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
 typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
 typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
+typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -149,6 +150,23 @@ typedef enum MGPUShaderStageBits {
 
 typedef MGPUFlags MGPUShaderStage;
 
+typedef enum MGPUPolygonMode {
+  MGPU_POLYGON_MODE_FILL = 0,
+  MGPU_POLYGON_MODE_LINE = 1
+} MGPUPolygonMode;
+
+typedef enum MGPUCullModeBits {
+  MGPU_CULL_MODE_FRONT = 0x00000001,
+  MGPU_CULL_MODE_BACK = 0x00000002,
+} MGPUCullModeBits;
+
+typedef MGPUFlags MGPUCullMode;
+
+typedef enum MGPUFrontFace {
+  MGPU_FRONT_FACE_COUNTER_CLOCKWISE = 0,
+  MGPU_FRONT_FACE_CLOCKWISE = 1
+} MGPUFrontFace;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -248,6 +266,19 @@ typedef struct MGPUShaderProgramCreateInfo {
   const MGPUShaderStageCreateInfo* shader_stages;
 } MGPUShaderProgramCreateInfo;
 
+typedef struct MGPURasterizerStateCreateInfo {
+  bool depth_clamp_enable;
+  bool rasterizer_discard_enable;
+  MGPUPolygonMode polygon_mode;
+  MGPUCullMode cull_mode;
+  MGPUFrontFace front_face;
+  bool depth_bias_enable;
+  float depth_bias_constant_factor;
+  float depth_bias_clamp;
+  float depth_bias_slope_factor;
+  float line_width;
+} MGPURasterizerStateCreateInfo;
+
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -346,6 +377,7 @@ MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo*
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module);
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program);
+MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
@@ -373,11 +405,15 @@ void mgpuShaderModuleDestroy(MGPUShaderModule shader_module);
 // MGPUShaderProgram methods
 void mgpuShaderProgramDestroy(MGPUShaderProgram shader_program);
 
+// MGPURasterizerState methods
+void mgpuRasterizerStateDestroy(MGPURasterizerState rasterizer_state);
+
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
+void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

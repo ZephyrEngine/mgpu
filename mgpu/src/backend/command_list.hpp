@@ -14,13 +14,15 @@
 
 namespace mgpu {
 
-class ShaderProgramBase;
 class TextureViewBase;
+class ShaderProgramBase;
+class RasterizerStateBase;
 
 enum class CommandType {
   BeginRenderPass,
   EndRenderPass,
   UseShaderProgram,
+  UseRasterizerState,
   Draw
 };
 
@@ -93,6 +95,15 @@ struct UseShaderProgramCommand : CommandBase {
   ShaderProgramBase* m_shader_program;
 };
 
+struct UseRasterizerStateCommand : CommandBase {
+  explicit UseRasterizerStateCommand(RasterizerStateBase* rasterizer_state)
+      : CommandBase{CommandType::UseRasterizerState}
+      , m_rasterizer_state{rasterizer_state} {
+  }
+
+  RasterizerStateBase* m_rasterizer_state;
+};
+
 struct DrawCommand : CommandBase {
   DrawCommand(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
       : CommandBase{CommandType::Draw}
@@ -147,6 +158,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       Push<UseShaderProgramCommand>(shader_program);
     }
 
+    void CmdUseRasterizerState(RasterizerStateBase* rasterizer_state) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseRasterizerStateCommand>(rasterizer_state);
+    }
+
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
       // TODO: validate that enough state is bound for the draw.
       ErrorUnlessInsideRenderPass();
@@ -169,6 +185,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       }
     }
 
+    // TODO: remove this when we implement the RenderPassEncoder API !!!
     void ErrorUnlessInsideRenderPass() {
       m_state.has_errors |= !m_state.inside_render_pass;
     }

@@ -98,6 +98,29 @@ inline VkShaderStageFlagBits MGPUShaderStageBitToVkShaderStageBit(MGPUShaderStag
   }
 }
 
+inline VkPolygonMode MGPUPolygonModeToVkPolygonMode(MGPUPolygonMode polygon_mode) {
+  switch(polygon_mode) {
+    case MGPU_POLYGON_MODE_FILL:  return VK_POLYGON_MODE_FILL;
+    case MGPU_POLYGON_MODE_LINE:  return VK_POLYGON_MODE_LINE;
+    default: ATOM_PANIC("unhandled polygon mode: {}", (int)polygon_mode);
+  }
+}
+
+inline VkCullModeFlags MGPUCullModeToVkCullMode(MGPUCullMode cull_mode) {
+  VkCullModeFlags vk_cull_mode{};
+  if(cull_mode & MGPU_CULL_MODE_FRONT) vk_cull_mode |= VK_CULL_MODE_FRONT_BIT;
+  if(cull_mode & MGPU_CULL_MODE_BACK)  vk_cull_mode |= VK_CULL_MODE_BACK_BIT;
+  return vk_cull_mode;
+}
+
+inline VkFrontFace MGPUFrontFaceToVkFrontFace(MGPUFrontFace front_face) {
+  switch(front_face) {
+    case MGPU_FRONT_FACE_CLOCKWISE:         return VK_FRONT_FACE_CLOCKWISE;
+    case MGPU_FRONT_FACE_COUNTER_CLOCKWISE: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    default: ATOM_PANIC("unhandled front face: {}", (int)front_face);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

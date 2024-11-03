@@ -64,7 +64,8 @@ bool VulkanPhysicalDevice::QueryDeviceLayerSupport(const char* layer_name) const
 [[nodiscard]] Result<VkDevice> VulkanPhysicalDevice::CreateLogicalDevice(
   std::span<const VkDeviceQueueCreateInfo> queue_create_infos,
   std::span<const char* const> required_device_extensions,
-  std::span<const char* const> required_device_layers
+  std::span<const char* const> required_device_layers,
+  const VkPhysicalDeviceFeatures* physical_device_features
 ) const {
   const VkDeviceCreateInfo create_info{
     .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -76,7 +77,7 @@ bool VulkanPhysicalDevice::QueryDeviceLayerSupport(const char* layer_name) const
     .ppEnabledLayerNames = required_device_layers.data(),
     .enabledExtensionCount = (u32)required_device_extensions.size(),
     .ppEnabledExtensionNames = required_device_extensions.data(),
-    .pEnabledFeatures = nullptr
+    .pEnabledFeatures = physical_device_features
   };
 
   VkDevice vk_device{};

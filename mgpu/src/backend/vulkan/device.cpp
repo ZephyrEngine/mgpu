@@ -5,6 +5,7 @@
 
 #include "buffer.hpp"
 #include "device.hpp"
+#include "rasterizer_state.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
@@ -85,7 +86,8 @@ Result<DeviceBase*> Device::Create(
     });
   }
 
-  Result<VkDevice> vk_device_result = vk_physical_device.CreateLogicalDevice(vk_queue_create_infos, vk_required_device_extensions, vk_required_device_layers);
+  Result<VkDevice> vk_device_result = vk_physical_device.CreateLogicalDevice(
+    vk_queue_create_infos, vk_required_device_extensions, vk_required_device_layers);
   MGPU_FORWARD_ERROR(vk_device_result.Code());
 
   VkDevice vk_device = vk_device_result.Unwrap();
@@ -162,7 +164,11 @@ Result<ShaderModuleBase*> Device::CreateShaderModule(const u32* spirv_code, size
 }
 
 Result<ShaderProgramBase*> Device::CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) {
-  return new ShaderProgram(create_info);
+  return new ShaderProgram{create_info};
+}
+
+Result<RasterizerStateBase*> Device::CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) {
+  return new RasterizerState{create_info};
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

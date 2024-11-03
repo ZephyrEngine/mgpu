@@ -186,6 +186,21 @@ int main() {
   MGPUShaderProgram mgpu_shader_program{};
   MGPU_CHECK(mgpuDeviceCreateShaderProgram(mgpu_device, &shader_program_create_info, &mgpu_shader_program));
 
+  const MGPURasterizerStateCreateInfo rasterizer_state_create_info{
+    .depth_clamp_enable = false,
+    .rasterizer_discard_enable = false,
+    .polygon_mode = MGPU_POLYGON_MODE_LINE,
+    .cull_mode = MGPU_CULL_MODE_BACK,
+    .front_face = MGPU_FRONT_FACE_COUNTER_CLOCKWISE,
+    .depth_bias_enable = false,
+    .depth_bias_constant_factor = 0.f,
+    .depth_bias_clamp = 0.f,
+    .depth_bias_slope_factor = 0.f,
+    .line_width = 1.f
+  };
+  MGPURasterizerState mgpu_rasterizer_state{};
+  MGPU_CHECK(mgpuDeviceCreateRasterizerState(mgpu_device, &rasterizer_state_create_info, &mgpu_rasterizer_state));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -214,6 +229,7 @@ int main() {
     };
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
     mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
+    mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
@@ -229,6 +245,7 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuRasterizerStateDestroy(mgpu_rasterizer_state);
   mgpuShaderProgramDestroy(mgpu_shader_program);
   mgpuShaderModuleDestroy(mgpu_frag_shader);
   mgpuShaderModuleDestroy(mgpu_vert_shader);

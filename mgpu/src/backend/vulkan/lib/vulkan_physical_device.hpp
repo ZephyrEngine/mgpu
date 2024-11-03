@@ -32,7 +32,8 @@ class VulkanPhysicalDevice {
     [[nodiscard]] Result<VkDevice> CreateLogicalDevice(
       std::span<const VkDeviceQueueCreateInfo> queue_create_infos,
       std::span<const char* const> required_device_extensions,
-      std::span<const char* const> required_device_layers
+      std::span<const char* const> required_device_layers,
+      const VkPhysicalDeviceFeatures* physical_device_features = nullptr
     ) const;
 
     [[nodiscard]] VkPhysicalDevice Handle() const {

@@ -4,6 +4,7 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
 #include "queue.hpp"
+#include "rasterizer_state.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
@@ -144,6 +145,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::BeginRenderPass: HandleCmdBeginRenderPass(state, *(BeginRenderPassCommand*)command); break;
       case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
       case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
+      case CommandType::UseRasterizerState: HandleCmdUseRasterizerState(state, *(UseRasterizerStateCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -333,12 +335,30 @@ void Queue::HandleCmdEndRenderPass(CommandListState& state) {
 }
 
 void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command) {
-  if(state.render_pass.pipeline.shader_program != command.m_shader_program) {
-    state.render_pass.pipeline.shader_program = command.m_shader_program;
-    state.render_pass.pipeline.require_switch = true;
+  if(state.render_pass.shader_program != command.m_shader_program) {
+    state.render_pass.shader_program = (ShaderProgram*)command.m_shader_program;
+    BindGraphicsPipeline(state);
   }
+}
 
-  // TODO: redo this total hack
+void Queue::HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command) {
+  if(state.render_pass.rasterizer_state != command.m_rasterizer_state) {
+    state.render_pass.rasterizer_state = (RasterizerState*)command.m_rasterizer_state;
+    BindGraphicsPipeline(state);
+  }
+}
+
+void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
+  vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
+}
+
+void Queue::BindGraphicsPipeline(const CommandListState& state) {
+  // TODO(fleroviux): make this not suck?
+
+  // Bail out for now if pipeline state is incomplete.
+  if(state.render_pass.shader_program == nullptr || state.render_pass.rasterizer_state == nullptr) {
+    return;
+  }
 
   const VkPipelineLayoutCreateInfo vk_pipeline_layout_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -354,7 +374,7 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     ATOM_PANIC("failed to create pipeline layout?");
   }
 
-  const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = ((ShaderProgram*)command.m_shader_program)->GetShaderStages();
+  const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = state.render_pass.shader_program->GetVkShaderStages();
 
   const VkPipelineVertexInputStateCreateInfo vk_vertex_input_state_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -396,22 +416,6 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     .pViewports = &vk_viewport,
     .scissorCount = 1u,
     .pScissors = &vk_scissor
-  };
-
-  const VkPipelineRasterizationStateCreateInfo vk_rasterization_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .depthClampEnable = VK_FALSE,
-    .rasterizerDiscardEnable = VK_FALSE,
-    .polygonMode = VK_POLYGON_MODE_FILL,
-    .cullMode = VK_CULL_MODE_FRONT_BIT,
-    .frontFace = VK_FRONT_FACE_CLOCKWISE,
-    .depthBiasEnable = VK_FALSE,
-    .depthBiasConstantFactor = 0.f,
-    .depthBiasClamp = 0.f,
-    .depthBiasSlopeFactor = 0.f,
-    .lineWidth = 1.f
   };
 
   const VkPipelineMultisampleStateCreateInfo vk_multisample_state_create_info{
@@ -469,6 +473,7 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
   Result<VkRenderPass> vk_render_pass_result = m_render_pass_cache->GetRenderPass(render_pass_query);
   VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap(); // TODO: handle error
 
+  // TODO(fleroviux): do not recreate this structure from scratch on every pipeline generation?
   const VkGraphicsPipelineCreateInfo vk_graphics_pipeline_create_info{
     .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
     .pNext = nullptr,
@@ -479,7 +484,7 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     .pInputAssemblyState = &vk_input_assembly_state_create_info,
     .pTessellationState = nullptr,
     .pViewportState = &vk_viewport_state_create_info,
-    .pRasterizationState = &vk_rasterization_state_create_info,
+    .pRasterizationState = &state.render_pass.rasterizer_state->GetVkRasterizationState(),
     .pMultisampleState = &vk_multisample_state_create_info,
     .pDepthStencilState = &vk_depth_stencil_state_create_info,
     .pColorBlendState = &vk_color_blend_state_create_info,
@@ -499,10 +504,6 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
   // TODO: at least fix the fucking memory leak
 
   vkCmdBindPipeline(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline);
-}
-
-void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
-  vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
 }
 
 }  // namespace mgpu::vulkan
