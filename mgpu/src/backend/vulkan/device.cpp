@@ -86,6 +86,7 @@ Result<DeviceBase*> Device::Create(
     });
   }
 
+  // TODO(fleroviux): enable fillModeNonSolid feature for wireframe drawing.
   Result<VkDevice> vk_device_result = vk_physical_device.CreateLogicalDevice(
     vk_queue_create_infos, vk_required_device_extensions, vk_required_device_layers);
   MGPU_FORWARD_ERROR(vk_device_result.Code());
