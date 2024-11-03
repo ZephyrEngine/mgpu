@@ -64,6 +64,7 @@ set(HEADERS
   src/backend/texture.hpp
   src/backend/texture_view.hpp
   src/frontend/validation/buffer.hpp
+  src/frontend/validation/shader_program.hpp
   src/frontend/validation/texture.hpp
   src/frontend/validation/texture_view.hpp
   src/common/bump_allocator.hpp

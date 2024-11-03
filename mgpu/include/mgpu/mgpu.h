@@ -60,7 +60,8 @@ typedef enum MGPUResult {
   MGPU_INCOMPATIBLE_TEXTURE_USAGE  = 10,
   MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 11,
   MGPU_NOT_READY = 12,
-  MGPU_BAD_COMMAND_LIST = 13
+  MGPU_BAD_COMMAND_LIST = 13,
+  MGPU_INVALID_ARGUMENT = 14
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -135,6 +136,19 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
 
+typedef enum MGPUShaderStageBits {
+  MGPU_SHADER_STAGE_VERTEX = 0x00000001,
+  MGPU_SHADER_STAGE_TESSELLATION_CONTROL = 0x00000002,
+  MGPU_SHADER_STAGE_TESSELLATION_EVALUATION = 0x00000004,
+  MGPU_SHADER_STAGE_GEOMETRY = 0x00000008,
+  MGPU_SHADER_STAGE_FRAGMENT = 0x00000010,
+  MGPU_SHADER_STAGE_COMPUTE = 0x00000020,
+
+  MGPU_SHADER_STAGE_ALL_GRAPHICS = MGPU_SHADER_STAGE_VERTEX | MGPU_SHADER_STAGE_TESSELLATION_CONTROL | MGPU_SHADER_STAGE_TESSELLATION_EVALUATION | MGPU_SHADER_STAGE_GEOMETRY | MGPU_SHADER_STAGE_FRAGMENT
+} MGPUShaderStageBits;
+
+typedef MGPUFlags MGPUShaderStage;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -191,7 +205,7 @@ typedef struct MGPUSurfaceCapabilities {
 
 typedef struct MGPUSurfaceFormat {
   MGPUTextureFormat format;
-  MGPUColorSpace  color_space;
+  MGPUColorSpace color_space;
 } MGPUSurfaceFormat;
 
 // ======================================================= //
@@ -223,9 +237,15 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
 
+typedef struct MGPUShaderStageCreateInfo {
+  MGPUShaderStageBits stage;
+  MGPUShaderModule module;
+  const char* entrypoint;
+} MGPUShaderStageCreateInfo;
+
 typedef struct MGPUShaderProgramCreateInfo {
-  MGPUShaderModule vertex;
-  MGPUShaderModule fragment;
+  uint32_t shader_stage_count;
+  const MGPUShaderStageCreateInfo* shader_stages;
 } MGPUShaderProgramCreateInfo;
 
 typedef struct MGPUSurfaceCreateInfo {

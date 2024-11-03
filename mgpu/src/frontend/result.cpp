@@ -22,6 +22,7 @@ const char* mgpuResultCodeToString(MGPUResult result) {
     REGISTER(MGPU_INCOMPATIBLE_TEXTURE_ASPECT)
     REGISTER(MGPU_NOT_READY)
     REGISTER(MGPU_BAD_COMMAND_LIST)
+    REGISTER(MGPU_INVALID_ARGUMENT)
     default: ATOM_PANIC("internal error (missing result code to string translation)")
   }
 

@@ -86,6 +86,18 @@ inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType 
   }
 }
 
+inline VkShaderStageFlagBits MGPUShaderStageBitToVkShaderStageBit(MGPUShaderStageBits shader_stage_bit) {
+  switch(shader_stage_bit) {
+    case MGPU_SHADER_STAGE_VERTEX:                  return VK_SHADER_STAGE_VERTEX_BIT;
+    case MGPU_SHADER_STAGE_TESSELLATION_CONTROL:    return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    case MGPU_SHADER_STAGE_TESSELLATION_EVALUATION: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    case MGPU_SHADER_STAGE_GEOMETRY:                return VK_SHADER_STAGE_GEOMETRY_BIT;
+    case MGPU_SHADER_STAGE_FRAGMENT:                return VK_SHADER_STAGE_FRAGMENT_BIT;
+    case MGPU_SHADER_STAGE_COMPUTE:                 return VK_SHADER_STAGE_COMPUTE_BIT;
+    default: ATOM_PANIC("unhandled shader stage bit: {}", (int)shader_stage_bit);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

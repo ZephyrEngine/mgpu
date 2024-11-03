@@ -167,9 +167,21 @@ int main() {
   MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_vert, sizeof(triangle_vert), &mgpu_vert_shader));
   MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_frag, sizeof(triangle_frag), &mgpu_frag_shader));
 
-  MGPUShaderProgramCreateInfo shader_program_create_info{
-    .vertex = mgpu_vert_shader,
-    .fragment = mgpu_frag_shader
+  const MGPUShaderStageCreateInfo shader_stages[2] {
+    {
+      .stage = MGPU_SHADER_STAGE_VERTEX,
+      .module = mgpu_vert_shader,
+      .entrypoint = "main"
+    },
+    {
+      .stage = MGPU_SHADER_STAGE_FRAGMENT,
+      .module = mgpu_frag_shader,
+      .entrypoint = "main"
+    }
+  };
+  const MGPUShaderProgramCreateInfo shader_program_create_info{
+    .shader_stage_count = 2u,
+    .shader_stages = shader_stages
   };
   MGPUShaderProgram mgpu_shader_program{};
   MGPU_CHECK(mgpuDeviceCreateShaderProgram(mgpu_device, &shader_program_create_info, &mgpu_shader_program));

@@ -4,6 +4,7 @@
 #include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "validation/buffer.hpp"
+#include "validation/shader_program.hpp"
 #include "validation/texture.hpp"
 
 extern "C" {
@@ -46,7 +47,8 @@ MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv
 }
 
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program) {
-  // TODO(fleroviux): validate that the pipeline stage combination is valid.
+  MGPU_FORWARD_ERROR(validate_shader_program_stages(create_info));
+
   mgpu::Result<mgpu::ShaderProgramBase*> cxx_shader_program_result = ((mgpu::DeviceBase*)device)->CreateShaderProgram(*create_info);
   MGPU_FORWARD_ERROR(cxx_shader_program_result.Code());
   *shader_program = (MGPUShaderProgram)cxx_shader_program_result.Unwrap();

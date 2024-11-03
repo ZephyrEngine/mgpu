@@ -354,26 +354,7 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     ATOM_PANIC("failed to create pipeline layout?");
   }
 
-  const VkPipelineShaderStageCreateInfo vk_shader_stages[2]{
-    {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0u,
-      .stage = VK_SHADER_STAGE_VERTEX_BIT,
-      .module = ((ShaderModule*)((ShaderProgram*)command.m_shader_program)->GetCreateInfo().vertex)->Handle(),
-      .pName = "main",
-      .pSpecializationInfo = nullptr
-    },
-    {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0u,
-      .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-      .module = ((ShaderModule*)((ShaderProgram*)command.m_shader_program)->GetCreateInfo().fragment)->Handle(),
-      .pName = "main",
-      .pSpecializationInfo = nullptr
-    }
-  };
+  const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = ((ShaderProgram*)command.m_shader_program)->GetShaderStages();
 
   const VkPipelineVertexInputStateCreateInfo vk_vertex_input_state_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -492,8 +473,8 @@ void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderPr
     .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0,
-    .stageCount = 2u,
-    .pStages = vk_shader_stages,
+    .stageCount = (u32)vk_shader_stages.size(),
+    .pStages = vk_shader_stages.data(),
     .pVertexInputState = &vk_vertex_input_state_create_info,
     .pInputAssemblyState = &vk_input_assembly_state_create_info,
     .pTessellationState = nullptr,
