@@ -4,6 +4,7 @@
 #include <atom/float.hpp>
 
 #include "buffer.hpp"
+#include "color_blend_state.hpp"
 #include "device.hpp"
 #include "input_assembly_state.hpp"
 #include "rasterizer_state.hpp"
@@ -175,6 +176,10 @@ Result<RasterizerStateBase*> Device::CreateRasterizerState(const MGPURasterizerS
 
 Result<InputAssemblyStateBase*> Device::CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) {
   return new InputAssemblyState{create_info};
+}
+
+Result<ColorBlendStateBase*> Device::CreateColorBlendState(const MGPUColorBlendStateCreateInfo& create_info) {
+  return new ColorBlendState{create_info};
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

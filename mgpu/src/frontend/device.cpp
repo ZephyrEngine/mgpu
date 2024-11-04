@@ -73,6 +73,15 @@ MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInput
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBlendStateCreateInfo* create_info, MGPUColorBlendState* color_blend_state) {
+  // TODO(fleroviux): implement validation?
+
+  mgpu::Result<mgpu::ColorBlendStateBase*> cxx_color_blend_state_result = ((mgpu::DeviceBase*)device)->CreateColorBlendState(*create_info);
+  MGPU_FORWARD_ERROR(cxx_color_blend_state_result.Code());
+  *color_blend_state = (MGPUColorBlendState)cxx_color_blend_state_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 

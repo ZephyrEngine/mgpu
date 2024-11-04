@@ -4,8 +4,9 @@
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
-#include "queue.hpp"
+#include "color_blend_state.hpp"
 #include "input_assembly_state.hpp"
+#include "queue.hpp"
 #include "rasterizer_state.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
@@ -149,6 +150,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
       case CommandType::UseRasterizerState: HandleCmdUseRasterizerState(state, *(UseRasterizerStateCommand*)command); break;
       case CommandType::UseInputAssemblyState: HandleCmdUseInputAssemblyState(state, *(UseInputAssemblyStateCommand*)command); break;
+      case CommandType::UseColorBlendState: HandleCmdUseColorBlendState(state, *(UseColorBlendStateCommand*)command); break;
       case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
       case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
@@ -378,6 +380,13 @@ void Queue::HandleCmdUseInputAssemblyState(CommandListState& state, const UseInp
   }
 }
 
+void Queue::HandleCmdUseColorBlendState(CommandListState& state, const UseColorBlendStateCommand& command) {
+  if(state.render_pass.color_blend_state != command.m_color_blend_state) {
+    state.render_pass.color_blend_state = (ColorBlendState*)command.m_color_blend_state;
+    BindGraphicsPipeline(state);
+  }
+}
+
 void Queue::HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command) {
   const VkViewport vk_viewport{
     .x = command.m_viewport_x,
@@ -417,7 +426,10 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
   // TODO(fleroviux): make this not suck?
 
   // Bail out for now if pipeline state is incomplete.
-  if(state.render_pass.shader_program == nullptr || state.render_pass.rasterizer_state == nullptr || state.render_pass.input_assembly_state == nullptr) {
+  if(state.render_pass.shader_program == nullptr ||
+     state.render_pass.rasterizer_state == nullptr ||
+     state.render_pass.input_assembly_state == nullptr ||
+     state.render_pass.color_blend_state == nullptr) {
     return;
   }
 
@@ -486,27 +498,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .maxDepthBounds = 1.f
   };
 
-  const VkPipelineColorBlendAttachmentState vk_color_blend_attachment_state{
-    .blendEnable = VK_FALSE,
-    .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-    .dstColorBlendFactor = VK_BLEND_FACTOR_ONE,
-    .colorBlendOp = VK_BLEND_OP_ADD,
-    .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-    .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-    .alphaBlendOp = VK_BLEND_OP_ADD,
-    .colorWriteMask = 0b1111
-  };
-
-  const VkPipelineColorBlendStateCreateInfo vk_color_blend_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .logicOpEnable = VK_FALSE,
-    .logicOp = VK_LOGIC_OP_AND,
-    .attachmentCount = 1u,
-    .pAttachments = &vk_color_blend_attachment_state,
-    .blendConstants = {0.f, 0.f, 0.f, 0.f}
-  };
+  // TODO(fleroviux): just use the currently active render pass for creating the pipeline?
 
   RenderPassQuery render_pass_query{};
   render_pass_query.SetColorAttachment(0u, MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB, MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE);
@@ -537,7 +529,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .pRasterizationState = &state.render_pass.rasterizer_state->GetVkRasterizationState(),
     .pMultisampleState = &vk_multisample_state_create_info,
     .pDepthStencilState = &vk_depth_stencil_state_create_info,
-    .pColorBlendState = &vk_color_blend_state_create_info,
+    .pColorBlendState = &state.render_pass.color_blend_state->GetVkColorBlendState(),
     .pDynamicState = &vk_dynamic_state_create_info,
     .layout = vk_pipeline_layout,
     .renderPass = vk_render_pass,

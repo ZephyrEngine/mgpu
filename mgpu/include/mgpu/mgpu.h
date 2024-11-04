@@ -38,6 +38,7 @@ typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
 typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
 typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
 typedef struct MGPUInputAssemblyStateImpl* MGPUInputAssemblyState;
+typedef struct MGPUColorBlendStateImpl* MGPUColorBlendState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -177,6 +178,41 @@ typedef enum MGPUPrimitiveTopology {
   MGPU_PRIMITIVE_TOPOLOGY_PATCH_LIST = 5
 } MGPUPrimitiveTopology;
 
+typedef enum MGPUBlendFactor {
+  MGPU_BLEND_FACTOR_ZERO = 0,
+  MGPU_BLEND_FACTOR_ONE = 1,
+  MGPU_BLEND_FACTOR_SRC_COLOR = 2,
+  MGPU_BLEND_FACTOR_ONE_MINUS_SRC_COLOR = 3,
+  MGPU_BLEND_FACTOR_DST_COLOR = 4,
+  MGPU_BLEND_FACTOR_ONE_MINUS_DST_COLOR = 5,
+  MGPU_BLEND_FACTOR_SRC_ALPHA = 6,
+  MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA = 7,
+  MGPU_BLEND_FACTOR_DST_ALPHA = 8,
+  MGPU_BLEND_FACTOR_ONE_MINUS_DST_ALPHA = 9,
+  MGPU_BLEND_FACTOR_SRC_ALPHA_SATURATE = 10,
+  MGPU_BLEND_FACTOR_SRC1_COLOR = 11,
+  MGPU_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR = 12,
+  MGPU_BLEND_FACTOR_SRC1_ALPHA = 13,
+  MGPU_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA = 14
+} MGPUBlendFactor;
+
+typedef enum MGPUBlendOp {
+  MGPU_BLEND_OP_ADD = 0,
+  MGPU_BLEND_OP_SUBTRACT = 1,
+  MGPU_BLEND_OP_REVERSE_SUBTRACT = 2,
+  MGPU_BLEND_OP_MIN = 3,
+  MGPU_BLEND_OP_MAX = 4
+} MGPUBlendOp;
+
+typedef enum MGPUColorComponentFlagBits {
+  MGPU_COLOR_COMPONENT_R = 1,
+  MGPU_COLOR_COMPONENT_G = 2,
+  MGPU_COLOR_COMPONENT_B = 4,
+  MGPU_COLOR_COMPONENT_A = 8,
+} MGPUColorComponentFlagBits;
+
+typedef MGPUFlags MGPUColorComponentFlags;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -294,6 +330,23 @@ typedef struct MGPUInputAssemblyStateCreateInfo {
   bool primitive_restart_enable;
 } MGPUInputAssemblyStateCreateInfo;
 
+typedef struct MGPUColorBlendAttachmentState {
+  bool blend_enable;
+  MGPUBlendFactor src_color_blend_factor;
+  MGPUBlendFactor dst_color_blend_factor;
+  MGPUBlendOp color_blend_op;
+  MGPUBlendFactor src_alpha_blend_factor;
+  MGPUBlendFactor dst_alpha_blend_factor;
+  MGPUBlendOp alpha_blend_op;
+  MGPUColorComponentFlags color_write_mask;
+} MGPUColorBlendAttachmentState;
+
+typedef struct MGPUColorBlendStateCreateInfo {
+  // Note: Logic Op and Blend Constants emitted, since they appear to be unsupported on Metal (and MoltenVK).
+  uint32_t attachment_count;
+  const MGPUColorBlendAttachmentState* attachments;
+} MGPUColorBlendStateCreateInfo;
+
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -394,6 +447,7 @@ MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program);
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
 MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state);
+MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBlendStateCreateInfo* create_info, MGPUColorBlendState* color_blend_state);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
@@ -427,6 +481,9 @@ void mgpuRasterizerStateDestroy(MGPURasterizerState rasterizer_state);
 // MGPUInputAssemblyState methods
 void mgpuInputAssemblyStateDestroy(MGPUInputAssemblyState input_assembly_state);
 
+// MGPUColorBlendState methods
+void mgpuColorBlendStateDestroy(MGPUColorBlendState color_blend_state);
+
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
@@ -434,6 +491,7 @@ void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
 void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
 void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
+void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state);
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
 void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);

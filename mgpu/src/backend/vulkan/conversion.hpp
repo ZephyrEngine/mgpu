@@ -133,6 +133,38 @@ inline VkPrimitiveTopology MGPUPrimitiveTopologyToVkPrimitiveTopology(MGPUPrimit
   }
 }
 
+inline VkBlendFactor MGPUBlendFactorToVkBlendFactor(MGPUBlendFactor blend_factor) {
+  switch(blend_factor) {
+    case MGPU_BLEND_FACTOR_ZERO:                 return VK_BLEND_FACTOR_ZERO;
+    case MGPU_BLEND_FACTOR_ONE:                  return VK_BLEND_FACTOR_ONE;
+    case MGPU_BLEND_FACTOR_SRC_COLOR:            return VK_BLEND_FACTOR_SRC_COLOR;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:  return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    case MGPU_BLEND_FACTOR_DST_COLOR:            return VK_BLEND_FACTOR_DST_COLOR;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_DST_COLOR:  return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+    case MGPU_BLEND_FACTOR_SRC_ALPHA:            return VK_BLEND_FACTOR_SRC_ALPHA;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:  return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    case MGPU_BLEND_FACTOR_DST_ALPHA:            return VK_BLEND_FACTOR_DST_ALPHA;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:  return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    case MGPU_BLEND_FACTOR_SRC_ALPHA_SATURATE:   return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+    case MGPU_BLEND_FACTOR_SRC1_COLOR:           return VK_BLEND_FACTOR_SRC1_COLOR;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+    case MGPU_BLEND_FACTOR_SRC1_ALPHA:           return VK_BLEND_FACTOR_SRC1_ALPHA;
+    case MGPU_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+    default: ATOM_PANIC("unhandled blend factor: {}", (int)blend_factor);
+  }
+}
+
+inline VkBlendOp MGPUBlendOpToVkBlendOp(MGPUBlendOp blend_op) {
+  switch(blend_op) {
+    case MGPU_BLEND_OP_ADD:              return VK_BLEND_OP_ADD;
+    case MGPU_BLEND_OP_SUBTRACT:         return VK_BLEND_OP_SUBTRACT;
+    case MGPU_BLEND_OP_REVERSE_SUBTRACT: return VK_BLEND_OP_REVERSE_SUBTRACT;
+    case MGPU_BLEND_OP_MIN:              return VK_BLEND_OP_MIN;
+    case MGPU_BLEND_OP_MAX:              return VK_BLEND_OP_MAX;
+    default: ATOM_PANIC("unhandled blend op: {}", (int)blend_op);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

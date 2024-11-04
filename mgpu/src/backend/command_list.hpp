@@ -19,6 +19,7 @@ class TextureViewBase;
 class ShaderProgramBase;
 class RasterizerStateBase;
 class InputAssemblyStateBase;
+class ColorBlendStateBase;
 
 enum class CommandType {
   BeginRenderPass,
@@ -26,6 +27,7 @@ enum class CommandType {
   UseShaderProgram,
   UseRasterizerState,
   UseInputAssemblyState,
+  UseColorBlendState,
   SetViewport,
   SetScissor,
   Draw
@@ -116,6 +118,15 @@ struct UseInputAssemblyStateCommand : CommandBase {
   }
 
   InputAssemblyStateBase* m_input_assembly_state;
+};
+
+struct UseColorBlendStateCommand : CommandBase {
+  explicit UseColorBlendStateCommand(ColorBlendStateBase* color_blend_state)
+      : CommandBase{CommandType::UseColorBlendState}
+      , m_color_blend_state{color_blend_state} {
+  }
+
+  ColorBlendStateBase* m_color_blend_state;
 };
 
 struct SetViewportCommand : CommandBase {
@@ -210,6 +221,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdUseInputAssemblyState(InputAssemblyStateBase* input_assembly_state) {
       ErrorUnlessInsideRenderPass();
       Push<UseInputAssemblyStateCommand>(input_assembly_state);
+    }
+
+    void CmdUseColorBlendState(ColorBlendStateBase* color_blend_state) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseColorBlendStateCommand>(color_blend_state);
     }
 
     void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {

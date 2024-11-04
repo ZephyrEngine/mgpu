@@ -208,6 +208,25 @@ int main() {
   MGPUInputAssemblyState mgpu_input_assembly_state{};
   MGPU_CHECK(mgpuDeviceCreateInputAssemblyState(mgpu_device, &input_assembly_state_create_info, &mgpu_input_assembly_state));
 
+  const MGPUColorBlendAttachmentState color_blend_attachment_states[1]{
+    {
+      .blend_enable = true,
+      .src_color_blend_factor = MGPU_BLEND_FACTOR_SRC_ALPHA,
+      .dst_color_blend_factor = MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      .color_blend_op = MGPU_BLEND_OP_ADD,
+      .src_alpha_blend_factor = MGPU_BLEND_FACTOR_ONE,
+      .dst_alpha_blend_factor = MGPU_BLEND_FACTOR_ONE,
+      .alpha_blend_op = MGPU_BLEND_OP_MAX,
+      .color_write_mask = 0b1111
+    }
+  };
+  const MGPUColorBlendStateCreateInfo color_blend_state_create_info{
+    .attachment_count = sizeof(color_blend_attachment_states) / sizeof(MGPUColorBlendAttachmentState),
+    .attachments = color_blend_attachment_states
+  };
+  MGPUColorBlendState mgpu_color_blend_state{};
+  MGPU_CHECK(mgpuDeviceCreateColorBlendState(mgpu_device, &color_blend_state_create_info, &mgpu_color_blend_state));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -238,7 +257,8 @@ int main() {
     mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
     mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
     mgpuCommandListCmdUseInputAssemblyState(mgpu_cmd_list, mgpu_input_assembly_state);
-    mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.f, 0.f, 1600.f, 900.f);
+    mgpuCommandListCmdUseColorBlendState(mgpu_cmd_list, mgpu_color_blend_state);
+    mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.0f, 0.0f, 1600.f, 900.f);
     mgpuCommandListCmdSetScissor(mgpu_cmd_list, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
@@ -255,6 +275,7 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuColorBlendStateDestroy(mgpu_color_blend_state);
   mgpuInputAssemblyStateDestroy(mgpu_input_assembly_state);
   mgpuRasterizerStateDestroy(mgpu_rasterizer_state);
   mgpuShaderProgramDestroy(mgpu_shader_program);

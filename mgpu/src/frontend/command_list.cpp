@@ -43,6 +43,10 @@ void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUI
   ((mgpu::CommandList*)command_list)->CmdUseInputAssemblyState((mgpu::InputAssemblyStateBase*)input_assembly_state);
 }
 
+void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state) {
+  ((mgpu::CommandList*)command_list)->CmdUseColorBlendState((mgpu::ColorBlendStateBase*)color_blend_state);
+}
+
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height) {
   ((mgpu::CommandList*)command_list)->CmdSetViewport(x, y, width, height);
 }
