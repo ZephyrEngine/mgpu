@@ -8,6 +8,9 @@ inline MGPUResult validate_shader_program_stages(const MGPUShaderProgramCreateIn
 
   for(size_t i = 0; i < create_info->shader_stage_count; i++) {
     const MGPUShaderStageCreateInfo& shader_stage = create_info->shader_stages[i];
+    if(shader_stage_bitset & shader_stage.stage) {
+      return MGPU_INVALID_ARGUMENT;
+    }
     shader_stage_bitset |= shader_stage.stage;
   }
 

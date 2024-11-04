@@ -189,7 +189,7 @@ int main() {
   const MGPURasterizerStateCreateInfo rasterizer_state_create_info{
     .depth_clamp_enable = false,
     .rasterizer_discard_enable = false,
-    .polygon_mode = MGPU_POLYGON_MODE_LINE,
+    .polygon_mode = MGPU_POLYGON_MODE_FILL,
     .cull_mode = MGPU_CULL_MODE_BACK,
     .front_face = MGPU_FRONT_FACE_COUNTER_CLOCKWISE,
     .depth_bias_enable = false,
