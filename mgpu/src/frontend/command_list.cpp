@@ -39,6 +39,10 @@ void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURast
   ((mgpu::CommandList*)command_list)->CmdUseRasterizerState((mgpu::RasterizerStateBase*)rasterizer_state);
 }
 
+void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state) {
+  ((mgpu::CommandList*)command_list)->CmdUseInputAssemblyState((mgpu::InputAssemblyStateBase*)input_assembly_state);
+}
+
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
   ((mgpu::CommandList*)command_list)->CmdDraw(vertex_count, instance_count, first_vertex, first_instance);
 }

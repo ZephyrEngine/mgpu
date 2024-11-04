@@ -5,6 +5,7 @@
 
 #include "buffer.hpp"
 #include "device.hpp"
+#include "input_assembly_state.hpp"
 #include "rasterizer_state.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
@@ -170,6 +171,10 @@ Result<ShaderProgramBase*> Device::CreateShaderProgram(const MGPUShaderProgramCr
 
 Result<RasterizerStateBase*> Device::CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) {
   return new RasterizerState{create_info};
+}
+
+Result<InputAssemblyStateBase*> Device::CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) {
+  return new InputAssemblyState{create_info};
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

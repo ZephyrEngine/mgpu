@@ -12,7 +12,7 @@ class RasterizerState final : public RasterizerStateBase {
   public:
     explicit RasterizerState(const MGPURasterizerStateCreateInfo& create_info);
 
-    [[nodiscard]] const VkPipelineRasterizationStateCreateInfo& GetVkRasterizationState() {
+    [[nodiscard]] const VkPipelineRasterizationStateCreateInfo& GetVkRasterizationState() const {
       return m_vk_rasterization_state;
     }
 

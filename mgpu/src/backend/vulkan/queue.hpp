@@ -18,6 +18,7 @@ namespace mgpu::vulkan {
 class TextureView;
 class ShaderProgram;
 class RasterizerState;
+class InputAssemblyState;
 class SwapChain;
 
 class Queue final : public QueueBase {
@@ -55,6 +56,7 @@ class Queue final : public QueueBase {
 
         ShaderProgram* shader_program{};
         RasterizerState* rasterizer_state{};
+        InputAssemblyState* input_assembly_state{};
       } render_pass{};
     };
 
@@ -62,6 +64,7 @@ class Queue final : public QueueBase {
     void HandleCmdEndRenderPass(CommandListState& state);
     void HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command);
     void HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command);
+    void HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
 
     void BindGraphicsPipeline(const CommandListState& state);

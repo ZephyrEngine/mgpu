@@ -4,6 +4,7 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
 #include "queue.hpp"
+#include "input_assembly_state.hpp"
 #include "rasterizer_state.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
@@ -146,6 +147,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::EndRenderPass: HandleCmdEndRenderPass(state); break;
       case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
       case CommandType::UseRasterizerState: HandleCmdUseRasterizerState(state, *(UseRasterizerStateCommand*)command); break;
+      case CommandType::UseInputAssemblyState: HandleCmdUseInputAssemblyState(state, *(UseInputAssemblyStateCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -348,7 +350,15 @@ void Queue::HandleCmdUseRasterizerState(CommandListState& state, const UseRaster
   }
 }
 
+void Queue::HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command) {
+  if(state.render_pass.input_assembly_state != command.m_input_assembly_state) {
+    state.render_pass.input_assembly_state = (InputAssemblyState*)command.m_input_assembly_state;
+    BindGraphicsPipeline(state);
+  }
+}
+
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
+  (void)state;
   vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
 }
 
@@ -356,7 +366,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
   // TODO(fleroviux): make this not suck?
 
   // Bail out for now if pipeline state is incomplete.
-  if(state.render_pass.shader_program == nullptr || state.render_pass.rasterizer_state == nullptr) {
+  if(state.render_pass.shader_program == nullptr || state.render_pass.rasterizer_state == nullptr || state.render_pass.input_assembly_state == nullptr) {
     return;
   }
 
@@ -384,14 +394,6 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .pVertexBindingDescriptions = nullptr,
     .vertexAttributeDescriptionCount = 0u,
     .pVertexAttributeDescriptions = nullptr
-  };
-
-  const VkPipelineInputAssemblyStateCreateInfo vk_input_assembly_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    .primitiveRestartEnable = VK_FALSE
   };
 
   const VkViewport vk_viewport{
@@ -481,7 +483,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .stageCount = (u32)vk_shader_stages.size(),
     .pStages = vk_shader_stages.data(),
     .pVertexInputState = &vk_vertex_input_state_create_info,
-    .pInputAssemblyState = &vk_input_assembly_state_create_info,
+    .pInputAssemblyState = &state.render_pass.input_assembly_state->GetVkInputAssemblyState(),
     .pTessellationState = nullptr,
     .pViewportState = &vk_viewport_state_create_info,
     .pRasterizationState = &state.render_pass.rasterizer_state->GetVkRasterizationState(),

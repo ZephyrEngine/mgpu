@@ -43,6 +43,7 @@ class Device final : public DeviceBase {
     Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) override;
     Result<ShaderProgramBase*> CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) override;
     Result<RasterizerStateBase*> CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) override;
+    Result<InputAssemblyStateBase*> CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
 
   private:

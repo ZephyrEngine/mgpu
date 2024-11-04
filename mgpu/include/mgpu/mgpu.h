@@ -37,6 +37,7 @@ typedef struct MGPUTextureViewImpl* MGPUTextureView;
 typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
 typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
 typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
+typedef struct MGPUInputAssemblyStateImpl* MGPUInputAssemblyState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -167,6 +168,15 @@ typedef enum MGPUFrontFace {
   MGPU_FRONT_FACE_CLOCKWISE = 1
 } MGPUFrontFace;
 
+typedef enum MGPUPrimitiveTopology {
+  MGPU_PRIMITIVE_TOPOLOGY_POINT_LIST = 0,
+  MGPU_PRIMITIVE_TOPOLOGY_LINE_LIST = 1,
+  MGPU_PRIMITIVE_TOPOLOGY_LINE_STRIP = 2,
+  MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST = 3,
+  MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP = 4,
+  MGPU_PRIMITIVE_TOPOLOGY_PATCH_LIST = 5
+} MGPUPrimitiveTopology;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -279,6 +289,11 @@ typedef struct MGPURasterizerStateCreateInfo {
   float line_width;
 } MGPURasterizerStateCreateInfo;
 
+typedef struct MGPUInputAssemblyStateCreateInfo {
+  MGPUPrimitiveTopology topology;
+  bool primitive_restart_enable;
+} MGPUInputAssemblyStateCreateInfo;
+
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -378,6 +393,7 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module);
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program);
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
+MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
@@ -408,12 +424,16 @@ void mgpuShaderProgramDestroy(MGPUShaderProgram shader_program);
 // MGPURasterizerState methods
 void mgpuRasterizerStateDestroy(MGPURasterizerState rasterizer_state);
 
+// MGPUInputAssemblyState methods
+void mgpuInputAssemblyStateDestroy(MGPUInputAssemblyState input_assembly_state);
+
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
 void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
+void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

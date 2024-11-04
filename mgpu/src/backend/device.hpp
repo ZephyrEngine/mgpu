@@ -16,6 +16,7 @@ class TextureBase;
 class ShaderModuleBase;
 class ShaderProgramBase;
 class RasterizerStateBase;
+class InputAssemblyStateBase;
 class SwapChainBase;
 
 class DeviceBase : atom::NonCopyable, atom::NonMoveable {
@@ -32,6 +33,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) = 0;
     virtual Result<ShaderProgramBase*> CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) = 0;
     virtual Result<RasterizerStateBase*> CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) = 0;
+    virtual Result<InputAssemblyStateBase*> CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
 
   private:

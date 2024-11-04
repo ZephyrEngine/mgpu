@@ -17,12 +17,14 @@ namespace mgpu {
 class TextureViewBase;
 class ShaderProgramBase;
 class RasterizerStateBase;
+class InputAssemblyStateBase;
 
 enum class CommandType {
   BeginRenderPass,
   EndRenderPass,
   UseShaderProgram,
   UseRasterizerState,
+  UseInputAssemblyState,
   Draw
 };
 
@@ -104,6 +106,15 @@ struct UseRasterizerStateCommand : CommandBase {
   RasterizerStateBase* m_rasterizer_state;
 };
 
+struct UseInputAssemblyStateCommand : CommandBase {
+  explicit UseInputAssemblyStateCommand(InputAssemblyStateBase* input_assembly_state)
+      : CommandBase{CommandType::UseInputAssemblyState}
+      , m_input_assembly_state{input_assembly_state} {
+  }
+
+  InputAssemblyStateBase* m_input_assembly_state;
+};
+
 struct DrawCommand : CommandBase {
   DrawCommand(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
       : CommandBase{CommandType::Draw}
@@ -161,6 +172,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdUseRasterizerState(RasterizerStateBase* rasterizer_state) {
       ErrorUnlessInsideRenderPass();
       Push<UseRasterizerStateCommand>(rasterizer_state);
+    }
+
+    void CmdUseInputAssemblyState(InputAssemblyStateBase* input_assembly_state) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseInputAssemblyStateCommand>(input_assembly_state);
     }
 
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {

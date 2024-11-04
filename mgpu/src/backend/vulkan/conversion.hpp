@@ -121,6 +121,18 @@ inline VkFrontFace MGPUFrontFaceToVkFrontFace(MGPUFrontFace front_face) {
   }
 }
 
+inline VkPrimitiveTopology MGPUPrimitiveTopologyToVkPrimitiveTopology(MGPUPrimitiveTopology topology) {
+  switch(topology) {
+    case MGPU_PRIMITIVE_TOPOLOGY_POINT_LIST:     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    case MGPU_PRIMITIVE_TOPOLOGY_LINE_LIST:      return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    case MGPU_PRIMITIVE_TOPOLOGY_LINE_STRIP:     return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    case MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:  return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    case MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    case MGPU_PRIMITIVE_TOPOLOGY_PATCH_LIST:     return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    default: ATOM_PANIC("unhandled primitive topology: {}", (int)topology);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

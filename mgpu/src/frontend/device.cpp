@@ -56,11 +56,20 @@ MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProg
 }
 
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state) {
-  // TODO(fleroviux): implement some basic level of validation? i.e. that enum values are valid?
+  // TODO(fleroviux): implement validation?
 
   mgpu::Result<mgpu::RasterizerStateBase*> cxx_rasterizer_state_result = ((mgpu::DeviceBase*)device)->CreateRasterizerState(*create_info);
   MGPU_FORWARD_ERROR(cxx_rasterizer_state_result.Code());
   *rasterizer_state = (MGPURasterizerState)cxx_rasterizer_state_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state) {
+  // TODO(fleroviux): implement validation?
+
+  mgpu::Result<mgpu::InputAssemblyStateBase*> cxx_input_assembly_state_result = ((mgpu::DeviceBase*)device)->CreateInputAssemblyState(*create_info);
+  MGPU_FORWARD_ERROR(cxx_input_assembly_state_result.Code());
+  *input_assembly_state = (MGPUInputAssemblyState)cxx_input_assembly_state_result.Unwrap();
   return MGPU_SUCCESS;
 }
 

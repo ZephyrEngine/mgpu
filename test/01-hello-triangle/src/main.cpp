@@ -201,6 +201,13 @@ int main() {
   MGPURasterizerState mgpu_rasterizer_state{};
   MGPU_CHECK(mgpuDeviceCreateRasterizerState(mgpu_device, &rasterizer_state_create_info, &mgpu_rasterizer_state));
 
+  const MGPUInputAssemblyStateCreateInfo input_assembly_state_create_info{
+    .topology = MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    .primitive_restart_enable = false
+  };
+  MGPUInputAssemblyState mgpu_input_assembly_state{};
+  MGPU_CHECK(mgpuDeviceCreateInputAssemblyState(mgpu_device, &input_assembly_state_create_info, &mgpu_input_assembly_state));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -230,6 +237,7 @@ int main() {
     mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
     mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
     mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
+    mgpuCommandListCmdUseInputAssemblyState(mgpu_cmd_list, mgpu_input_assembly_state);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
@@ -245,6 +253,7 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuInputAssemblyStateDestroy(mgpu_input_assembly_state);
   mgpuRasterizerStateDestroy(mgpu_rasterizer_state);
   mgpuShaderProgramDestroy(mgpu_shader_program);
   mgpuShaderModuleDestroy(mgpu_frag_shader);

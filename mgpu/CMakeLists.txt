@@ -7,6 +7,7 @@ set(SOURCES
   src/backend/vulkan/buffer.cpp
   src/backend/vulkan/deleter_queue.cpp
   src/backend/vulkan/device.cpp
+  src/backend/vulkan/input_assembly_state.cpp
   src/backend/vulkan/instance.cpp
   src/backend/vulkan/physical_device.cpp
   src/backend/vulkan/queue.cpp
@@ -21,6 +22,7 @@ set(SOURCES
   src/frontend/buffer.cpp
   src/frontend/command_list.cpp
   src/frontend/device.cpp
+  src/frontend/input_assembly_state.cpp
   src/frontend/instance.cpp
   src/frontend/physical_device.cpp
   src/frontend/queue.cpp
@@ -43,6 +45,7 @@ set(HEADERS
   src/backend/vulkan/buffer.hpp
   src/backend/vulkan/deleter_queue.hpp
   src/backend/vulkan/device.hpp
+  src/backend/vulkan/input_assembly_state.hpp
   src/backend/vulkan/instance.hpp
   src/backend/vulkan/physical_device.hpp
   src/backend/vulkan/queue.hpp
@@ -57,6 +60,7 @@ set(HEADERS
   src/backend/buffer.hpp
   src/backend/command_list.hpp
   src/backend/device.hpp
+  src/backend/input_assembly_state.hpp
   src/backend/instance.hpp
   src/backend/physical_device.hpp
   src/backend/queue.hpp
