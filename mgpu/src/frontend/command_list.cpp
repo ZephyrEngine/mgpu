@@ -43,6 +43,15 @@ void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUI
   ((mgpu::CommandList*)command_list)->CmdUseInputAssemblyState((mgpu::InputAssemblyStateBase*)input_assembly_state);
 }
 
+void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height) {
+  ((mgpu::CommandList*)command_list)->CmdSetViewport(x, y, width, height);
+}
+
+void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height) {
+  // TODO(fleroviux): implement validation?
+  ((mgpu::CommandList*)command_list)->CmdSetScissor(x, y, width, height);
+}
+
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
   ((mgpu::CommandList*)command_list)->CmdDraw(vertex_count, instance_count, first_vertex, first_instance);
 }

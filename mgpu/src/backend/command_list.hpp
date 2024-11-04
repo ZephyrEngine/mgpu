@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <atom/float.hpp>
 #include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
@@ -25,6 +26,8 @@ enum class CommandType {
   UseShaderProgram,
   UseRasterizerState,
   UseInputAssemblyState,
+  SetViewport,
+  SetScissor,
   Draw
 };
 
@@ -115,6 +118,36 @@ struct UseInputAssemblyStateCommand : CommandBase {
   InputAssemblyStateBase* m_input_assembly_state;
 };
 
+struct SetViewportCommand : CommandBase {
+  SetViewportCommand(f32 x, f32 y, f32 width, f32 height)
+      : CommandBase{CommandType::SetViewport}
+      , m_viewport_x{x}
+      , m_viewport_y{y}
+      , m_viewport_width{width}
+      , m_viewport_height{height} {
+  }
+
+  f32 m_viewport_x;
+  f32 m_viewport_y;
+  f32 m_viewport_width;
+  f32 m_viewport_height;
+};
+
+struct SetScissorCommand : CommandBase {
+  SetScissorCommand(i32 x, i32 y, u32 width, u32 height)
+      : CommandBase{CommandType::SetScissor}
+      , m_scissor_x{x}
+      , m_scissor_y{y}
+      , m_scissor_width{width}
+      , m_scissor_height{height} {
+  }
+
+  i32 m_scissor_x;
+  i32 m_scissor_y;
+  u32 m_scissor_width;
+  u32 m_scissor_height;
+};
+
 struct DrawCommand : CommandBase {
   DrawCommand(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
       : CommandBase{CommandType::Draw}
@@ -177,6 +210,16 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdUseInputAssemblyState(InputAssemblyStateBase* input_assembly_state) {
       ErrorUnlessInsideRenderPass();
       Push<UseInputAssemblyStateCommand>(input_assembly_state);
+    }
+
+    void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {
+      ErrorUnlessInsideRenderPass();
+      Push<SetViewportCommand>(x, y, width, height);
+    }
+
+    void CmdSetScissor(i32 x, i32 y, u32 width, u32 height) {
+      ErrorUnlessInsideRenderPass();
+      Push<SetScissorCommand>(x, y, width, height);
     }
 
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {

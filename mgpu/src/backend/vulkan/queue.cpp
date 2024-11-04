@@ -1,4 +1,5 @@
 
+#include <atom/float.hpp>
 #include <atom/panic.hpp>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
@@ -148,6 +149,8 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::UseShaderProgram: HandleCmdUseShaderProgram(state, *(UseShaderProgramCommand*)command); break;
       case CommandType::UseRasterizerState: HandleCmdUseRasterizerState(state, *(UseRasterizerStateCommand*)command); break;
       case CommandType::UseInputAssemblyState: HandleCmdUseInputAssemblyState(state, *(UseInputAssemblyStateCommand*)command); break;
+      case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
+      case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -278,10 +281,10 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
       vk_clear_values.PushBack({
         .color = {
           .float32 = {
-            (float)color_attachment.clear_color.r,
-            (float)color_attachment.clear_color.g,
-            (float)color_attachment.clear_color.b,
-            (float)color_attachment.clear_color.a
+            (f32)color_attachment.clear_color.r,
+            (f32)color_attachment.clear_color.g,
+            (f32)color_attachment.clear_color.b,
+            (f32)color_attachment.clear_color.a
           }
         }
       });
@@ -323,6 +326,24 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
   };
   vkCmdBeginRenderPass(m_vk_cmd_buffer, &vk_render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
+  // Set viewport and scissor test to sane defaults
+  const VkViewport vk_viewport{
+    .x = 0.f,
+    .y = 0.f,
+    .width = (f32)texture_dimensions.width,
+    .height = (f32)texture_dimensions.height,
+    .minDepth = 0.f,
+    .maxDepth = 1.f
+  };
+
+  const VkRect2D vk_scissor{
+    .offset = {.x = 0, .y = 0},
+    .extent = {.width = 0x7FFFFFFF, .height = 0x7FFFFFFF}
+  };
+
+  vkCmdSetViewport(m_vk_cmd_buffer, 0u, 1u, &vk_viewport);
+  vkCmdSetScissor(m_vk_cmd_buffer, 0u, 1u, &vk_scissor);
+
   // Destroy temporary framebuffer at the end of the frame.
   VkDevice vk_device = m_vk_device;
   m_deleter_queue->Schedule([vk_device, vk_framebuffer]() {
@@ -357,6 +378,36 @@ void Queue::HandleCmdUseInputAssemblyState(CommandListState& state, const UseInp
   }
 }
 
+void Queue::HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command) {
+  const VkViewport vk_viewport{
+    .x = command.m_viewport_x,
+    .y = command.m_viewport_y,
+    .width = command.m_viewport_width,
+    .height = command.m_viewport_height,
+    .minDepth = 0.f,
+    .maxDepth = 1.f
+  };
+
+  (void)state;
+  vkCmdSetViewport(m_vk_cmd_buffer, 0u, 1u, &vk_viewport);
+}
+
+void Queue::HandleCmdSetScissor(CommandListState& state, const SetScissorCommand& command) {
+  const VkRect2D vk_scissor_rect{
+    .offset = {
+      .x = command.m_scissor_x,
+      .y = command.m_scissor_y
+    },
+    .extent = {
+      .width = command.m_scissor_width,
+      .height = command.m_scissor_height
+    }
+  };
+
+  (void)state;
+  vkCmdSetScissor(m_vk_cmd_buffer, 0u, 1u, &vk_scissor_rect);
+}
+
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
   (void)state;
   vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
@@ -386,6 +437,8 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
 
   const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = state.render_pass.shader_program->GetVkShaderStages();
 
+  // TODO(fleroviux): do not recreate these structures from scratch on every pipeline generation!
+
   const VkPipelineVertexInputStateCreateInfo vk_vertex_input_state_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
     .pNext = nullptr,
@@ -396,28 +449,14 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .pVertexAttributeDescriptions = nullptr
   };
 
-  const VkViewport vk_viewport{
-    .x = 0.f,
-    .y = 0.f,
-    .width = 1600.f,
-    .height = 900.f,
-    .minDepth = 0.f,
-    .maxDepth = 1.f
-  };
-
-  const VkRect2D vk_scissor{
-    .offset = {.x = 0, .y = 0},
-    .extent = {.width = 0x7FFFFFFF, .height = 0x7FFFFFFF}
-  };
-
   const VkPipelineViewportStateCreateInfo vk_viewport_state_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0,
     .viewportCount = 1u,
-    .pViewports = &vk_viewport,
+    .pViewports = nullptr,
     .scissorCount = 1u,
-    .pScissors = &vk_scissor
+    .pScissors = nullptr
   };
 
   const VkPipelineMultisampleStateCreateInfo vk_multisample_state_create_info{
@@ -475,7 +514,16 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
   Result<VkRenderPass> vk_render_pass_result = m_render_pass_cache->GetRenderPass(render_pass_query);
   VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap(); // TODO: handle error
 
-  // TODO(fleroviux): do not recreate this structure from scratch on every pipeline generation?
+  const VkDynamicState vk_dynamic_states[] { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+  const VkPipelineDynamicStateCreateInfo vk_dynamic_state_create_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+    .pNext = nullptr,
+    .flags = 0,
+    .dynamicStateCount = sizeof(vk_dynamic_states) / sizeof(VkDynamicState),
+    .pDynamicStates = vk_dynamic_states
+  };
+
   const VkGraphicsPipelineCreateInfo vk_graphics_pipeline_create_info{
     .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
     .pNext = nullptr,
@@ -490,7 +538,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .pMultisampleState = &vk_multisample_state_create_info,
     .pDepthStencilState = &vk_depth_stencil_state_create_info,
     .pColorBlendState = &vk_color_blend_state_create_info,
-    .pDynamicState = nullptr,
+    .pDynamicState = &vk_dynamic_state_create_info,
     .layout = vk_pipeline_layout,
     .renderPass = vk_render_pass,
     .subpass = 0,

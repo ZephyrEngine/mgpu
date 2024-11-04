@@ -434,6 +434,8 @@ void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
 void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
 void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
 void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
+void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
+void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

@@ -238,6 +238,8 @@ int main() {
     mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
     mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
     mgpuCommandListCmdUseInputAssemblyState(mgpu_cmd_list, mgpu_input_assembly_state);
+    mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.f, 0.f, 1600.f, 900.f);
+    mgpuCommandListCmdSetScissor(mgpu_cmd_list, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 

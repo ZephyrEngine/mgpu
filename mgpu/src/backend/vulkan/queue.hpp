@@ -65,6 +65,8 @@ class Queue final : public QueueBase {
     void HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command);
     void HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command);
     void HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command);
+    void HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command);
+    void HandleCmdSetScissor(CommandListState& state, const SetScissorCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
 
     void BindGraphicsPipeline(const CommandListState& state);
