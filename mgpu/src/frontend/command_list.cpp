@@ -48,6 +48,8 @@ void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColo
 }
 
 void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state) {
+  // TODO(fleroviux): validate that vertex input state is compatible with the current vertex shader.
+
   ((mgpu::CommandList*)command_list)->CmdUseVertexInputState((mgpu::VertexInputStateBase*)vertex_input_state);
 }
 
@@ -61,10 +63,14 @@ void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32
 }
 
 void mgpuCommandListBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
+  // TODO(fleroviux): implement validation? i.e. buffer usage
+
   ((mgpu::CommandList*)command_list)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
 }
 
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
+  // TODO(fleroviux): validate that all vertex buffer bindings have something bound?
+
   ((mgpu::CommandList*)command_list)->CmdDraw(vertex_count, instance_count, first_vertex, first_instance);
 }
 

@@ -429,6 +429,7 @@ void Queue::HandleCmdSetScissor(CommandListState& state, const SetScissorCommand
 }
 
 void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command) {
+  // TODO(fleroviux): if necessary insert a pipeline barrier to ensure the buffer can be safely read.
   VkBuffer vk_buffer = ((Buffer*)command.m_buffer)->Handle();
   vkCmdBindVertexBuffers(m_vk_cmd_buffer, command.m_binding, 1u, &vk_buffer, &command.m_buffer_offset);
 }
