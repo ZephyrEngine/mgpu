@@ -227,6 +227,15 @@ int main() {
   MGPUColorBlendState mgpu_color_blend_state{};
   MGPU_CHECK(mgpuDeviceCreateColorBlendState(mgpu_device, &color_blend_state_create_info, &mgpu_color_blend_state));
 
+  const MGPUVertexInputStateCreateInfo vertex_input_state_create_info{
+    .binding_count = 0u,
+    .bindings = nullptr,
+    .attribute_count = 0u,
+    .attributes = nullptr
+  };
+  MGPUVertexInputState mgpu_vertex_input_state{};
+  MGPU_CHECK(mgpuDeviceCreateVertexInputState(mgpu_device, &vertex_input_state_create_info, &mgpu_vertex_input_state));
+
   MGPUCommandList mgpu_cmd_list{};
   MGPU_CHECK(mgpuDeviceCreateCommandList(mgpu_device, &mgpu_cmd_list));
 
@@ -258,6 +267,7 @@ int main() {
     mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
     mgpuCommandListCmdUseInputAssemblyState(mgpu_cmd_list, mgpu_input_assembly_state);
     mgpuCommandListCmdUseColorBlendState(mgpu_cmd_list, mgpu_color_blend_state);
+    mgpuCommandListCmdUseVertexInputState(mgpu_cmd_list, mgpu_vertex_input_state);
     mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.0f, 0.0f, 1600.f, 900.f);
     mgpuCommandListCmdSetScissor(mgpu_cmd_list, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
@@ -275,6 +285,7 @@ int main() {
 
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
+  mgpuVertexInputStateDestroy(mgpu_vertex_input_state);
   mgpuColorBlendStateDestroy(mgpu_color_blend_state);
   mgpuInputAssemblyStateDestroy(mgpu_input_assembly_state);
   mgpuRasterizerStateDestroy(mgpu_rasterizer_state);

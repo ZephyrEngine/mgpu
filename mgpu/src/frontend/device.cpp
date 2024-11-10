@@ -82,6 +82,16 @@ MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBle
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateVertexInputState(MGPUDevice device, const MGPUVertexInputStateCreateInfo* create_info, MGPUVertexInputState* vertex_input_state) {
+  // TODO(fleroviux): implement validation?
+  // For example: that the number of bindings and attributes is within the device limits.
+
+  mgpu::Result<mgpu::VertexInputStateBase*> cxx_vertex_input_state_result = ((mgpu::DeviceBase*)device)->CreateVertexInputState(*create_info);
+  MGPU_FORWARD_ERROR(cxx_vertex_input_state_result.Code());
+  *vertex_input_state = (MGPUVertexInputState)cxx_vertex_input_state_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
   mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 

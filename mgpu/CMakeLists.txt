@@ -20,6 +20,7 @@ set(SOURCES
   src/backend/vulkan/swap_chain.cpp
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
+  src/backend/vulkan/vertex_input_state.cpp
   src/frontend/buffer.cpp
   src/frontend/color_blend_state.cpp
   src/frontend/command_list.cpp
@@ -36,6 +37,7 @@ set(SOURCES
   src/frontend/swap_chain.cpp
   src/frontend/texture.cpp
   src/frontend/texture_view.cpp
+  src/frontend/vertex_input_state.cpp
 )
 
 set(HEADERS
@@ -60,6 +62,7 @@ set(HEADERS
   src/backend/vulkan/swap_chain.hpp
   src/backend/vulkan/texture.hpp
   src/backend/vulkan/texture_view.hpp
+  src/backend/vulkan/vertex_input_state.hpp
   src/backend/buffer.hpp
   src/backend/color_blend_state.hpp
   src/backend/command_list.hpp
@@ -75,6 +78,7 @@ set(HEADERS
   src/backend/swap_chain.hpp
   src/backend/texture.hpp
   src/backend/texture_view.hpp
+  src/backend/vertex_input_state.hpp
   src/frontend/validation/buffer.hpp
   src/frontend/validation/shader_program.hpp
   src/frontend/validation/texture.hpp

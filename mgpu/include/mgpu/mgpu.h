@@ -39,6 +39,7 @@ typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
 typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
 typedef struct MGPUInputAssemblyStateImpl* MGPUInputAssemblyState;
 typedef struct MGPUColorBlendStateImpl* MGPUColorBlendState;
+typedef struct MGPUVertexInputStateImpl* MGPUVertexInputState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -213,6 +214,16 @@ typedef enum MGPUColorComponentFlagBits {
 
 typedef MGPUFlags MGPUColorComponentFlags;
 
+typedef enum MGPUVertexInputRate {
+  MGPU_VERTEX_INPUT_RATE_VERTEX = 0,
+  MGPU_VERTEX_INPUT_RATE_INSTANCE = 1
+} MGPUVertexInputRate;
+
+// TODO(fleroviux): add more formats!
+typedef enum MGPUVertexFormat {
+  MGPU_VERTEX_FORMAT_STUB_XYZ323232 = 0
+} MGPUVertexFormat;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -347,6 +358,26 @@ typedef struct MGPUColorBlendStateCreateInfo {
   const MGPUColorBlendAttachmentState* attachments;
 } MGPUColorBlendStateCreateInfo;
 
+typedef struct MGPUVertexBinding {
+  uint32_t binding;
+  uint32_t stride;
+  MGPUVertexInputRate input_rate;
+} MGPUVertexBinding;
+
+typedef struct MGPUVertexAttribute {
+  uint32_t location;
+  uint32_t binding;
+  MGPUVertexFormat format;
+  uint32_t offset;
+} MGPUVertexAttribute;
+
+typedef struct MGPUVertexInputStateCreateInfo {
+  uint32_t binding_count;
+  const MGPUVertexBinding* bindings;
+  uint32_t attribute_count;
+  const MGPUVertexAttribute* attributes;
+} MGPUVertexInputStateCreateInfo;
+
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
   struct {
@@ -384,6 +415,10 @@ typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_array_layers;
   uint32_t max_color_attachments;
   uint32_t max_attachment_dimension;
+  uint32_t max_vertex_input_bindings;
+  uint32_t max_vertex_input_attributes;
+  uint32_t max_vertex_input_binding_stride;
+  uint32_t max_vertex_input_attribute_offset;
 } MGPUPhysicalDeviceLimits;
 
 typedef struct MGPUPhysicalDeviceInfo {
@@ -448,6 +483,7 @@ MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProg
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
 MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state);
 MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBlendStateCreateInfo* create_info, MGPUColorBlendState* color_blend_state);
+MGPUResult mgpuDeviceCreateVertexInputState(MGPUDevice device, const MGPUVertexInputStateCreateInfo* create_info, MGPUVertexInputState* vertex_input_state);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
@@ -484,6 +520,9 @@ void mgpuInputAssemblyStateDestroy(MGPUInputAssemblyState input_assembly_state);
 // MGPUColorBlendState methods
 void mgpuColorBlendStateDestroy(MGPUColorBlendState color_blend_state);
 
+// MGPUVertexInputState methods
+void mgpuVertexInputStateDestroy(MGPUVertexInputState vertex_input_state);
+
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
@@ -492,8 +531,10 @@ void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShader
 void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
 void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
 void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state);
+void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state);
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
 void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
+void mgpuCommandListBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

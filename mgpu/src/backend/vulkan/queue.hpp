@@ -20,6 +20,7 @@ class ShaderProgram;
 class RasterizerState;
 class InputAssemblyState;
 class ColorBlendState;
+class VertexInputState;
 class SwapChain;
 
 class Queue final : public QueueBase {
@@ -59,6 +60,7 @@ class Queue final : public QueueBase {
         RasterizerState* rasterizer_state{};
         InputAssemblyState* input_assembly_state{};
         ColorBlendState* color_blend_state{};
+        VertexInputState* vertex_input_state{};
       } render_pass{};
     };
 
@@ -68,8 +70,10 @@ class Queue final : public QueueBase {
     void HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command);
     void HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command);
     void HandleCmdUseColorBlendState(CommandListState& state, const UseColorBlendStateCommand& command);
+    void HandleCmdUseVertexInputState(CommandListState& state, const UseVertexInputStateCommand& command);
     void HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command);
     void HandleCmdSetScissor(CommandListState& state, const SetScissorCommand& command);
+    void HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
 
     void BindGraphicsPipeline(const CommandListState& state);

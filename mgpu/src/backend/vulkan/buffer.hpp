@@ -16,6 +16,8 @@ class Buffer final : public BufferBase {
 
     static Result<BufferBase*> Create(Device* device, const MGPUBufferCreateInfo& create_info);
 
+    [[nodiscard]] VkBuffer Handle() { return m_vk_buffer; }
+
     [[nodiscard]] bool IsMapped() const override;
 
     Result<void*> Map() override;

@@ -20,6 +20,8 @@ class ShaderProgramBase;
 class RasterizerStateBase;
 class InputAssemblyStateBase;
 class ColorBlendStateBase;
+class VertexInputStateBase;
+class BufferBase;
 
 enum class CommandType {
   BeginRenderPass,
@@ -28,8 +30,10 @@ enum class CommandType {
   UseRasterizerState,
   UseInputAssemblyState,
   UseColorBlendState,
+  UseVertexInputState,
   SetViewport,
   SetScissor,
+  BindVertexBuffer,
   Draw
 };
 
@@ -129,6 +133,15 @@ struct UseColorBlendStateCommand : CommandBase {
   ColorBlendStateBase* m_color_blend_state;
 };
 
+struct UseVertexInputStateCommand : CommandBase {
+  explicit UseVertexInputStateCommand(VertexInputStateBase* vertex_input_state)
+      : CommandBase{CommandType::UseVertexInputState}
+      , m_vertex_input_state{vertex_input_state} {
+  }
+
+  VertexInputStateBase* m_vertex_input_state;
+};
+
 struct SetViewportCommand : CommandBase {
   SetViewportCommand(f32 x, f32 y, f32 width, f32 height)
       : CommandBase{CommandType::SetViewport}
@@ -157,6 +170,19 @@ struct SetScissorCommand : CommandBase {
   i32 m_scissor_y;
   u32 m_scissor_width;
   u32 m_scissor_height;
+};
+
+struct BindVertexBufferCommand : CommandBase {
+  BindVertexBufferCommand(u32 binding, BufferBase* buffer, u64 buffer_offset)
+      : CommandBase{CommandType::BindVertexBuffer}
+      , m_binding{binding}
+      , m_buffer{buffer}
+      , m_buffer_offset{buffer_offset} {
+  }
+
+  u32 m_binding;
+  BufferBase* m_buffer;
+  u64 m_buffer_offset;
 };
 
 struct DrawCommand : CommandBase {
@@ -228,6 +254,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       Push<UseColorBlendStateCommand>(color_blend_state);
     }
 
+    void CmdUseVertexInputState(VertexInputStateBase* vertex_input_state) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseVertexInputStateCommand>(vertex_input_state);
+    }
+
     void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {
       ErrorUnlessInsideRenderPass();
       Push<SetViewportCommand>(x, y, width, height);
@@ -236,6 +267,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdSetScissor(i32 x, i32 y, u32 width, u32 height) {
       ErrorUnlessInsideRenderPass();
       Push<SetScissorCommand>(x, y, width, height);
+    }
+
+    void CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset) {
+      ErrorUnlessInsideRenderPass();
+      Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
     }
 
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {

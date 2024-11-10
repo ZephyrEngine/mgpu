@@ -165,6 +165,21 @@ inline VkBlendOp MGPUBlendOpToVkBlendOp(MGPUBlendOp blend_op) {
   }
 }
 
+inline VkVertexInputRate MGPUVertexInputRateToVkVertexInputRate(MGPUVertexInputRate vertex_input_rate) {
+  switch(vertex_input_rate) {
+    case MGPU_VERTEX_INPUT_RATE_VERTEX:   return VK_VERTEX_INPUT_RATE_VERTEX;
+    case MGPU_VERTEX_INPUT_RATE_INSTANCE: return VK_VERTEX_INPUT_RATE_INSTANCE;
+    default: ATOM_PANIC("unhandled vertex input rate: {}", (int)vertex_input_rate);
+  }
+}
+
+inline VkFormat MGPUVertexFormatToVkFormat(MGPUVertexFormat vertex_format) {
+  switch(vertex_format) {
+    case MGPU_VERTEX_FORMAT_STUB_XYZ323232: return VK_FORMAT_R32G32B32_SFLOAT;
+    default: ATOM_PANIC("unhandled vertex format: {}", (int)vertex_format);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

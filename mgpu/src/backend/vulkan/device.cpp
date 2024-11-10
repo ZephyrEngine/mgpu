@@ -12,6 +12,7 @@
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
+#include "vertex_input_state.hpp"
 
 namespace mgpu::vulkan {
 
@@ -180,6 +181,10 @@ Result<InputAssemblyStateBase*> Device::CreateInputAssemblyState(const MGPUInput
 
 Result<ColorBlendStateBase*> Device::CreateColorBlendState(const MGPUColorBlendStateCreateInfo& create_info) {
   return new ColorBlendState{create_info};
+}
+
+Result<VertexInputStateBase*> Device::CreateVertexInputState(const MGPUVertexInputStateCreateInfo& create_info) {
+  return new VertexInputState{create_info};
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

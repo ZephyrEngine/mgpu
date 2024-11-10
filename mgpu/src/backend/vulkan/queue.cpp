@@ -4,6 +4,7 @@
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
+#include "buffer.hpp"
 #include "color_blend_state.hpp"
 #include "input_assembly_state.hpp"
 #include "queue.hpp"
@@ -12,6 +13,7 @@
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
 #include "texture_view.hpp"
+#include "vertex_input_state.hpp"
 
 namespace mgpu::vulkan {
 
@@ -151,8 +153,10 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::UseRasterizerState: HandleCmdUseRasterizerState(state, *(UseRasterizerStateCommand*)command); break;
       case CommandType::UseInputAssemblyState: HandleCmdUseInputAssemblyState(state, *(UseInputAssemblyStateCommand*)command); break;
       case CommandType::UseColorBlendState: HandleCmdUseColorBlendState(state, *(UseColorBlendStateCommand*)command); break;
+      case CommandType::UseVertexInputState: HandleCmdUseVertexInputState(state, *(UseVertexInputStateCommand*)command); break;
       case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
       case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
+      case CommandType::BindVertexBuffer: HandleCmdBindVertexBuffer(state, *(BindVertexBufferCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -387,6 +391,13 @@ void Queue::HandleCmdUseColorBlendState(CommandListState& state, const UseColorB
   }
 }
 
+void Queue::HandleCmdUseVertexInputState(CommandListState& state, const UseVertexInputStateCommand& command) {
+  if(state.render_pass.vertex_input_state != command.m_vertex_input_state) {
+    state.render_pass.vertex_input_state = (VertexInputState*)command.m_vertex_input_state;
+    BindGraphicsPipeline(state);
+  }
+}
+
 void Queue::HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command) {
   const VkViewport vk_viewport{
     .x = command.m_viewport_x,
@@ -417,6 +428,11 @@ void Queue::HandleCmdSetScissor(CommandListState& state, const SetScissorCommand
   vkCmdSetScissor(m_vk_cmd_buffer, 0u, 1u, &vk_scissor_rect);
 }
 
+void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command) {
+  VkBuffer vk_buffer = ((Buffer*)command.m_buffer)->Handle();
+  vkCmdBindVertexBuffers(m_vk_cmd_buffer, command.m_binding, 1u, &vk_buffer, &command.m_buffer_offset);
+}
+
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
   (void)state;
   vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
@@ -429,7 +445,8 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
   if(state.render_pass.shader_program == nullptr ||
      state.render_pass.rasterizer_state == nullptr ||
      state.render_pass.input_assembly_state == nullptr ||
-     state.render_pass.color_blend_state == nullptr) {
+     state.render_pass.color_blend_state == nullptr ||
+     state.render_pass.vertex_input_state == nullptr) {
     return;
   }
 
@@ -450,16 +467,6 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
   const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = state.render_pass.shader_program->GetVkShaderStages();
 
   // TODO(fleroviux): do not recreate these structures from scratch on every pipeline generation!
-
-  const VkPipelineVertexInputStateCreateInfo vk_vertex_input_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .vertexBindingDescriptionCount = 0u,
-    .pVertexBindingDescriptions = nullptr,
-    .vertexAttributeDescriptionCount = 0u,
-    .pVertexAttributeDescriptions = nullptr
-  };
 
   const VkPipelineViewportStateCreateInfo vk_viewport_state_create_info{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -522,7 +529,7 @@ void Queue::BindGraphicsPipeline(const CommandListState& state) {
     .flags = 0,
     .stageCount = (u32)vk_shader_stages.size(),
     .pStages = vk_shader_stages.data(),
-    .pVertexInputState = &vk_vertex_input_state_create_info,
+    .pVertexInputState = &state.render_pass.vertex_input_state->GetVkVertexInputState(),
     .pInputAssemblyState = &state.render_pass.input_assembly_state->GetVkInputAssemblyState(),
     .pTessellationState = nullptr,
     .pViewportState = &vk_viewport_state_create_info,

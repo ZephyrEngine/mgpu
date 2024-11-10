@@ -47,6 +47,10 @@ void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColo
   ((mgpu::CommandList*)command_list)->CmdUseColorBlendState((mgpu::ColorBlendStateBase*)color_blend_state);
 }
 
+void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state) {
+  ((mgpu::CommandList*)command_list)->CmdUseVertexInputState((mgpu::VertexInputStateBase*)vertex_input_state);
+}
+
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height) {
   ((mgpu::CommandList*)command_list)->CmdSetViewport(x, y, width, height);
 }
@@ -54,6 +58,10 @@ void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float 
 void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height) {
   // TODO(fleroviux): implement validation?
   ((mgpu::CommandList*)command_list)->CmdSetScissor(x, y, width, height);
+}
+
+void mgpuCommandListBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
+  ((mgpu::CommandList*)command_list)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
 }
 
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
