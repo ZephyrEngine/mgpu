@@ -32,8 +32,9 @@ Queue::Queue(
     , m_vk_cmd_pool{vk_cmd_pool}
     , m_vk_cmd_buffer{vk_cmd_buffer}
     , m_vk_cmd_buffer_fence{vk_cmd_buffer_fence}
-    , m_deleter_queue{std::move(deleter_queue)}
-    , m_render_pass_cache{std::move(render_pass_cache)} {
+    , m_deleter_queue{deleter_queue}
+    , m_render_pass_cache{std::move(render_pass_cache)}
+    , m_graphics_pipeline_cache{vk_device, std::move(deleter_queue)} {
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
     .pNext = nullptr,
@@ -231,6 +232,7 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
   }
 
   VkRenderPass vk_render_pass = m_render_pass_cache->GetRenderPass(render_pass_query).Unwrap(); // TODO(fleroviux): handle failure
+  state.render_pass.pipeline_query.m_vk_render_pass = vk_render_pass;
 
   // Create a temporary framebuffer
   atom::Vector_N<VkImageView, limits::max_total_attachments> vk_attachment_image_views{};
@@ -364,37 +366,47 @@ void Queue::HandleCmdEndRenderPass(CommandListState& state) {
 }
 
 void Queue::HandleCmdUseShaderProgram(CommandListState& state, const UseShaderProgramCommand& command) {
-  if(state.render_pass.shader_program != command.m_shader_program) {
-    state.render_pass.shader_program = (ShaderProgram*)command.m_shader_program;
-    BindGraphicsPipeline(state);
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_shader_program != command.m_shader_program) {
+    pipeline_query.m_shader_program = (ShaderProgram*)command.m_shader_program;
+    state.render_pass.require_pipeline_switch = true;
   }
 }
 
 void Queue::HandleCmdUseRasterizerState(CommandListState& state, const UseRasterizerStateCommand& command) {
-  if(state.render_pass.rasterizer_state != command.m_rasterizer_state) {
-    state.render_pass.rasterizer_state = (RasterizerState*)command.m_rasterizer_state;
-    BindGraphicsPipeline(state);
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_rasterizer_state != command.m_rasterizer_state) {
+    pipeline_query.m_rasterizer_state = (RasterizerState*)command.m_rasterizer_state;
+    state.render_pass.require_pipeline_switch = true;
   }
 }
 
 void Queue::HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command) {
-  if(state.render_pass.input_assembly_state != command.m_input_assembly_state) {
-    state.render_pass.input_assembly_state = (InputAssemblyState*)command.m_input_assembly_state;
-    BindGraphicsPipeline(state);
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_input_assembly_state != command.m_input_assembly_state) {
+    pipeline_query.m_input_assembly_state = (InputAssemblyState*)command.m_input_assembly_state;
+    state.render_pass.require_pipeline_switch = true;
   }
 }
 
 void Queue::HandleCmdUseColorBlendState(CommandListState& state, const UseColorBlendStateCommand& command) {
-  if(state.render_pass.color_blend_state != command.m_color_blend_state) {
-    state.render_pass.color_blend_state = (ColorBlendState*)command.m_color_blend_state;
-    BindGraphicsPipeline(state);
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_color_blend_state != command.m_color_blend_state) {
+    pipeline_query.m_color_blend_state = (ColorBlendState*)command.m_color_blend_state;
+    state.render_pass.require_pipeline_switch = true;
   }
 }
 
 void Queue::HandleCmdUseVertexInputState(CommandListState& state, const UseVertexInputStateCommand& command) {
-  if(state.render_pass.vertex_input_state != command.m_vertex_input_state) {
-    state.render_pass.vertex_input_state = (VertexInputState*)command.m_vertex_input_state;
-    BindGraphicsPipeline(state);
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_vertex_input_state != command.m_vertex_input_state) {
+    pipeline_query.m_vertex_input_state = (VertexInputState*)command.m_vertex_input_state;
+    state.render_pass.require_pipeline_switch = true;
   }
 }
 
@@ -435,125 +447,33 @@ void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexB
 }
 
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
-  (void)state;
+  BindGraphicsPipelineForCurrentState(state);
   vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
 }
 
-void Queue::BindGraphicsPipeline(const CommandListState& state) {
-  // TODO(fleroviux): make this not suck?
+void Queue::BindGraphicsPipelineForCurrentState(CommandListState& state) {
+  if(!state.render_pass.require_pipeline_switch) {
+    return;
+  }
+  state.render_pass.require_pipeline_switch = false;
 
-  // Bail out for now if pipeline state is incomplete.
-  if(state.render_pass.shader_program == nullptr ||
-     state.render_pass.rasterizer_state == nullptr ||
-     state.render_pass.input_assembly_state == nullptr ||
-     state.render_pass.color_blend_state == nullptr ||
-     state.render_pass.vertex_input_state == nullptr) {
+  const GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  // TODO(fleroviux): make sure that this can never happen in the future.
+  bool pipeline_complete =
+         pipeline_query.m_shader_program != nullptr
+      && pipeline_query.m_rasterizer_state != nullptr
+      && pipeline_query.m_input_assembly_state != nullptr
+      && pipeline_query.m_color_blend_state != nullptr
+      && pipeline_query.m_vertex_input_state != nullptr;
+
+  if(!pipeline_complete) {
     return;
   }
 
-  const VkPipelineLayoutCreateInfo vk_pipeline_layout_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .setLayoutCount = 0u,
-    .pSetLayouts = nullptr,
-    .pushConstantRangeCount = 0u,
-    .pPushConstantRanges = nullptr
-  };
-  VkPipelineLayout vk_pipeline_layout{};
-  if(vkCreatePipelineLayout(m_vk_device, &vk_pipeline_layout_create_info, nullptr, &vk_pipeline_layout) != VK_SUCCESS) {
-    ATOM_PANIC("failed to create pipeline layout?");
-  }
-
-  const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = state.render_pass.shader_program->GetVkShaderStages();
-
-  // TODO(fleroviux): do not recreate these structures from scratch on every pipeline generation!
-
-  const VkPipelineViewportStateCreateInfo vk_viewport_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .viewportCount = 1u,
-    .pViewports = nullptr,
-    .scissorCount = 1u,
-    .pScissors = nullptr
-  };
-
-  const VkPipelineMultisampleStateCreateInfo vk_multisample_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-    .sampleShadingEnable = VK_FALSE,
-    .minSampleShading = 0.f,
-    .pSampleMask = nullptr,
-    .alphaToCoverageEnable = VK_FALSE,
-    .alphaToOneEnable = VK_FALSE
-  };
-
-  const VkPipelineDepthStencilStateCreateInfo vk_depth_stencil_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .depthTestEnable = VK_FALSE,
-    .depthWriteEnable = VK_FALSE,
-    .depthCompareOp = VK_COMPARE_OP_ALWAYS,
-    .depthBoundsTestEnable = VK_FALSE,
-    .stencilTestEnable = VK_FALSE,
-    .front = {},
-    .back = {},
-    .minDepthBounds = 0.f,
-    .maxDepthBounds = 1.f
-  };
-
-  // TODO(fleroviux): just use the currently active render pass for creating the pipeline?
-
-  RenderPassQuery render_pass_query{};
-  render_pass_query.SetColorAttachment(0u, MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB, MGPU_LOAD_OP_DONT_CARE, MGPU_STORE_OP_DONT_CARE);
-
-  Result<VkRenderPass> vk_render_pass_result = m_render_pass_cache->GetRenderPass(render_pass_query);
-  VkRenderPass vk_render_pass = vk_render_pass_result.Unwrap(); // TODO: handle error
-
-  const VkDynamicState vk_dynamic_states[] { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-
-  const VkPipelineDynamicStateCreateInfo vk_dynamic_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .dynamicStateCount = sizeof(vk_dynamic_states) / sizeof(VkDynamicState),
-    .pDynamicStates = vk_dynamic_states
-  };
-
-  const VkGraphicsPipelineCreateInfo vk_graphics_pipeline_create_info{
-    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .stageCount = (u32)vk_shader_stages.size(),
-    .pStages = vk_shader_stages.data(),
-    .pVertexInputState = &state.render_pass.vertex_input_state->GetVkVertexInputState(),
-    .pInputAssemblyState = &state.render_pass.input_assembly_state->GetVkInputAssemblyState(),
-    .pTessellationState = nullptr,
-    .pViewportState = &vk_viewport_state_create_info,
-    .pRasterizationState = &state.render_pass.rasterizer_state->GetVkRasterizationState(),
-    .pMultisampleState = &vk_multisample_state_create_info,
-    .pDepthStencilState = &vk_depth_stencil_state_create_info,
-    .pColorBlendState = &state.render_pass.color_blend_state->GetVkColorBlendState(),
-    .pDynamicState = &vk_dynamic_state_create_info,
-    .layout = vk_pipeline_layout,
-    .renderPass = vk_render_pass,
-    .subpass = 0,
-    .basePipelineHandle = VK_NULL_HANDLE,
-    .basePipelineIndex = 0
-  };
-
-  VkPipeline vk_pipeline{};
-  if(vkCreateGraphicsPipelines(m_vk_device, VK_NULL_HANDLE, 1u, &vk_graphics_pipeline_create_info, nullptr, &vk_pipeline) != VK_SUCCESS) {
-    ATOM_PANIC("failed to create graphics pipeline?");
-  }
-
-  // TODO: at least fix the fucking memory leak
-
-  vkCmdBindPipeline(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline);
+  // TODO(fleroviux): handle failure to create the graphics pipeline.
+  Result<VkPipeline> vk_pipeline_result = m_graphics_pipeline_cache.GetPipeline(pipeline_query);
+  vkCmdBindPipeline(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline_result.Unwrap());
 }
 
 }  // namespace mgpu::vulkan

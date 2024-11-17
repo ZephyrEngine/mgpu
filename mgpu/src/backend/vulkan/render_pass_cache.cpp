@@ -112,9 +112,9 @@ RenderPassCache::~RenderPassCache() {
 }
 
 Result<VkRenderPass> RenderPassCache::GetRenderPass(const RenderPassQuery& query) {
-  const auto match = m_query_to_vk_render_pass.find(query);
-  if(match != m_query_to_vk_render_pass.end()) {
-    return match->second;
+  VkRenderPass vk_render_pass = m_query_to_vk_render_pass[query];
+  if(vk_render_pass != nullptr) {
+    return vk_render_pass;
   }
 
   atom::Vector_N<VkAttachmentDescription, limits::max_total_attachments> vk_attachment_descriptions{};
@@ -200,7 +200,6 @@ Result<VkRenderPass> RenderPassCache::GetRenderPass(const RenderPassQuery& query
     .pDependencies = nullptr
   };
 
-  VkRenderPass vk_render_pass{};
   MGPU_VK_FORWARD_ERROR(vkCreateRenderPass(m_vk_device, &vk_render_pass_create_info, nullptr, &vk_render_pass));
   m_query_to_vk_render_pass[query] = vk_render_pass;
   return vk_render_pass;

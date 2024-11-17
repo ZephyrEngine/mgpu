@@ -11,6 +11,7 @@
 #include "common/result.hpp"
 #include "common/limits.hpp"
 #include "deleter_queue.hpp"
+#include "graphics_pipeline_cache.hpp"
 #include "render_pass_cache.hpp"
 
 namespace mgpu::vulkan {
@@ -55,12 +56,8 @@ class Queue final : public QueueBase {
       struct RenderPass {
         atom::Vector_N<TextureView*, limits::max_color_attachments> color_attachments{};
         TextureView* depth_stencil_attachment{};
-
-        ShaderProgram* shader_program{};
-        RasterizerState* rasterizer_state{};
-        InputAssemblyState* input_assembly_state{};
-        ColorBlendState* color_blend_state{};
-        VertexInputState* vertex_input_state{};
+        GraphicsPipelineQuery pipeline_query{};
+        bool require_pipeline_switch{true};
       } render_pass{};
     };
 
@@ -76,7 +73,7 @@ class Queue final : public QueueBase {
     void HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
 
-    void BindGraphicsPipeline(const CommandListState& state);
+    void BindGraphicsPipelineForCurrentState(CommandListState& state);
 
     VkDevice m_vk_device;
     VkQueue m_vk_queue;
@@ -85,6 +82,7 @@ class Queue final : public QueueBase {
     VkFence m_vk_cmd_buffer_fence;
     std::shared_ptr<DeleterQueue> m_deleter_queue;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
+    GraphicsPipelineCache m_graphics_pipeline_cache;
     VkSemaphore m_vk_swap_chain_acquire_semaphore{};
 };
 

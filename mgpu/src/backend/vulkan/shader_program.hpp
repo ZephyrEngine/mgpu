@@ -14,7 +14,7 @@ class ShaderProgram final : public ShaderProgramBase {
   public:
     explicit ShaderProgram(const MGPUShaderProgramCreateInfo& create_info);
 
-    [[nodiscard]] std::span<const VkPipelineShaderStageCreateInfo> GetVkShaderStages() {
+    [[nodiscard]] std::span<const VkPipelineShaderStageCreateInfo> GetVkShaderStages() const {
       return m_vk_shader_stages;
     }
 

@@ -8,6 +8,7 @@ set(SOURCES
   src/backend/vulkan/color_blend_state.cpp
   src/backend/vulkan/deleter_queue.cpp
   src/backend/vulkan/device.cpp
+  src/backend/vulkan/graphics_pipeline_cache.cpp
   src/backend/vulkan/input_assembly_state.cpp
   src/backend/vulkan/instance.cpp
   src/backend/vulkan/physical_device.cpp
@@ -50,6 +51,7 @@ set(HEADERS
   src/backend/vulkan/color_blend_state.hpp
   src/backend/vulkan/deleter_queue.hpp
   src/backend/vulkan/device.hpp
+  src/backend/vulkan/graphics_pipeline_cache.hpp
   src/backend/vulkan/input_assembly_state.hpp
   src/backend/vulkan/instance.hpp
   src/backend/vulkan/physical_device.hpp

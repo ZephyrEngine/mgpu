@@ -13,7 +13,7 @@ class VertexInputState : public VertexInputStateBase {
   public:
     explicit VertexInputState(const MGPUVertexInputStateCreateInfo& create_info);
 
-    [[nodiscard]] const VkPipelineVertexInputStateCreateInfo& GetVkVertexInputState() {
+    [[nodiscard]] const VkPipelineVertexInputStateCreateInfo& GetVkVertexInputState() const {
       return m_vk_vertex_input_state_create_info;
     }
 
