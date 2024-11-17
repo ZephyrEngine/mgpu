@@ -62,7 +62,7 @@ void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32
   ((mgpu::CommandList*)command_list)->CmdSetScissor(x, y, width, height);
 }
 
-void mgpuCommandListBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
+void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
   // TODO(fleroviux): implement validation? i.e. buffer usage
 
   ((mgpu::CommandList*)command_list)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
