@@ -162,6 +162,24 @@ int main() {
     }
   }
 
+  const float vertices[] {
+    -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+     0.0f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f
+  };
+  const MGPUBufferCreateInfo vbo_create_info{
+    .size = sizeof(vertices),
+    .usage = MGPU_BUFFER_USAGE_VERTEX_BUFFER,
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
+  };
+  MGPUBuffer mgpu_vbo{};
+  MGPU_CHECK(mgpuDeviceCreateBuffer(mgpu_device, &vbo_create_info, &mgpu_vbo));
+  void* vbo_address{};
+  MGPU_CHECK(mgpuBufferMap(mgpu_vbo, &vbo_address));
+  std::memcpy(vbo_address, vertices, sizeof(vertices));
+  MGPU_CHECK(mgpuBufferFlushRange(mgpu_vbo, 0u, MGPU_WHOLE_SIZE));
+  MGPU_CHECK(mgpuBufferUnmap(mgpu_vbo));
+
   MGPUShaderModule mgpu_vert_shader{};
   MGPUShaderModule mgpu_frag_shader{};
   MGPU_CHECK(mgpuDeviceCreateShaderModule(mgpu_device, triangle_vert, sizeof(triangle_vert), &mgpu_vert_shader));
@@ -210,7 +228,7 @@ int main() {
 
   const MGPUColorBlendAttachmentState color_blend_attachment_states[1]{
     {
-      .blend_enable = true,
+      .blend_enable = false,
       .src_color_blend_factor = MGPU_BLEND_FACTOR_SRC_ALPHA,
       .dst_color_blend_factor = MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       .color_blend_op = MGPU_BLEND_OP_ADD,
@@ -227,11 +245,30 @@ int main() {
   MGPUColorBlendState mgpu_color_blend_state{};
   MGPU_CHECK(mgpuDeviceCreateColorBlendState(mgpu_device, &color_blend_state_create_info, &mgpu_color_blend_state));
 
+  const MGPUVertexBinding vertex_input_binding{
+    .binding = 0u,
+    .stride = sizeof(float) * 6,
+    .input_rate = MGPU_VERTEX_INPUT_RATE_VERTEX
+  };
+  const MGPUVertexAttribute vertex_input_attributes[]{
+    {
+      .location = 0u,
+      .binding = 0u,
+      .format = MGPU_VERTEX_FORMAT_STUB_XYZ323232,
+      .offset = 0u
+    },
+    {
+      .location = 1u,
+      .binding = 0u,
+      .format = MGPU_VERTEX_FORMAT_STUB_XYZ323232,
+      .offset = sizeof(float) * 3
+    }
+  };
   const MGPUVertexInputStateCreateInfo vertex_input_state_create_info{
-    .binding_count = 0u,
-    .bindings = nullptr,
-    .attribute_count = 0u,
-    .attributes = nullptr
+    .binding_count = 1u,
+    .bindings = &vertex_input_binding,
+    .attribute_count = sizeof(vertex_input_attributes) / sizeof(MGPUVertexAttribute),
+    .attributes = vertex_input_attributes
   };
   MGPUVertexInputState mgpu_vertex_input_state{};
   MGPU_CHECK(mgpuDeviceCreateVertexInputState(mgpu_device, &vertex_input_state_create_info, &mgpu_vertex_input_state));
@@ -270,6 +307,7 @@ int main() {
     mgpuCommandListCmdUseVertexInputState(mgpu_cmd_list, mgpu_vertex_input_state);
     mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.0f, 0.0f, 1600.f, 900.f);
     mgpuCommandListCmdSetScissor(mgpu_cmd_list, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
+    mgpuCommandListCmdBindVertexBuffer(mgpu_cmd_list, 0u, mgpu_vbo, 0u);
     mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
     mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
 
@@ -292,6 +330,7 @@ done:
   mgpuShaderProgramDestroy(mgpu_shader_program);
   mgpuShaderModuleDestroy(mgpu_frag_shader);
   mgpuShaderModuleDestroy(mgpu_vert_shader);
+  mgpuBufferDestroy(mgpu_vbo);
   for(MGPUTextureView texture_view : mgpu_swap_chain_texture_views) mgpuTextureViewDestroy(texture_view);
   mgpuSwapChainDestroy(mgpu_swap_chain);
   mgpuDeviceDestroy(mgpu_device);
