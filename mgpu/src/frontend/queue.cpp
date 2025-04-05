@@ -22,6 +22,9 @@ MGPUResult mgpuQueueBufferUpload(MGPUQueue queue, MGPUBuffer buffer, uint64_t of
 
   MGPU_FORWARD_ERROR(validate_buffer_range(cxx_buffer, offset, size));
   MGPU_FORWARD_ERROR(validate_buffer_has_usage_bits(cxx_buffer, MGPU_BUFFER_USAGE_COPY_DST));
+  if(size == 0u) {
+    return MGPU_SUCCESS;
+  }
   return cxx_queue->BufferUpload(cxx_buffer, {(const u8*)data, size}, offset);
 }
 

@@ -5,6 +5,10 @@
 
 namespace mgpu::vulkan {
 
+bool Buffer::State::operator==(const State& other_state) const {
+  return m_access == other_state.m_access && m_pipeline_stages == other_state.m_pipeline_stages;
+}
+
 Buffer::Buffer(Device* device, VkBuffer vk_buffer, VmaAllocation vma_allocation, const MGPUBufferCreateInfo& create_info)
     : BufferBase{create_info}
     , m_device{device}
@@ -79,6 +83,13 @@ MGPUResult Buffer::Unmap() {
 MGPUResult Buffer::FlushRange(u64 offset, u64 size) {
   MGPU_VK_FORWARD_ERROR(vmaFlushAllocation(m_device->GetVmaAllocator(), m_vma_allocation, offset, size));
   return MGPU_SUCCESS;
+}
+
+void Buffer::TransitionState(State new_state, VkCommandBuffer vk_command_buffer) {
+  // thoughts:
+  // read-read dependency may not need a barrier (does it ever need one?)
+  // read-write and write-write dependencies always need a barrier
+  //ATOM_PANIC("transition state unimplemented");
 }
 
 }  // namespace mgpu::vulkan

@@ -3,6 +3,7 @@
 
 #include <mgpu/mgpu.h>
 #include <atom/integer.hpp>
+#include <algorithm>
 
 #include "backend/buffer.hpp"
 
@@ -36,8 +37,11 @@ inline MGPUResult validate_buffer_mapped(mgpu::BufferBase* buffer) {
 }
 
 inline MGPUResult validate_buffer_range(mgpu::BufferBase* buffer, u64 offset, u64 size) {
-  const u64 offset_plus_size = offset + size;
-  if(offset_plus_size < offset || offset_plus_size > buffer->Size()) {
+  const u64 buffer_size = buffer->Size();
+  const u64 high_offset = offset + size;
+
+  // NOTE: the 'offset == buffer_size' check is needed when the range size is zero.
+  if(high_offset < offset || high_offset > buffer_size || offset == buffer_size) {
     return MGPU_BAD_DIMENSIONS;
   }
   return MGPU_SUCCESS;

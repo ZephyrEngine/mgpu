@@ -29,7 +29,7 @@ class Texture final : public TextureBase {
 
     Result<TextureViewBase*> CreateView(const MGPUTextureViewCreateInfo& create_info) override;
 
-    void TransitionState(const State& new_state, VkCommandBuffer vk_command_buffer);
+    void TransitionState(State new_state, VkCommandBuffer vk_command_buffer);
 
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);
