@@ -18,6 +18,7 @@ class BufferBase : atom::NonCopyable, atom::NonMoveable {
 
     [[nodiscard]] u64  Size() const { return m_create_info.size; }
     [[nodiscard]] bool HostVisible() const { return m_create_info.flags & MGPU_BUFFER_FLAGS_HOST_VISIBLE; }
+    [[nodiscard]] MGPUBufferUsage Usage() const { return m_create_info.usage; }
     [[nodiscard]] virtual bool IsMapped() const = 0;
 
     virtual Result<void*> Map() = 0;

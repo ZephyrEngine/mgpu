@@ -10,11 +10,14 @@
 
 namespace mgpu {
 
+class BufferBase;
+
 class QueueBase : atom::NonCopyable, atom::NonMoveable {
   public:
     virtual ~QueueBase() = default;
 
     virtual MGPUResult SubmitCommandList(const CommandList* command_list) = 0;
+    virtual MGPUResult BufferUpload(const BufferBase* buffer, std::span<const u8> data, u64 offset) = 0;
     virtual MGPUResult Flush() = 0;
 };
 

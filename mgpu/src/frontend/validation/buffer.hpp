@@ -34,3 +34,18 @@ inline MGPUResult validate_buffer_mapped(mgpu::BufferBase* buffer) {
   }
   return MGPU_SUCCESS;
 }
+
+inline MGPUResult validate_buffer_range(mgpu::BufferBase* buffer, u64 offset, u64 size) {
+  const u64 offset_plus_size = offset + size;
+  if(offset_plus_size < offset || offset_plus_size > buffer->Size()) {
+    return MGPU_BAD_DIMENSIONS;
+  }
+  return MGPU_SUCCESS;
+}
+
+inline MGPUResult validate_buffer_has_usage_bits(mgpu::BufferBase* buffer, MGPUBufferUsage usage_bits) {
+  if((buffer->Usage() & usage_bits) != usage_bits) {
+    return MGPU_BUFFER_INCOMPATIBLE;
+  }
+  return MGPU_SUCCESS;
+}

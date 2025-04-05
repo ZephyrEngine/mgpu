@@ -29,6 +29,11 @@ Device::Device(
     , m_deleter_queue{std::move(deleter_queue)}
     , m_queues{std::move(queues)}
     , m_render_pass_cache{std::move(render_pass_cache)} {
+  // TODO(fleroviux): rework architecture to avoid referencing back the Device from here
+  m_queues.graphics_compute->SetDevice(this);
+  if(m_queues.async_compute) {
+    m_queues.async_compute->SetDevice(this);
+  }
 }
 
 Device::~Device() {

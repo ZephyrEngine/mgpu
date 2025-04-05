@@ -10,7 +10,9 @@
 inline MGPUResult validate_texture_format(MGPUTextureFormat texture_format) {
   // TODO(fleroviux): MSVC generates suboptimal code for this (GCC and Clang emit a single comparison)
   switch(texture_format) {
-    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return MGPU_SUCCESS;
+    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB:
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32:
+      return MGPU_SUCCESS;
   }
   return MGPU_BAD_ENUM;
 }

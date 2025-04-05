@@ -59,13 +59,14 @@ typedef enum MGPUResult {
   MGPU_BAD_DIMENSIONS = 5,
   MGPU_BUFFER_NOT_HOST_VISIBLE = 6,
   MGPU_BUFFER_NOT_MAPPED = 7,
-  MGPU_INCOMPATIBLE_TEXTURE_VIEW_TYPE = 8,
-  MGPU_INCOMPATIBLE_TEXTURE_FORMAT = 9,
-  MGPU_INCOMPATIBLE_TEXTURE_USAGE  = 10,
-  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 11,
-  MGPU_NOT_READY = 12,
-  MGPU_BAD_COMMAND_LIST = 13,
-  MGPU_INVALID_ARGUMENT = 14
+  MGPU_BUFFER_INCOMPATIBLE = 8,
+  MGPU_INCOMPATIBLE_TEXTURE_VIEW_TYPE = 9,
+  MGPU_INCOMPATIBLE_TEXTURE_FORMAT = 10,
+  MGPU_INCOMPATIBLE_TEXTURE_USAGE  = 11,
+  MGPU_INCOMPATIBLE_TEXTURE_ASPECT = 12,
+  MGPU_NOT_READY = 13,
+  MGPU_BAD_COMMAND_LIST = 14,
+  MGPU_INVALID_ARGUMENT = 15
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -103,7 +104,8 @@ typedef enum MGPUBufferFlagsBits {
 typedef MGPUFlags MGPUBufferFlags;
 
 typedef enum MGPUTextureFormat {
-  MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB = 0
+  MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB = 0,
+  MGPU_TEXTURE_FORMAT_DEPTH_F32 = 1
 } MGPUTextureFormat;
 
 typedef enum MGPUTextureUsageBits {
@@ -219,9 +221,11 @@ typedef enum MGPUVertexInputRate {
   MGPU_VERTEX_INPUT_RATE_INSTANCE = 1
 } MGPUVertexInputRate;
 
-// TODO(fleroviux): add more formats!
+// TODO(fleroviux): unstub this
 typedef enum MGPUVertexFormat {
-  MGPU_VERTEX_FORMAT_STUB_XYZ323232 = 0
+  MGPU_VERTEX_FORMAT_STUB_XYZW32323232 = 0,
+  MGPU_VERTEX_FORMAT_STUB_XYZ323232 = 1,
+  MGPU_VERTEX_FORMAT_STUB_XY3232 = 2
 } MGPUVertexFormat;
 
 typedef enum MGPULoadOp {
@@ -490,6 +494,7 @@ void mgpuDeviceDestroy(MGPUDevice device);
 
 // MGPUQueue methods
 MGPUResult mgpuQueueSubmitCommandList(MGPUQueue queue, MGPUCommandList command_list);
+MGPUResult mgpuQueueBufferUpload(MGPUQueue queue, MGPUBuffer buffer, uint64_t offset, uint64_t size, const void* data);
 MGPUResult mgpuQueueFlush(MGPUQueue queue);
 
 // MGPUBuffer methods

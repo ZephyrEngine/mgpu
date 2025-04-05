@@ -34,6 +34,7 @@ inline VkImageType MGPUTextureTypeToVkImageType(MGPUTextureType texture_type) {
 inline VkFormat MGPUTextureFormatToVkFormat(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32: return VK_FORMAT_D32_SFLOAT;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
@@ -175,7 +176,9 @@ inline VkVertexInputRate MGPUVertexInputRateToVkVertexInputRate(MGPUVertexInputR
 
 inline VkFormat MGPUVertexFormatToVkFormat(MGPUVertexFormat vertex_format) {
   switch(vertex_format) {
+    case MGPU_VERTEX_FORMAT_STUB_XYZW32323232: return VK_FORMAT_R32G32B32A32_SFLOAT;
     case MGPU_VERTEX_FORMAT_STUB_XYZ323232: return VK_FORMAT_R32G32B32_SFLOAT;
+    case MGPU_VERTEX_FORMAT_STUB_XY3232: return VK_FORMAT_R32G32_SFLOAT;
     default: ATOM_PANIC("unhandled vertex format: {}", (int)vertex_format);
   }
 }

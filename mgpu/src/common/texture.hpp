@@ -3,18 +3,22 @@
 
 #include <mgpu/mgpu.h>
 
+#include <atom/integer.hpp>
 #include <atom/panic.hpp>
 
 inline MGPUTextureAspect MGPUTextureFormatToMGPUTextureAspect(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return MGPU_TEXTURE_ASPECT_COLOR;
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32: return MGPU_TEXTURE_ASPECT_DEPTH;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
 inline bool MGPUTextureFormatIsCompressed(MGPUTextureFormat texture_format) {
   switch(texture_format) {
-    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return false;
+    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB:
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32:
+      return false;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
@@ -23,13 +27,16 @@ inline bool MGPUTextureFormatIsDepthStencil(MGPUTextureFormat texture_format) {
   // TODO(fleroviux): this possibly could be implemented via MGPUTextureFormatToMGPUTextureAspect()
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return false;
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32: return true;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
 
 inline size_t MGPUTextureFormatGetTexelSize(MGPUTextureFormat texture_format) {
   switch(texture_format) {
-    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return sizeof(uint32_t);
+    case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB:
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32:
+      return sizeof(u32);
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }
@@ -37,6 +44,7 @@ inline size_t MGPUTextureFormatGetTexelSize(MGPUTextureFormat texture_format) {
 inline bool MGPUTextureFormatHasAlpha(MGPUTextureFormat texture_format) {
   switch(texture_format) {
     case MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB: return true;
+    case MGPU_TEXTURE_FORMAT_DEPTH_F32: return false;
     default: ATOM_PANIC("unhandled texture format: {}", (int)texture_format);
   }
 }

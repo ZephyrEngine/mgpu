@@ -1,6 +1,7 @@
 
 #include <atom/float.hpp>
 #include <atom/panic.hpp>
+#include <cstring>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
 
@@ -100,6 +101,10 @@ Result<std::unique_ptr<Queue>> Queue::Create(
   }};
 }
 
+void Queue::SetDevice(Device* device) {
+  m_device = device;
+}
+
 void Queue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
   m_vk_swap_chain_acquire_semaphore = vk_swap_chain_acquire_semaphore;
 }
@@ -166,6 +171,35 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
 
     command = command->m_next;
   }
+
+  return MGPU_SUCCESS;
+}
+
+MGPUResult Queue::BufferUpload(const BufferBase* buffer, std::span<const u8> data, u64 offset) {
+  // TODO(fleroviux): instead of allocating a bunch of small, individual buffers, allocate a single, large arena staging buffer
+  Result<BufferBase*> staging_buffer_result = Buffer::Create(m_device, {
+    .size = (u64)data.size_bytes(),
+    .usage = MGPU_BUFFER_USAGE_COPY_SRC,
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
+  });
+  MGPU_FORWARD_ERROR(staging_buffer_result.Code());
+
+  // TODO(fleroviux): do we need to flush the buffer?
+  auto staging_buffer = (Buffer*)staging_buffer_result.Unwrap();
+  Result<void*> map_address_result = staging_buffer->Map();
+  MGPU_FORWARD_ERROR(map_address_result.Code());
+  void* map_address = map_address_result.Unwrap();
+  std::memcpy(map_address, data.data(), data.size_bytes());
+
+  // TODO(fleroviux): add a buffer barrier to avoid data races
+  const VkBufferCopy vk_buffer_copy{
+    .srcOffset = 0u,
+    .dstOffset = offset,
+    .size = data.size_bytes()
+  };
+  vkCmdCopyBuffer(m_vk_cmd_buffer, staging_buffer->Handle(), ((Buffer*)buffer)->Handle(), 1u, &vk_buffer_copy);
+
+  delete staging_buffer;
 
   return MGPU_SUCCESS;
 }

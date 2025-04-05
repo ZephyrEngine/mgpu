@@ -16,6 +16,7 @@
 
 namespace mgpu::vulkan {
 
+class Device;
 class TextureView;
 class ShaderProgram;
 class RasterizerState;
@@ -35,10 +36,12 @@ class Queue final : public QueueBase {
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
 
+    void SetDevice(Device* device);
     void SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore);
     MGPUResult Present(SwapChain* swap_chain, u32 texture_index);
 
     MGPUResult SubmitCommandList(const CommandList* command_list) override;
+    MGPUResult BufferUpload(const BufferBase* buffer, std::span<const u8> data, u64 offset) override;
     MGPUResult Flush() override;
 
   private:
@@ -75,6 +78,7 @@ class Queue final : public QueueBase {
 
     void BindGraphicsPipelineForCurrentState(CommandListState& state);
 
+    Device* m_device;
     VkDevice m_vk_device;
     VkQueue m_vk_queue;
     VkCommandPool m_vk_cmd_pool;
