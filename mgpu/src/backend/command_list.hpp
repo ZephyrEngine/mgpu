@@ -21,6 +21,7 @@ class RasterizerStateBase;
 class InputAssemblyStateBase;
 class ColorBlendStateBase;
 class VertexInputStateBase;
+class DepthStencilStateBase;
 class BufferBase;
 
 enum class CommandType {
@@ -31,6 +32,7 @@ enum class CommandType {
   UseInputAssemblyState,
   UseColorBlendState,
   UseVertexInputState,
+  UseDepthStencilState,
   SetViewport,
   SetScissor,
   BindVertexBuffer,
@@ -140,6 +142,15 @@ struct UseVertexInputStateCommand : CommandBase {
   }
 
   VertexInputStateBase* m_vertex_input_state;
+};
+
+struct UseDepthStencilStateCommand : CommandBase {
+  explicit UseDepthStencilStateCommand(DepthStencilStateBase* depth_stencil_state)
+      : CommandBase{CommandType::UseDepthStencilState}
+      , m_depth_stencil_state{depth_stencil_state} {
+  }
+
+  DepthStencilStateBase* m_depth_stencil_state;
 };
 
 struct SetViewportCommand : CommandBase {
@@ -257,6 +268,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdUseVertexInputState(VertexInputStateBase* vertex_input_state) {
       ErrorUnlessInsideRenderPass();
       Push<UseVertexInputStateCommand>(vertex_input_state);
+    }
+
+    void CmdUseDepthStencilState(DepthStencilStateBase* depth_stencil_state) {
+      ErrorUnlessInsideRenderPass();
+      Push<UseDepthStencilStateCommand>(depth_stencil_state);
     }
 
     void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {

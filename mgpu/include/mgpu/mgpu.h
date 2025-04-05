@@ -40,6 +40,7 @@ typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
 typedef struct MGPUInputAssemblyStateImpl* MGPUInputAssemblyState;
 typedef struct MGPUColorBlendStateImpl* MGPUColorBlendState;
 typedef struct MGPUVertexInputStateImpl* MGPUVertexInputState;
+typedef struct MGPUDepthStencilStateImpl* MGPUDepthStencilState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
@@ -228,6 +229,28 @@ typedef enum MGPUVertexFormat {
   MGPU_VERTEX_FORMAT_STUB_XY3232 = 2
 } MGPUVertexFormat;
 
+typedef enum MGPUCompareOp {
+  MGPU_COMPARE_OP_NEVER = 0,
+  MGPU_COMPARE_OP_LESS = 1,
+  MGPU_COMPARE_OP_EQUAL = 2,
+  MGPU_COMPARE_OP_LESS_OR_EQUAL = 3,
+  MGPU_COMPARE_OP_GREATER = 4,
+  MGPU_COMPARE_OP_NOT_EQUAL = 5,
+  MGPU_COMPARE_OP_GREATER_OR_EQUAL = 6,
+  MGPU_COMPARE_OP_ALWAYS = 7
+} MGPUCompareOp;
+
+typedef enum MGPUStencilOp {
+  MGPU_STENCIL_OP_KEEP = 0,
+  MGPU_STENCIL_OP_ZERO = 1,
+  MGPU_STENCIL_OP_REPLACE = 2,
+  MGPU_STENCIL_OP_INCREMENT_AND_CLAMP = 3,
+  MGPU_STENCIL_OP_DECREMENT_AND_CLAMP = 4,
+  MGPU_STENCIL_OP_INVERT = 5,
+  MGPU_STENCIL_OP_INCREMENT_AND_WRAP = 6,
+  MGPU_STENCIL_OP_DECREMENT_AND_WRAP = 7
+} MGPUStencilOp;
+
 typedef enum MGPULoadOp {
   MGPU_LOAD_OP_LOAD = 0,
   MGPU_LOAD_OP_CLEAR = 1,
@@ -357,7 +380,7 @@ typedef struct MGPUColorBlendAttachmentState {
 } MGPUColorBlendAttachmentState;
 
 typedef struct MGPUColorBlendStateCreateInfo {
-  // Note: Logic Op and Blend Constants emitted, since they appear to be unsupported on Metal (and MoltenVK).
+  // Note: Logic Op and Blend Constants omitted, since they appear to be unsupported on Metal (and MoltenVK).
   uint32_t attachment_count;
   const MGPUColorBlendAttachmentState* attachments;
 } MGPUColorBlendStateCreateInfo;
@@ -381,6 +404,27 @@ typedef struct MGPUVertexInputStateCreateInfo {
   uint32_t attribute_count;
   const MGPUVertexAttribute* attributes;
 } MGPUVertexInputStateCreateInfo;
+
+typedef struct MGPUStencilFaceState {
+  MGPUStencilOp fail_op;
+  MGPUStencilOp pass_op;
+  MGPUStencilOp depth_fail_op;
+  MGPUCompareOp compare_op;
+  uint32_t read_mask;
+  uint32_t write_mask;
+
+  // TODO(fleroviux): make the reference value dynamic state?
+  uint32_t reference;
+} MGPUStencilFaceState;
+
+typedef struct MGPUDepthStencilStateCreateInfo {
+  bool depth_test_enable;
+  bool depth_write_enable;
+  MGPUCompareOp depth_compare_op;
+  bool stencil_test_enable;
+  MGPUStencilFaceState stencil_front;
+  MGPUStencilFaceState stencil_back;
+} MGPUDepthStencilStateCreateInfo;
 
 typedef struct MGPUSurfaceCreateInfo {
 #ifdef WIN32
@@ -488,6 +532,7 @@ MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasteriz
 MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state);
 MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBlendStateCreateInfo* create_info, MGPUColorBlendState* color_blend_state);
 MGPUResult mgpuDeviceCreateVertexInputState(MGPUDevice device, const MGPUVertexInputStateCreateInfo* create_info, MGPUVertexInputState* vertex_input_state);
+MGPUResult mgpuDeviceCreateDepthStencilState(MGPUDevice device, const MGPUDepthStencilStateCreateInfo* create_info, MGPUDepthStencilState* depth_stencil_state);
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list);
 MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreateInfo* create_info, MGPUSwapChain* swap_chain);
 void mgpuDeviceDestroy(MGPUDevice device);
@@ -528,6 +573,9 @@ void mgpuColorBlendStateDestroy(MGPUColorBlendState color_blend_state);
 // MGPUVertexInputState methods
 void mgpuVertexInputStateDestroy(MGPUVertexInputState vertex_input_state);
 
+// MGPUDepthStencilState methods
+void mgpuDepthStencilStateDestroy(MGPUDepthStencilState depth_stencil_state);
+
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
 void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
@@ -537,6 +585,7 @@ void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURast
 void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
 void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state);
 void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state);
+void mgpuCommandListCmdUseDepthStencilState(MGPUCommandList command_list, MGPUDepthStencilState depth_stencil_state);
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
 void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);

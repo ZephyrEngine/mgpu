@@ -53,6 +53,10 @@ void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVer
   ((mgpu::CommandList*)command_list)->CmdUseVertexInputState((mgpu::VertexInputStateBase*)vertex_input_state);
 }
 
+void mgpuCommandListCmdUseDepthStencilState(MGPUCommandList command_list, MGPUDepthStencilState depth_stencil_state) {
+  ((mgpu::CommandList*)command_list)->CmdUseDepthStencilState((mgpu::DepthStencilStateBase*)depth_stencil_state);
+}
+
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height) {
   ((mgpu::CommandList*)command_list)->CmdSetViewport(x, y, width, height);
 }

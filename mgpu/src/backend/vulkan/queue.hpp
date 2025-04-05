@@ -71,6 +71,7 @@ class Queue final : public QueueBase {
     void HandleCmdUseInputAssemblyState(CommandListState& state, const UseInputAssemblyStateCommand& command);
     void HandleCmdUseColorBlendState(CommandListState& state, const UseColorBlendStateCommand& command);
     void HandleCmdUseVertexInputState(CommandListState& state, const UseVertexInputStateCommand& command);
+    void HandleCmdUseDepthStencilState(CommandListState& state, const UseDepthStencilStateCommand& command);
     void HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command);
     void HandleCmdSetScissor(CommandListState& state, const SetScissorCommand& command);
     void HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command);

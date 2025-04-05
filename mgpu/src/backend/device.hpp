@@ -19,6 +19,7 @@ class RasterizerStateBase;
 class InputAssemblyStateBase;
 class ColorBlendStateBase;
 class VertexInputStateBase;
+class DepthStencilStateBase;
 class SwapChainBase;
 
 class DeviceBase : atom::NonCopyable, atom::NonMoveable {
@@ -38,6 +39,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<InputAssemblyStateBase*> CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) = 0;
     virtual Result<ColorBlendStateBase*> CreateColorBlendState(const MGPUColorBlendStateCreateInfo& create_info) = 0;
     virtual Result<VertexInputStateBase*> CreateVertexInputState(const MGPUVertexInputStateCreateInfo& create_info) = 0;
+    virtual Result<DepthStencilStateBase*> CreateDepthStencilState(const MGPUDepthStencilStateCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
 
   private:

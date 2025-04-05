@@ -1,6 +1,7 @@
 
-#include <mgpu/mgpu.h>
+#pragma once
 
+#include <mgpu/mgpu.h>
 #include <atom/vector_n.hpp>
 #include <vulkan/vulkan.h>
 

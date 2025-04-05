@@ -5,6 +5,7 @@
 
 #include "buffer.hpp"
 #include "color_blend_state.hpp"
+#include "depth_stencil_state.hpp"
 #include "device.hpp"
 #include "input_assembly_state.hpp"
 #include "rasterizer_state.hpp"
@@ -190,6 +191,10 @@ Result<ColorBlendStateBase*> Device::CreateColorBlendState(const MGPUColorBlendS
 
 Result<VertexInputStateBase*> Device::CreateVertexInputState(const MGPUVertexInputStateCreateInfo& create_info) {
   return new VertexInputState{create_info};
+}
+
+Result<DepthStencilStateBase*> Device::CreateDepthStencilState(const MGPUDepthStencilStateCreateInfo& create_info) {
+  return new DepthStencilState{create_info};
 }
 
 Result<SwapChainBase*> Device::CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) {

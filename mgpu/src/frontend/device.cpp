@@ -57,7 +57,6 @@ MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProg
 
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state) {
   // TODO(fleroviux): implement validation?
-
   mgpu::Result<mgpu::RasterizerStateBase*> cxx_rasterizer_state_result = ((mgpu::DeviceBase*)device)->CreateRasterizerState(*create_info);
   MGPU_FORWARD_ERROR(cxx_rasterizer_state_result.Code());
   *rasterizer_state = (MGPURasterizerState)cxx_rasterizer_state_result.Unwrap();
@@ -66,7 +65,6 @@ MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasteriz
 
 MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInputAssemblyStateCreateInfo* create_info, MGPUInputAssemblyState* input_assembly_state) {
   // TODO(fleroviux): implement validation?
-
   mgpu::Result<mgpu::InputAssemblyStateBase*> cxx_input_assembly_state_result = ((mgpu::DeviceBase*)device)->CreateInputAssemblyState(*create_info);
   MGPU_FORWARD_ERROR(cxx_input_assembly_state_result.Code());
   *input_assembly_state = (MGPUInputAssemblyState)cxx_input_assembly_state_result.Unwrap();
@@ -75,7 +73,6 @@ MGPUResult mgpuDeviceCreateInputAssemblyState(MGPUDevice device, const MGPUInput
 
 MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBlendStateCreateInfo* create_info, MGPUColorBlendState* color_blend_state) {
   // TODO(fleroviux): implement validation?
-
   mgpu::Result<mgpu::ColorBlendStateBase*> cxx_color_blend_state_result = ((mgpu::DeviceBase*)device)->CreateColorBlendState(*create_info);
   MGPU_FORWARD_ERROR(cxx_color_blend_state_result.Code());
   *color_blend_state = (MGPUColorBlendState)cxx_color_blend_state_result.Unwrap();
@@ -85,10 +82,17 @@ MGPUResult mgpuDeviceCreateColorBlendState(MGPUDevice device, const MGPUColorBle
 MGPUResult mgpuDeviceCreateVertexInputState(MGPUDevice device, const MGPUVertexInputStateCreateInfo* create_info, MGPUVertexInputState* vertex_input_state) {
   // TODO(fleroviux): implement validation?
   // For example: that the number of bindings and attributes is within the device limits.
-
   mgpu::Result<mgpu::VertexInputStateBase*> cxx_vertex_input_state_result = ((mgpu::DeviceBase*)device)->CreateVertexInputState(*create_info);
   MGPU_FORWARD_ERROR(cxx_vertex_input_state_result.Code());
   *vertex_input_state = (MGPUVertexInputState)cxx_vertex_input_state_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuDeviceCreateDepthStencilState(MGPUDevice device, const MGPUDepthStencilStateCreateInfo* create_info, MGPUDepthStencilState* depth_stencil_state) {
+  // TODO(fleroviux): implement validation?
+  mgpu::Result<mgpu::DepthStencilStateBase*> cxx_depth_stencil_state_result = ((mgpu::DeviceBase*)device)->CreateDepthStencilState(*create_info);
+  MGPU_FORWARD_ERROR(cxx_depth_stencil_state_result.Code());
+  *depth_stencil_state = (MGPUDepthStencilState)cxx_depth_stencil_state_result.Unwrap();
   return MGPU_SUCCESS;
 }
 

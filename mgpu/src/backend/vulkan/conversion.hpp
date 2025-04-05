@@ -183,6 +183,34 @@ inline VkFormat MGPUVertexFormatToVkFormat(MGPUVertexFormat vertex_format) {
   }
 }
 
+inline VkCompareOp MGPUCompareOpToVkCompareOp(MGPUCompareOp compare_op) {
+  switch(compare_op) {
+    case MGPU_COMPARE_OP_NEVER:            return VK_COMPARE_OP_NEVER;
+    case MGPU_COMPARE_OP_LESS:             return VK_COMPARE_OP_LESS;
+    case MGPU_COMPARE_OP_EQUAL:            return VK_COMPARE_OP_EQUAL;
+    case MGPU_COMPARE_OP_LESS_OR_EQUAL:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+    case MGPU_COMPARE_OP_GREATER:          return VK_COMPARE_OP_GREATER;
+    case MGPU_COMPARE_OP_NOT_EQUAL:        return VK_COMPARE_OP_NOT_EQUAL;
+    case MGPU_COMPARE_OP_GREATER_OR_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+    case MGPU_COMPARE_OP_ALWAYS:           return VK_COMPARE_OP_ALWAYS;
+    default: ATOM_PANIC("unhandled compare op: {}", (int)compare_op);
+  }
+}
+
+inline VkStencilOp MGPUStencilOpToVkStencilOp(MGPUStencilOp stencil_op) {
+  switch(stencil_op) {
+    case MGPU_STENCIL_OP_KEEP: return VK_STENCIL_OP_KEEP;
+    case MGPU_STENCIL_OP_ZERO: return VK_STENCIL_OP_ZERO;
+    case MGPU_STENCIL_OP_REPLACE: return VK_STENCIL_OP_REPLACE;
+    case MGPU_STENCIL_OP_INCREMENT_AND_CLAMP: return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+    case MGPU_STENCIL_OP_DECREMENT_AND_CLAMP: return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+    case MGPU_STENCIL_OP_INVERT: return VK_STENCIL_OP_INVERT;
+    case MGPU_STENCIL_OP_INCREMENT_AND_WRAP: return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+    case MGPU_STENCIL_OP_DECREMENT_AND_WRAP: return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+    default: ATOM_PANIC("unhandled stencil op: {}", (int)stencil_op);
+  }
+}
+
 inline VkAttachmentLoadOp MGPULoadOpToVkAttachmentLoadOp(MGPULoadOp load_op) {
   switch(load_op) {
     case MGPU_LOAD_OP_CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;

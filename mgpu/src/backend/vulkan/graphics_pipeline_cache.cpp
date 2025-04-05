@@ -5,6 +5,7 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 #include "graphics_pipeline_cache.hpp"
 #include "color_blend_state.hpp"
+#include "depth_stencil_state.hpp"
 #include "input_assembly_state.hpp"
 #include "shader_program.hpp"
 #include "rasterizer_state.hpp"
@@ -18,6 +19,7 @@ size_t GraphicsPipelineQuery::Hasher::operator()(const GraphicsPipelineQuery& qu
   atom::hash_combine(hash, query.m_input_assembly_state);
   atom::hash_combine(hash, query.m_color_blend_state);
   atom::hash_combine(hash, query.m_vertex_input_state);
+  atom::hash_combine(hash, query.m_depth_stencil_state);
   atom::hash_combine(hash, query.m_vk_render_pass);
   return hash;
 }
@@ -28,6 +30,7 @@ bool GraphicsPipelineQuery::operator==(const GraphicsPipelineQuery& other_query)
       && m_input_assembly_state == other_query.m_input_assembly_state
       && m_color_blend_state == other_query.m_color_blend_state
       && m_vertex_input_state == other_query.m_vertex_input_state
+      && m_depth_stencil_state == other_query.m_depth_stencil_state
       && m_vk_render_pass == other_query.m_vk_render_pass;
 }
 
@@ -95,27 +98,6 @@ Result<VkPipeline> GraphicsPipelineCache::GetPipeline(const GraphicsPipelineQuer
     .alphaToOneEnable = VK_FALSE
   };
 
-  const VkPipelineDepthStencilStateCreateInfo vk_depth_stencil_state_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-//    .depthTestEnable = VK_FALSE,
-//    .depthWriteEnable = VK_FALSE,
-//    .depthCompareOp = VK_COMPARE_OP_ALWAYS,
-    .depthTestEnable = VK_TRUE,
-    .depthWriteEnable = VK_TRUE,
-    .depthCompareOp = VK_COMPARE_OP_LESS,
-
-    .depthBoundsTestEnable = VK_FALSE,
-    .stencilTestEnable = VK_FALSE,
-    .front = {},
-    .back = {},
-    .minDepthBounds = 0.f,
-//    .minDepthBounds = -1.f,
-
-    .maxDepthBounds = 1.f
-  };
-
   const VkDynamicState vk_dynamic_states[] { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
   const VkPipelineDynamicStateCreateInfo vk_dynamic_state_create_info{
@@ -138,7 +120,7 @@ Result<VkPipeline> GraphicsPipelineCache::GetPipeline(const GraphicsPipelineQuer
     .pViewportState = &vk_viewport_state_create_info,
     .pRasterizationState = &query.m_rasterizer_state->GetVkRasterizationState(),
     .pMultisampleState = &vk_multisample_state_create_info,
-    .pDepthStencilState = &vk_depth_stencil_state_create_info,
+    .pDepthStencilState = &query.m_depth_stencil_state->GetVkDepthStencilState(),
     .pColorBlendState = &query.m_color_blend_state->GetVkColorBlendState(),
     .pDynamicState = &vk_dynamic_state_create_info,
     .layout = vk_pipeline_layout,

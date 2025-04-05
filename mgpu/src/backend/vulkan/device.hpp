@@ -46,6 +46,7 @@ class Device final : public DeviceBase {
     Result<InputAssemblyStateBase*> CreateInputAssemblyState(const MGPUInputAssemblyStateCreateInfo& create_info) override;
     Result<ColorBlendStateBase*> CreateColorBlendState(const MGPUColorBlendStateCreateInfo& create_info) override;
     Result<VertexInputStateBase*> CreateVertexInputState(const MGPUVertexInputStateCreateInfo& create_info) override;
+    Result<DepthStencilStateBase*> CreateDepthStencilState(const MGPUDepthStencilStateCreateInfo& create_info) override;
     Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) override;
 
   private:

@@ -7,6 +7,7 @@ set(SOURCES
   src/backend/vulkan/buffer.cpp
   src/backend/vulkan/color_blend_state.cpp
   src/backend/vulkan/deleter_queue.cpp
+  src/backend/vulkan/depth_stencil_state.cpp
   src/backend/vulkan/device.cpp
   src/backend/vulkan/graphics_pipeline_cache.cpp
   src/backend/vulkan/input_assembly_state.cpp
@@ -25,6 +26,7 @@ set(SOURCES
   src/frontend/buffer.cpp
   src/frontend/color_blend_state.cpp
   src/frontend/command_list.cpp
+  src/frontend/depth_stencil_state.cpp
   src/frontend/device.cpp
   src/frontend/input_assembly_state.cpp
   src/frontend/instance.cpp
@@ -50,6 +52,7 @@ set(HEADERS
   src/backend/vulkan/buffer.hpp
   src/backend/vulkan/color_blend_state.hpp
   src/backend/vulkan/deleter_queue.hpp
+  src/backend/vulkan/depth_stencil_state.hpp
   src/backend/vulkan/device.hpp
   src/backend/vulkan/graphics_pipeline_cache.hpp
   src/backend/vulkan/input_assembly_state.hpp
@@ -68,6 +71,7 @@ set(HEADERS
   src/backend/buffer.hpp
   src/backend/color_blend_state.hpp
   src/backend/command_list.hpp
+  src/backend/depth_stencil_state.hpp
   src/backend/device.hpp
   src/backend/input_assembly_state.hpp
   src/backend/instance.hpp

@@ -7,6 +7,7 @@
 
 #include "buffer.hpp"
 #include "color_blend_state.hpp"
+#include "depth_stencil_state.hpp"
 #include "input_assembly_state.hpp"
 #include "queue.hpp"
 #include "rasterizer_state.hpp"
@@ -160,6 +161,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::UseInputAssemblyState: HandleCmdUseInputAssemblyState(state, *(UseInputAssemblyStateCommand*)command); break;
       case CommandType::UseColorBlendState: HandleCmdUseColorBlendState(state, *(UseColorBlendStateCommand*)command); break;
       case CommandType::UseVertexInputState: HandleCmdUseVertexInputState(state, *(UseVertexInputStateCommand*)command); break;
+      case CommandType::UseDepthStencilState: HandleCmdUseDepthStencilState(state, *(UseDepthStencilStateCommand*)command); break;
       case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
       case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
       case CommandType::BindVertexBuffer: HandleCmdBindVertexBuffer(state, *(BindVertexBufferCommand*)command); break;
@@ -446,6 +448,15 @@ void Queue::HandleCmdUseVertexInputState(CommandListState& state, const UseVerte
 
   if(pipeline_query.m_vertex_input_state != command.m_vertex_input_state) {
     pipeline_query.m_vertex_input_state = (VertexInputState*)command.m_vertex_input_state;
+    state.render_pass.require_pipeline_switch = true;
+  }
+}
+
+void Queue::HandleCmdUseDepthStencilState(CommandListState& state, const UseDepthStencilStateCommand& command) {
+  GraphicsPipelineQuery& pipeline_query = state.render_pass.pipeline_query;
+
+  if(pipeline_query.m_depth_stencil_state != command.m_depth_stencil_state) {
+    pipeline_query.m_depth_stencil_state = (DepthStencilState*)command.m_depth_stencil_state;
     state.render_pass.require_pipeline_switch = true;
   }
 }

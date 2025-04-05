@@ -16,6 +16,7 @@ class RasterizerState;
 class InputAssemblyState;
 class ColorBlendState;
 class VertexInputState;
+class DepthStencilState;
 
 struct GraphicsPipelineQuery {
   struct Hasher {
@@ -27,6 +28,7 @@ struct GraphicsPipelineQuery {
   const InputAssemblyState* m_input_assembly_state{};
   const ColorBlendState* m_color_blend_state{};
   const VertexInputState* m_vertex_input_state{};
+  const DepthStencilState* m_depth_stencil_state{};
   VkRenderPass m_vk_render_pass{};
 
   [[nodiscard]] bool operator==(const GraphicsPipelineQuery& other_query) const;
