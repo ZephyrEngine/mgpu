@@ -86,10 +86,38 @@ MGPUResult Buffer::FlushRange(u64 offset, u64 size) {
 }
 
 void Buffer::TransitionState(State new_state, VkCommandBuffer vk_command_buffer) {
-  // thoughts:
-  // read-read dependency may not need a barrier (does it ever need one?)
-  // read-write and write-write dependencies always need a barrier
-  //ATOM_PANIC("transition state unimplemented");
+  const auto AccessFlagsHaveWrite = [](VkAccessFlags access_flags) {
+    return access_flags & (
+      VK_ACCESS_SHADER_WRITE_BIT |
+      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+      VK_ACCESS_TRANSFER_WRITE_BIT |
+      VK_ACCESS_HOST_WRITE_BIT |
+      VK_ACCESS_MEMORY_WRITE_BIT
+    );
+  };
+
+  // Add a barrier if the state has changed or if there is a Read-Write, Write-Read or Write-Write dependency.
+  const bool old_state_has_write = AccessFlagsHaveWrite(m_state.m_access);
+  const bool new_state_has_write = AccessFlagsHaveWrite(new_state.m_access);
+  if(m_state != new_state || old_state_has_write || new_state_has_write) {
+    const VkBufferMemoryBarrier vk_buffer_barrier{
+      .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = m_state.m_access,
+      .dstAccessMask = new_state.m_access,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .buffer = m_vk_buffer,
+      .offset = 0u,
+      .size = VK_WHOLE_SIZE
+    };
+
+    // TODO(fleroviux): attempt to batch multiple pipeline barriers together?
+    vkCmdPipelineBarrier(vk_command_buffer, m_state.m_pipeline_stages, new_state.m_pipeline_stages, 0, 0u, nullptr, 1u, &vk_buffer_barrier, 0u, nullptr);
+  }
+
+  m_state = new_state;
 }
 
 }  // namespace mgpu::vulkan
