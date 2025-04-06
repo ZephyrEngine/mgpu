@@ -180,35 +180,42 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
 MGPUResult Queue::BufferUpload(const BufferBase* buffer, std::span<const u8> data, u64 offset) {
   const auto dst_buffer = (Buffer*)buffer;
 
-  // TODO(fleroviux): instead of allocating a bunch of small, individual buffers, allocate a single, large arena staging buffer
-  Result<BufferBase*> staging_buffer_result = Buffer::Create(m_device, {
-    .size = (u64)data.size_bytes(),
-    .usage = MGPU_BUFFER_USAGE_COPY_SRC,
-    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
-  });
-  MGPU_FORWARD_ERROR(staging_buffer_result.Code());
-
-  const auto staging_buffer = (Buffer*)staging_buffer_result.Unwrap();
-
-  Result<void*> map_address_result = staging_buffer->Map();
-  MGPU_FORWARD_ERROR(map_address_result.Code());
-
-  void* map_address = map_address_result.Unwrap();
-  std::memcpy(map_address, data.data(), data.size_bytes());
-  staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
-
   // Bring the buffer into a state where it's safe to copy to
   dst_buffer->TransitionState({VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT}, m_vk_cmd_buffer);
 
-  // Perform a copy from our staging buffer to the destination buffer
-  const VkBufferCopy vk_buffer_copy{
-    .srcOffset = 0u,
-    .dstOffset = offset,
-    .size = data.size_bytes()
-  };
-  vkCmdCopyBuffer(m_vk_cmd_buffer, staging_buffer->Handle(), dst_buffer->Handle(), 1u, &vk_buffer_copy);
+  // TODO(fleroviux): even though the spec guarantees up to 64kb of data work, it might make sense to set the threshold lower?
+  // "The additional cost of this functionality compared to buffer to buffer copies means it is only recommended for very small amounts of data, and is why it is limited to only 65536 bytes."
+  if(data.size_bytes() < 65536u && offset % 4u == 0u && data.size_bytes() % 4u == 0u) {
+    vkCmdUpdateBuffer(m_vk_cmd_buffer, dst_buffer->Handle(), offset, data.size_bytes(), data.data());
+  } else {
+    // TODO(fleroviux): instead of allocating a bunch of small, individual buffers, allocate a single, large arena staging buffer
+    Result<BufferBase*> staging_buffer_result = Buffer::Create(m_device, {
+      .size = (u64)data.size_bytes(),
+      .usage = MGPU_BUFFER_USAGE_COPY_SRC,
+      .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
+    });
+    MGPU_FORWARD_ERROR(staging_buffer_result.Code());
 
-  delete staging_buffer;
+    const auto staging_buffer = (Buffer*)staging_buffer_result.Unwrap();
+
+    Result<void*> map_address_result = staging_buffer->Map();
+    MGPU_FORWARD_ERROR(map_address_result.Code());
+
+    void* map_address = map_address_result.Unwrap();
+    std::memcpy(map_address, data.data(), data.size_bytes());
+    staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
+
+    // Perform a copy from our staging buffer to the destination buffer
+    const VkBufferCopy vk_buffer_copy{
+      .srcOffset = 0u,
+      .dstOffset = offset,
+      .size = data.size_bytes()
+    };
+    vkCmdCopyBuffer(m_vk_cmd_buffer, staging_buffer->Handle(), dst_buffer->Handle(), 1u, &vk_buffer_copy);
+
+    delete staging_buffer;
+  }
+
   return MGPU_SUCCESS;
 }
 
