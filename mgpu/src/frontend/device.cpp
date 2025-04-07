@@ -39,6 +39,13 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateResourceSetLayout(MGPUDevice device, const MGPUResourceSetLayoutCreateInfo* create_info, MGPUResourceSetLayout* resource_set_layout) {
+  mgpu::Result<mgpu::ResourceSetLayoutBase*> cxx_resource_set_layout_result = ((mgpu::DeviceBase*)device)->CreateResourceSetLayout(*create_info);
+  MGPU_FORWARD_ERROR(cxx_resource_set_layout_result.Code());
+  *resource_set_layout = (MGPUResourceSetLayout)cxx_resource_set_layout_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module) {
   mgpu::Result<mgpu::ShaderModuleBase*> cxx_shader_module_result = ((mgpu::DeviceBase*)device)->CreateShaderModule(spirv_code, spirv_byte_size);
   MGPU_FORWARD_ERROR(cxx_shader_module_result.Code());

@@ -15,6 +15,7 @@ set(SOURCES
   src/backend/vulkan/physical_device.cpp
   src/backend/vulkan/queue.cpp
   src/backend/vulkan/rasterizer_state.cpp
+  src/backend/vulkan/resource_set_layout.cpp
   src/backend/vulkan/render_pass_cache.cpp
   src/backend/vulkan/shader_module.cpp
   src/backend/vulkan/shader_program.cpp
@@ -33,6 +34,7 @@ set(SOURCES
   src/frontend/physical_device.cpp
   src/frontend/queue.cpp
   src/frontend/rasterizer_state.cpp
+  src/frontend/resource_set_layout.cpp
   src/frontend/result.cpp
   src/frontend/shader_module.cpp
   src/frontend/shader_program.cpp
@@ -61,6 +63,7 @@ set(HEADERS
   src/backend/vulkan/queue.hpp
   src/backend/vulkan/rasterizer_state.hpp
   src/backend/vulkan/render_pass_cache.hpp
+  src/backend/vulkan/resource_set_layout.hpp
   src/backend/vulkan/shader_module.hpp
   src/backend/vulkan/shader_program.hpp
   src/backend/vulkan/surface.hpp
@@ -78,6 +81,7 @@ set(HEADERS
   src/backend/physical_device.hpp
   src/backend/queue.hpp
   src/backend/rasterizer_state.hpp
+  src/backend/resource_set_layout.hpp
   src/backend/shader_module.hpp
   src/backend/shader_program.hpp
   src/backend/surface.hpp

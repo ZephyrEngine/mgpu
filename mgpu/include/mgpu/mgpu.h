@@ -34,6 +34,7 @@ typedef struct MGPUQueueImpl* MGPUQueue;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
+typedef struct MGPUResourceSetLayoutImpl* MGPUResourceSetLayout;
 typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
 typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
 typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
@@ -142,6 +143,17 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY = 5,
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
+
+typedef enum MGPUResourceBindingType {
+  MGPU_RESOURCE_TYPE_SAMPLER = 0,
+  MGPU_RESOURCE_TYPE_TEXTURE_AND_SAMPLER = 1,
+  MGPU_RESOURCE_TYPE_SAMPLED_TEXTURE = 2,
+  MGPU_RESOURCE_TYPE_STORAGE_TEXTURE = 3,
+  MGPU_RESOURCE_TYPE_UNIFORM_BUFFER = 4,
+  MGPU_RESOURCE_TYPE_STORAGE_BUFFER = 5,
+//  MGPU_RESOURCE_TYPE_UNIFORM_BUFFER_DYNAMIC = 6,
+//  MGPU_RESOURCE_TYPE_STORAGE_BUFFER_DYNAMIC = 7
+} MGPUResourceBindingType;
 
 typedef enum MGPUShaderStageBits {
   MGPU_SHADER_STAGE_VERTEX = 0x00000001,
@@ -339,6 +351,17 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
 
+typedef struct MGPUResourceSetLayoutBinding {
+  uint32_t binding;
+  MGPUResourceBindingType type;
+  MGPUShaderStage visibility;
+} MGPUResourceSetLayoutBinding;
+
+typedef struct MGPUResourceSetLayoutCreateInfo {
+  uint32_t binding_count;
+  const MGPUResourceSetLayoutBinding* bindings;
+} MGPUResourceSetLayoutCreateInfo;
+
 typedef struct MGPUShaderStageCreateInfo {
   MGPUShaderStageBits stage;
   MGPUShaderModule module;
@@ -467,6 +490,8 @@ typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_vertex_input_attributes;
   uint32_t max_vertex_input_binding_stride;
   uint32_t max_vertex_input_attribute_offset;
+
+  // TODO: resource set limits
 } MGPUPhysicalDeviceLimits;
 
 typedef struct MGPUPhysicalDeviceInfo {
@@ -526,6 +551,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 MGPUQueue mgpuDeviceGetQueue(MGPUDevice device, MGPUQueueType queue_type);
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateResourceSetLayout(MGPUDevice device, const MGPUResourceSetLayoutCreateInfo* create_info, MGPUResourceSetLayout* resource_set_layout);
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module);
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program);
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
@@ -554,6 +580,9 @@ void mgpuTextureDestroy(MGPUTexture texture);
 
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
+
+// MGPUResourceSetLayout methods
+void mgpuResourceSetLayoutDestroy(MGPUResourceSetLayout resource_set_layout);
 
 // MGPUShaderModule methods
 void mgpuShaderModuleDestroy(MGPUShaderModule shader_module);

@@ -99,6 +99,29 @@ inline VkShaderStageFlagBits MGPUShaderStageBitToVkShaderStageBit(MGPUShaderStag
   }
 }
 
+inline VkShaderStageFlags MGPUShaderStagesToVkShaderStageFlags(MGPUShaderStage shader_stages) {
+  VkShaderStageFlags vk_shader_stage_flags = 0;
+
+  while(shader_stages != 0) {
+    const auto shader_stage_bit = (MGPUShaderStageBits)(shader_stages & ~(shader_stages - 1));
+    vk_shader_stage_flags |= MGPUShaderStageBitToVkShaderStageBit(shader_stage_bit);
+    shader_stages &= ~shader_stage_bit;
+  }
+  return vk_shader_stage_flags;
+}
+
+inline VkDescriptorType MGPUResourceBindingTypeToVkDescriptorType(MGPUResourceBindingType resource_binding_type) {
+  switch(resource_binding_type) {
+    case MGPU_RESOURCE_TYPE_SAMPLER:             return VK_DESCRIPTOR_TYPE_SAMPLER;
+    case MGPU_RESOURCE_TYPE_TEXTURE_AND_SAMPLER: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    case MGPU_RESOURCE_TYPE_SAMPLED_TEXTURE:     return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    case MGPU_RESOURCE_TYPE_STORAGE_TEXTURE:     return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    case MGPU_RESOURCE_TYPE_UNIFORM_BUFFER:      return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    case MGPU_RESOURCE_TYPE_STORAGE_BUFFER:      return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    default: ATOM_PANIC("unhandled resource binding type: {}", (int)resource_binding_type);
+  }
+}
+
 inline VkPolygonMode MGPUPolygonModeToVkPolygonMode(MGPUPolygonMode polygon_mode) {
   switch(polygon_mode) {
     case MGPU_POLYGON_MODE_FILL:  return VK_POLYGON_MODE_FILL;

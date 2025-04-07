@@ -31,7 +31,7 @@ Texture::~Texture() {
   if(m_vma_allocation != nullptr) { // When m_vma_allocation is null the VkImage is not owned by this texture.
     // Defer deletion of underlying Vulkan resources until the currently recorded frame has been fully processed on the GPU.
     // TODO(fleroviux): make this a little bit less verbose.
-    Device *device = m_device;
+    Device* device = m_device;
     VkImage vk_image = m_vk_image;
     VmaAllocation vma_allocation = m_vma_allocation;
     device->GetDeleterQueue().Schedule([device, vk_image, vma_allocation]() {

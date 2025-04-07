@@ -6,9 +6,9 @@
 
 namespace mgpu {
 
-class RasterizerStateBase : atom::NonCopyable, atom::NonMoveable {
+class ResourceSetLayoutBase : atom::NonCopyable, atom::NonMoveable {
   public:
-    virtual ~RasterizerStateBase() = default;
+    virtual ~ResourceSetLayoutBase() = default;
 };
 
 } // namespace mgpu
