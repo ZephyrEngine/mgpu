@@ -14,6 +14,7 @@ class QueueBase;
 class BufferBase;
 class TextureBase;
 class ResourceSetLayoutBase;
+class ResourceSetBase;
 class ShaderModuleBase;
 class ShaderProgramBase;
 class RasterizerStateBase;
@@ -35,6 +36,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) = 0;
     virtual Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) = 0;
     virtual Result<ResourceSetLayoutBase*> CreateResourceSetLayout(const MGPUResourceSetLayoutCreateInfo& create_info) = 0;
+    virtual Result<ResourceSetBase*> CreateResourceSet(const MGPUResourceSetCreateInfo& create_info) = 0;
     virtual Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) = 0;
     virtual Result<ShaderProgramBase*> CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) = 0;
     virtual Result<RasterizerStateBase*> CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) = 0;

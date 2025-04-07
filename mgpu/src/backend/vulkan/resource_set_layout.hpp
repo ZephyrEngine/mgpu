@@ -13,7 +13,7 @@ class Device;
 
 class ResourceSetLayout : public ResourceSetLayoutBase {
   public:
-    ~ResourceSetLayout() override;
+   ~ResourceSetLayout() override;
 
     static Result<ResourceSetLayoutBase*> Create(Device* device, const MGPUResourceSetLayoutCreateInfo& create_info);
 

@@ -25,7 +25,7 @@ Result<InstanceBase*> Instance::Create() {
     .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
     .pEngineName = "mgpu Vulkan driver",
     .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-    .apiVersion = VK_API_VERSION_1_0
+    .apiVersion = VK_API_VERSION_1_2
   };
 
   std::vector<const char*> vk_required_instance_extensions{

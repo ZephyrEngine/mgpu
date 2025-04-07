@@ -376,7 +376,7 @@ typedef struct MGPUResourceBufferBinding {
 
 typedef struct MGPUResourceSetBinding {
   uint32_t binding;
-  MGPUResourceBindingType type;
+  MGPUResourceBindingType type; // TODO(fleroviux): do we really need this? It's already in the layout
   union {
     MGPUResourceTextureBinding texture;
     MGPUResourceBufferBinding buffer;

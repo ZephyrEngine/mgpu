@@ -10,6 +10,7 @@
 #include "input_assembly_state.hpp"
 #include "rasterizer_state.hpp"
 #include "resource_set_layout.hpp"
+#include "resource_set.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
@@ -172,6 +173,10 @@ Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_i
 
 Result<ResourceSetLayoutBase*> Device::CreateResourceSetLayout(const MGPUResourceSetLayoutCreateInfo& create_info) {
   return ResourceSetLayout::Create(this, create_info);
+}
+
+Result<ResourceSetBase*> Device::CreateResourceSet(const MGPUResourceSetCreateInfo& create_info) {
+  return ResourceSet::Create(this, create_info);
 }
 
 Result<ShaderModuleBase*> Device::CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) {
