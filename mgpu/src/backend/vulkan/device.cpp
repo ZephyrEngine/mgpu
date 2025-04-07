@@ -179,7 +179,7 @@ Result<ShaderModuleBase*> Device::CreateShaderModule(const u32* spirv_code, size
 }
 
 Result<ShaderProgramBase*> Device::CreateShaderProgram(const MGPUShaderProgramCreateInfo& create_info) {
-  return new ShaderProgram{create_info};
+  return ShaderProgram::Create(this, create_info);
 }
 
 Result<RasterizerStateBase*> Device::CreateRasterizerState(const MGPURasterizerStateCreateInfo& create_info) {

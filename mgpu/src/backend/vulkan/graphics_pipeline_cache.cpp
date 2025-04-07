@@ -56,22 +56,6 @@ Result<VkPipeline> GraphicsPipelineCache::GetPipeline(const GraphicsPipelineQuer
     return vk_pipeline;
   }
 
-  // TODO(fleroviux): do not recreate pipeline layout over and over.
-
-  const VkPipelineLayoutCreateInfo vk_pipeline_layout_create_info{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .setLayoutCount = 0u,
-    .pSetLayouts = nullptr,
-    .pushConstantRangeCount = 0u,
-    .pPushConstantRanges = nullptr
-  };
-  VkPipelineLayout vk_pipeline_layout{};
-  if(vkCreatePipelineLayout(m_vk_device, &vk_pipeline_layout_create_info, nullptr, &vk_pipeline_layout) != VK_SUCCESS) {
-    ATOM_PANIC("failed to create pipeline layout?");
-  }
-
   const std::span<const VkPipelineShaderStageCreateInfo> vk_shader_stages = query.m_shader_program->GetVkShaderStages();
 
   // TODO(fleroviux): do not recreate these structures from scratch on every pipeline generation.
@@ -123,7 +107,7 @@ Result<VkPipeline> GraphicsPipelineCache::GetPipeline(const GraphicsPipelineQuer
     .pDepthStencilState = &query.m_depth_stencil_state->GetVkDepthStencilState(),
     .pColorBlendState = &query.m_color_blend_state->GetVkColorBlendState(),
     .pDynamicState = &vk_dynamic_state_create_info,
-    .layout = vk_pipeline_layout,
+    .layout = query.m_shader_program->GetVkPipelineLayout(),
     .renderPass = query.m_vk_render_pass,
     .subpass = 0,
     .basePipelineHandle = VK_NULL_HANDLE,

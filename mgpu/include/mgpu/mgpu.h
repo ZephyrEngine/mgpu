@@ -372,6 +372,8 @@ typedef struct MGPUShaderStageCreateInfo {
 typedef struct MGPUShaderProgramCreateInfo {
   uint32_t shader_stage_count;
   const MGPUShaderStageCreateInfo* shader_stages;
+  uint32_t resource_set_count;
+  MGPUResourceSetLayout* resource_set_layouts;
 } MGPUShaderProgramCreateInfo;
 
 typedef struct MGPURasterizerStateCreateInfo {

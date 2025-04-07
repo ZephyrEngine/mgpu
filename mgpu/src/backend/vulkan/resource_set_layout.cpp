@@ -29,13 +29,13 @@ Result<ResourceSetLayoutBase*> ResourceSetLayout::Create(Device* device, const M
   for(size_t i = 0u; i < create_info.binding_count; i++) {
     const MGPUResourceSetLayoutBinding& mgpu_binding = create_info.bindings[i];
 
-    vk_bindings.push_back({
+    vk_bindings[i] = {
       .binding = mgpu_binding.binding,
       .descriptorType = MGPUResourceBindingTypeToVkDescriptorType(mgpu_binding.type),
       .descriptorCount = 1u,
       .stageFlags = MGPUShaderStagesToVkShaderStageFlags(mgpu_binding.visibility),
       .pImmutableSamplers = nullptr
-    });
+    };
   }
 
   const VkDescriptorSetLayoutCreateInfo vk_create_info{
