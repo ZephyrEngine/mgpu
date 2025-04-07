@@ -35,6 +35,7 @@ typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
 typedef struct MGPUResourceSetLayoutImpl* MGPUResourceSetLayout;
+typedef struct MGPUResourceSetImpl* MGPUResourceSet;
 typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
 typedef struct MGPUShaderProgramImpl* MGPUShaderProgram;
 typedef struct MGPURasterizerStateImpl* MGPURasterizerState;
@@ -363,6 +364,31 @@ typedef struct MGPUResourceSetLayoutCreateInfo {
   const MGPUResourceSetLayoutBinding* bindings;
 } MGPUResourceSetLayoutCreateInfo;
 
+typedef struct MGPUResourceTextureBinding {
+  MGPUTextureView texture_view;
+} MGPUResourceTextureBinding;
+
+typedef struct MGPUResourceBufferBinding {
+  MGPUBuffer buffer;
+  uint64_t offset;
+  uint64_t size;
+} MGPUResourceBufferBinding;
+
+typedef struct MGPUResourceSetBinding {
+  uint32_t binding;
+  MGPUResourceBindingType type;
+  union {
+    MGPUResourceTextureBinding texture;
+    MGPUResourceBufferBinding buffer;
+  };
+} MGPUResourceSetBinding;
+
+typedef struct MGPUResourceSetCreateInfo {
+  MGPUResourceSetLayout layout;
+  uint32_t binding_count;
+  const MGPUResourceSetBinding* bindings;
+} MGPUResourceSetCreateInfo;
+
 typedef struct MGPUShaderStageCreateInfo {
   MGPUShaderStageBits stage;
   MGPUShaderModule module;
@@ -555,6 +581,7 @@ MGPUQueue mgpuDeviceGetQueue(MGPUDevice device, MGPUQueueType queue_type);
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
 MGPUResult mgpuDeviceCreateResourceSetLayout(MGPUDevice device, const MGPUResourceSetLayoutCreateInfo* create_info, MGPUResourceSetLayout* resource_set_layout);
+MGPUResult mgpuDeviceCreateResourceSet(MGPUDevice device, const MGPUResourceSetCreateInfo* create_info, MGPUResourceSet* resource_set);
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module);
 MGPUResult mgpuDeviceCreateShaderProgram(MGPUDevice device, const MGPUShaderProgramCreateInfo* create_info, MGPUShaderProgram* shader_program);
 MGPUResult mgpuDeviceCreateRasterizerState(MGPUDevice device, const MGPURasterizerStateCreateInfo* create_info, MGPURasterizerState* rasterizer_state);
@@ -586,6 +613,9 @@ void mgpuTextureViewDestroy(MGPUTextureView texture_view);
 
 // MGPUResourceSetLayout methods
 void mgpuResourceSetLayoutDestroy(MGPUResourceSetLayout resource_set_layout);
+
+// MGPUResourceSet methods
+void mgpuResourceSetDestroy(MGPUResourceSet resource_set);
 
 // MGPUShaderModule methods
 void mgpuShaderModuleDestroy(MGPUShaderModule shader_module);
