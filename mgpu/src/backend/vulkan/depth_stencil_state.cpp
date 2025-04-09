@@ -17,7 +17,6 @@ DepthStencilState::DepthStencilState(const MGPUDepthStencilStateCreateInfo& crea
     };
   };
 
-  // TODO(fleroviux): should the depth bounds test actually be enabled?
   m_vk_depth_stencil_state_create_info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
     .pNext = nullptr,
@@ -25,7 +24,7 @@ DepthStencilState::DepthStencilState(const MGPUDepthStencilStateCreateInfo& crea
     .depthTestEnable = create_info.depth_test_enable,
     .depthWriteEnable = create_info.depth_write_enable,
     .depthCompareOp = MGPUCompareOpToVkCompareOp(create_info.depth_compare_op),
-    .depthBoundsTestEnable = VK_TRUE,
+    .depthBoundsTestEnable = VK_FALSE,
 
     .stencilTestEnable = create_info.stencil_test_enable,
     .front = MGPUStencilFaceStateToVkStencilOpState(create_info.stencil_front),
