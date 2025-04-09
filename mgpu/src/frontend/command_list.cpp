@@ -72,6 +72,11 @@ void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t b
   ((mgpu::CommandList*)command_list)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
 }
 
+void mgpuCommandListCmdBindResourceSet(MGPUCommandList command_list, uint32_t index, MGPUResourceSet resource_set) {
+  // TODO(fleroviux): implement validation?
+  ((mgpu::CommandList*)command_list)->CmdBindResourceSet(index, (mgpu::ResourceSetBase*)resource_set);
+}
+
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
   // TODO(fleroviux): validate that all vertex buffer bindings have something bound?
 

@@ -651,6 +651,7 @@ void mgpuCommandListCmdUseDepthStencilState(MGPUCommandList command_list, MGPUDe
 void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
 void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);
+void mgpuCommandListCmdBindResourceSet(MGPUCommandList command_list, uint32_t index, MGPUResourceSet resource_set);
 void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
 

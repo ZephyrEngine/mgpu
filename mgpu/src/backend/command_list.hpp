@@ -23,6 +23,7 @@ class ColorBlendStateBase;
 class VertexInputStateBase;
 class DepthStencilStateBase;
 class BufferBase;
+class ResourceSetBase;
 
 enum class CommandType {
   BeginRenderPass,
@@ -36,6 +37,7 @@ enum class CommandType {
   SetViewport,
   SetScissor,
   BindVertexBuffer,
+  BindResourceSet,
   Draw
 };
 
@@ -196,6 +198,17 @@ struct BindVertexBufferCommand : CommandBase {
   u64 m_buffer_offset;
 };
 
+struct BindResourceSetCommand : CommandBase {
+  BindResourceSetCommand(u32 index, ResourceSetBase* resource_set)
+      : CommandBase{CommandType::BindResourceSet}
+      , m_index{index}
+      , m_resource_set{resource_set} {
+  }
+
+  u32 m_index;
+  ResourceSetBase* m_resource_set;
+};
+
 struct DrawCommand : CommandBase {
   DrawCommand(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
       : CommandBase{CommandType::Draw}
@@ -288,6 +301,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     void CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset) {
       ErrorUnlessInsideRenderPass();
       Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
+    }
+
+    void CmdBindResourceSet(u32 index, ResourceSetBase* resource_set) {
+      ErrorUnlessInsideRenderPass();
+      Push<BindResourceSetCommand>(index, resource_set);
     }
 
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {

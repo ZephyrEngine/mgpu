@@ -11,6 +11,7 @@
 #include "input_assembly_state.hpp"
 #include "queue.hpp"
 #include "rasterizer_state.hpp"
+#include "resource_set.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
@@ -165,6 +166,7 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
       case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
       case CommandType::BindVertexBuffer: HandleCmdBindVertexBuffer(state, *(BindVertexBufferCommand*)command); break;
+      case CommandType::BindResourceSet: HandleCmdBindResourceSet(state, *(BindResourceSetCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
@@ -499,9 +501,19 @@ void Queue::HandleCmdSetScissor(CommandListState& state, const SetScissorCommand
 }
 
 void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command) {
-  // TODO(fleroviux): if necessary insert a pipeline barrier to ensure the buffer can be safely read.
-  VkBuffer vk_buffer = ((Buffer*)command.m_buffer)->Handle();
+  const auto buffer = (Buffer*)command.m_buffer;
+  // TODO(fleroviux): this breaks since we're inside of a render pass already. How to fix?
+  //buffer->TransitionState({VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
+
+  VkBuffer vk_buffer = buffer->Handle();
   vkCmdBindVertexBuffers(m_vk_cmd_buffer, command.m_binding, 1u, &vk_buffer, &command.m_buffer_offset);
+}
+
+void Queue::HandleCmdBindResourceSet(CommandListState& state, const BindResourceSetCommand& command) {
+  const auto vk_pipeline_layout = state.render_pass.pipeline_query.m_shader_program->GetVkPipelineLayout();
+  const auto vk_descriptor_set = ((ResourceSet*)command.m_resource_set)->Handle();
+  // TODO(fleroviux): transition resources bound to the resource set to their required states
+  vkCmdBindDescriptorSets(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline_layout, command.m_index, 1u, &vk_descriptor_set, 0u, nullptr);
 }
 
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
