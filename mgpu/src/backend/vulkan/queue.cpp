@@ -225,6 +225,8 @@ MGPUResult Queue::BufferUpload(const BufferBase* buffer, std::span<const u8> dat
 }
 
 MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUploadRegion& region, const void* data) {
+  const auto dst_texture = (Texture*)texture;
+
   const size_t size_bytes = MGPUTextureFormatGetTexelSize(texture->Format()) * region.extent.width * region.extent.height * region.extent.depth;
 
   // TODO(fleroviux): instead of allocating a bunch of small, individual buffers, allocate a single, large arena staging buffer
@@ -244,6 +246,12 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
   std::memcpy(map_address, data, size_bytes);
   staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
 
+  dst_texture->TransitionState({
+    .m_image_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    .m_access = VK_ACCESS_TRANSFER_WRITE_BIT,
+    .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
+  }, m_vk_cmd_buffer);
+
   const VkBufferImageCopy vk_buffer_image_copy{
     .bufferOffset = 0u,
     .bufferRowLength = 0u,
@@ -254,11 +262,10 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
       .baseArrayLayer = region.base_array_layer,
       .layerCount = region.array_layer_count
     },
-    // TODO(fleroviux): simplify these
     .imageOffset = MGPUOffset3DToVkOffset3D(region.offset),
     .imageExtent = MGPUExtent3DToVkExtent3D(region.extent)
   };
-  vkCmdCopyBufferToImage(m_vk_cmd_buffer, staging_buffer->Handle(), ((Texture*)texture)->Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &vk_buffer_image_copy);
+  vkCmdCopyBufferToImage(m_vk_cmd_buffer, staging_buffer->Handle(), dst_texture->Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &vk_buffer_image_copy);
 
   delete staging_buffer;
   return MGPU_SUCCESS;
