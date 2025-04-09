@@ -4,8 +4,10 @@
 #include <cstring>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
+#include "common/texture.hpp"
 
 #include "buffer.hpp"
+#include "conversion.hpp"
 #include "color_blend_state.hpp"
 #include "depth_stencil_state.hpp"
 #include "input_assembly_state.hpp"
@@ -15,6 +17,7 @@
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
+#include "texture.hpp"
 #include "texture_view.hpp"
 #include "vertex_input_state.hpp"
 
@@ -218,6 +221,46 @@ MGPUResult Queue::BufferUpload(const BufferBase* buffer, std::span<const u8> dat
     delete staging_buffer;
   }
 
+  return MGPU_SUCCESS;
+}
+
+MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUploadRegion& region, const void* data) {
+  const size_t size_bytes = MGPUTextureFormatGetTexelSize(texture->Format()) * region.extent.width * region.extent.height * region.extent.depth;
+
+  // TODO(fleroviux): instead of allocating a bunch of small, individual buffers, allocate a single, large arena staging buffer
+  Result<BufferBase*> staging_buffer_result = Buffer::Create(m_device, {
+    .size = (u64)size_bytes,
+    .usage = MGPU_BUFFER_USAGE_COPY_SRC,
+    .flags = MGPU_BUFFER_FLAGS_HOST_VISIBLE
+  });
+  MGPU_FORWARD_ERROR(staging_buffer_result.Code());
+
+  const auto staging_buffer = (Buffer*)staging_buffer_result.Unwrap();
+
+  Result<void*> map_address_result = staging_buffer->Map();
+  MGPU_FORWARD_ERROR(map_address_result.Code());
+
+  void* map_address = map_address_result.Unwrap();
+  std::memcpy(map_address, data, size_bytes);
+  staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
+
+  const VkBufferImageCopy vk_buffer_image_copy{
+    .bufferOffset = 0u,
+    .bufferRowLength = 0u,
+    .bufferImageHeight = 0u,
+    .imageSubresource = {
+      .aspectMask = MGPUTextureFormatToMGPUTextureAspect(texture->Format()),
+      .mipLevel = region.mip_level,
+      .baseArrayLayer = region.base_array_layer,
+      .layerCount = region.array_layer_count
+    },
+    // TODO(fleroviux): simplify these
+    .imageOffset = MGPUOffset3DToVkOffset3D(region.offset),
+    .imageExtent = MGPUExtent3DToVkExtent3D(region.extent)
+  };
+  vkCmdCopyBufferToImage(m_vk_cmd_buffer, staging_buffer->Handle(), ((Texture*)texture)->Handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &vk_buffer_image_copy);
+
+  delete staging_buffer;
   return MGPU_SUCCESS;
 }
 

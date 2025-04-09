@@ -28,6 +28,13 @@ MGPUResult mgpuQueueBufferUpload(MGPUQueue queue, MGPUBuffer buffer, uint64_t of
   return cxx_queue->BufferUpload(cxx_buffer, {(const u8*)data, size}, offset);
 }
 
+MGPUResult mgpuQueueTextureUpload(MGPUQueue queue, MGPUTexture texture, const MGPUTextureUploadRegion* region, const void* data) {
+  // TODO(fleroviux): implement loooots of validation
+  const auto cxx_queue = (mgpu::QueueBase*)queue;
+  const auto cxx_texture = (mgpu::TextureBase*)texture;
+  return cxx_queue->TextureUpload(cxx_texture, *region, data);
+}
+
 MGPUResult mgpuQueueFlush(MGPUQueue queue) {
   return ((mgpu::QueueBase*)queue)->Flush();
 }

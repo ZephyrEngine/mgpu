@@ -42,6 +42,7 @@ class Queue final : public QueueBase {
 
     MGPUResult SubmitCommandList(const CommandList* command_list) override;
     MGPUResult BufferUpload(const BufferBase* buffer, std::span<const u8> data, u64 offset) override;
+    MGPUResult TextureUpload(const TextureBase* texture, const MGPUTextureUploadRegion& region, const void* data) override;
     MGPUResult Flush() override;
 
   private:

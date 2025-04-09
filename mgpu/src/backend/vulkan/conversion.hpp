@@ -10,6 +10,14 @@
 
 namespace mgpu::vulkan {
 
+inline VkExtent3D MGPUExtent3DToVkExtent3D(MGPUExtent3D extent) {
+  return {.width = extent.width, .height = extent.height, .depth = extent.depth};
+}
+
+inline VkOffset3D MGPUOffset3DToVkOffset3D(MGPUOffset3D offset) {
+  return {.x = offset.x, .y = offset.y, .z = offset.z};
+}
+
 inline VkBufferUsageFlags MGPUBufferUsageToVkBufferUsage(MGPUBufferUsage buffer_usage) {
   VkBufferUsageFlags vk_buffer_usage{};
   if(buffer_usage & MGPU_BUFFER_USAGE_COPY_SRC)        vk_buffer_usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;

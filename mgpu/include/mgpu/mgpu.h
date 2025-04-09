@@ -302,12 +302,27 @@ typedef struct MGPUExtent3D {
   uint32_t depth;
 } MGPUExtent3D;
 
+typedef struct MGPUOffset3D {
+  int32_t x;
+  int32_t y;
+  int32_t z;
+} MGPUOffset3D;
+
 typedef struct MGPUColor {
   double r;
   double g;
   double b;
   double a;
 } MGPUColor;
+
+typedef struct MGPUTextureUploadRegion {
+  // TODO(fleroviux): expose the texture aspects to upload to?
+  MGPUOffset3D offset;
+  MGPUExtent3D extent;
+  uint32_t mip_level;
+  uint32_t base_array_layer;
+  uint32_t array_layer_count;
+} MGPUTextureUploadRegion;
 
 typedef struct MGPUSurfaceCapabilities {
   // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
@@ -596,6 +611,7 @@ void mgpuDeviceDestroy(MGPUDevice device);
 // MGPUQueue methods
 MGPUResult mgpuQueueSubmitCommandList(MGPUQueue queue, MGPUCommandList command_list);
 MGPUResult mgpuQueueBufferUpload(MGPUQueue queue, MGPUBuffer buffer, uint64_t offset, uint64_t size, const void* data);
+MGPUResult mgpuQueueTextureUpload(MGPUQueue queue, MGPUTexture texture, const MGPUTextureUploadRegion* region, const void* data);
 MGPUResult mgpuQueueFlush(MGPUQueue queue);
 
 // MGPUBuffer methods

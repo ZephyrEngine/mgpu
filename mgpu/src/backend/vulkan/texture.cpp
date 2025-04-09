@@ -43,15 +43,13 @@ Texture::~Texture() {
 
 Result<TextureBase*> Texture::Create(Device* device, const MGPUTextureCreateInfo& create_info) {
   const MGPUTextureType type = create_info.type;
-  const u32 width = create_info.extent.width;
-  const u32 height = create_info.extent.height;
-  const u32 depth = create_info.extent.depth;
+  const MGPUExtent3D extent = create_info.extent;
   const u32 mip_count = std::max<u32>(create_info.mip_count, 1u);
   const u32 array_layer_count = std::max<u32>(create_info.array_layer_count, 1u);
 
   VkImageCreateFlags vk_image_create_flags = 0;
 
-  if(type == MGPU_TEXTURE_TYPE_2D && array_layer_count >= 6u && width == height) {
+  if(type == MGPU_TEXTURE_TYPE_2D && array_layer_count >= 6u && extent.width == extent.height) {
     // TODO(fleroviux): evaluate the performance implications of enabling this on textures which do not need it.
     vk_image_create_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
   }
@@ -67,11 +65,7 @@ Result<TextureBase*> Texture::Create(Device* device, const MGPUTextureCreateInfo
     .flags = vk_image_create_flags,
     .imageType = MGPUTextureTypeToVkImageType(create_info.type),
     .format = MGPUTextureFormatToVkFormat(create_info.format),
-    .extent = {
-      .width = width,
-      .height = height,
-      .depth = depth
-    },
+    .extent = MGPUExtent3DToVkExtent3D(extent),
     .mipLevels = mip_count,
     .arrayLayers = array_layer_count,
     .samples = VK_SAMPLE_COUNT_1_BIT,
