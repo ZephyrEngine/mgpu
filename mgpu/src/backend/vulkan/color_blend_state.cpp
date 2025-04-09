@@ -29,8 +29,6 @@ ColorBlendState::ColorBlendState(const MGPUColorBlendStateCreateInfo& create_inf
     .pAttachments = m_vk_color_blend_attachment_states.Data(),
     .blendConstants = {0.f, 0.f, 0.f, 0.f}
   };
-
-  fmt::print("attachment count: {}\n", (u32)m_vk_color_blend_attachment_states.Size());
 }
 
 } // namespace mgpu::vulkan

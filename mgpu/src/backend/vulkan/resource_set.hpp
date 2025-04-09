@@ -20,9 +20,10 @@ class ResourceSet : public ResourceSetBase {
     [[nodiscard]] VkDescriptorSet Handle() { return m_vk_descriptor_set; }
 
   private:
-    ResourceSet(Device* device, VkDescriptorSet vk_descriptor_set);
+    ResourceSet(Device* device, VkDescriptorPool vk_descriptor_pool, VkDescriptorSet vk_descriptor_set);
 
     Device* m_device;
+    VkDescriptorPool m_vk_descriptor_pool;
     VkDescriptorSet m_vk_descriptor_set;
 };
 
