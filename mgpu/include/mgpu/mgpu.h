@@ -34,6 +34,7 @@ typedef struct MGPUQueueImpl* MGPUQueue;
 typedef struct MGPUBufferImpl* MGPUBuffer;
 typedef struct MGPUTextureImpl* MGPUTexture;
 typedef struct MGPUTextureViewImpl* MGPUTextureView;
+typedef struct MGPUSamplerImpl* MGPUSampler;
 typedef struct MGPUResourceSetLayoutImpl* MGPUResourceSetLayout;
 typedef struct MGPUResourceSetImpl* MGPUResourceSet;
 typedef struct MGPUShaderModuleImpl* MGPUShaderModule;
@@ -144,6 +145,19 @@ typedef enum MGPUTextureViewType {
   MGPU_TEXTURE_VIEW_TYPE_2D_ARRAY = 5,
   MGPU_TEXTURE_VIEW_TYPE_CUBE_ARRAY = 6
 } MGPUTextureViewType;
+
+// TODO(fleroviux): expose cubic filtering?
+typedef enum MGPUTextureFilter {
+  MGPU_TEXTURE_FILTER_NEAREST = 0,
+  MGPU_TEXTURE_FILTER_LINEAR = 1
+} MGPUTextureFilter;
+
+typedef enum MGPUSamplerAddressMode {
+  MGPU_SAMPLER_ADDRESS_MODE_REPEAT = 0,
+  MGPU_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT = 1,
+  MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE = 2,
+  MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER = 3,
+} MGPUSamplerRepeatMode;
 
 typedef enum MGPUResourceBindingType {
   MGPU_RESOURCE_BINDING_TYPE_SAMPLER = 0,
@@ -367,6 +381,25 @@ typedef struct MGPUTextureViewCreateInfo {
   uint32_t base_array_layer;
   uint32_t array_layer_count;
 } MGPUTextureViewCreateInfo;
+
+// NOTE(fleroviux): there appears to be some DirectX compatibility stuff (unnormalized_coordinates for example). Do we actually need that?
+typedef struct MGPUSamplerCreateInfo {
+  MGPUTextureFilter mag_filter;
+  MGPUTextureFilter min_filter;
+  MGPUTextureFilter mip_filter;
+  MGPUSamplerAddressMode address_mode_u;
+  MGPUSamplerAddressMode address_mode_v;
+  MGPUSamplerAddressMode address_mode_w;
+  float mip_lod_bias;
+  bool anisotropy_enable;
+  float max_anisotropy;
+  bool compare_enable;
+  MGPUCompareOp compare_op;
+  float min_lod;
+  float max_lod;
+  MGPUColor border_color;
+  bool unnormalized_coordinates;
+} MGPUSamplerCreateInfo;
 
 typedef struct MGPUResourceSetLayoutBinding {
   uint32_t binding;
@@ -595,6 +628,7 @@ MGPUResult mgpuPhysicalDeviceCreateDevice(MGPUPhysicalDevice physical_device, MG
 MGPUQueue mgpuDeviceGetQueue(MGPUDevice device, MGPUQueueType queue_type);
 MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo* create_info, MGPUBuffer* buffer);
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture);
+MGPUResult mgpuDeviceCreateSampler(MGPUDevice device, const MGPUSamplerCreateInfo* create_info, MGPUSampler* sampler);
 MGPUResult mgpuDeviceCreateResourceSetLayout(MGPUDevice device, const MGPUResourceSetLayoutCreateInfo* create_info, MGPUResourceSetLayout* resource_set_layout);
 MGPUResult mgpuDeviceCreateResourceSet(MGPUDevice device, const MGPUResourceSetCreateInfo* create_info, MGPUResourceSet* resource_set);
 MGPUResult mgpuDeviceCreateShaderModule(MGPUDevice device, const uint32_t* spirv_code, size_t spirv_byte_size, MGPUShaderModule* shader_module);
@@ -623,6 +657,9 @@ void mgpuBufferDestroy(MGPUBuffer buffer);
 // MGPUTexture methods
 MGPUResult mgpuTextureCreateView(MGPUTexture texture, const MGPUTextureViewCreateInfo* create_info, MGPUTextureView* texture_view);
 void mgpuTextureDestroy(MGPUTexture texture);
+
+// MGPUSampler methods
+void mgpuSamplerDestroy(MGPUSampler sampler);
 
 // MGPUTextureView methods
 void mgpuTextureViewDestroy(MGPUTextureView texture_view);
