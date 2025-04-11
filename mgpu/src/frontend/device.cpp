@@ -4,6 +4,7 @@
 #include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "validation/buffer.hpp"
+#include "validation/sampler.hpp"
 #include "validation/shader_program.hpp"
 #include "validation/texture.hpp"
 
@@ -24,7 +25,7 @@ MGPUResult mgpuDeviceCreateBuffer(MGPUDevice device, const MGPUBufferCreateInfo*
 }
 
 MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInfo* create_info, MGPUTexture* texture) {
-  mgpu::DeviceBase* cxx_device = (mgpu::DeviceBase*)device;
+  const auto cxx_device = (mgpu::DeviceBase*)device;
 
   MGPU_FORWARD_ERROR(validate_texture_format(create_info->format));
   MGPU_FORWARD_ERROR(validate_texture_type(create_info->type));
@@ -40,9 +41,14 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
 }
 
 MGPUResult mgpuDeviceCreateSampler(MGPUDevice device, const MGPUSamplerCreateInfo* create_info, MGPUSampler* sampler) {
-  mgpu::DeviceBase* cxx_device = (mgpu::DeviceBase*)device;
+  const auto cxx_device = (mgpu::DeviceBase*)device;
 
-  // TODO(fleroviux): implement input validation
+  MGPU_FORWARD_ERROR(validate_sampler_mip_lod_bias(cxx_device->Limits(), create_info->mip_lod_bias));
+  MGPU_FORWARD_ERROR(validate_sampler_lod_clamp(create_info->min_lod, create_info->max_lod));
+  if(create_info->anisotropy_enable) {
+    MGPU_FORWARD_ERROR(validate_sampler_max_anisotropy(cxx_device->Limits(), create_info->max_anisotropy));
+  }
+
   mgpu::Result<mgpu::SamplerBase*> cxx_sampler_result = cxx_device->CreateSampler(*create_info);
   MGPU_FORWARD_ERROR(cxx_sampler_result.Code());
   *sampler = (MGPUSampler)cxx_sampler_result.Unwrap();
@@ -121,7 +127,7 @@ MGPUResult mgpuDeviceCreateDepthStencilState(MGPUDevice device, const MGPUDepthS
 }
 
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
-  mgpu::CommandList* cxx_command_list = new(std::nothrow) mgpu::CommandList{};
+  const auto cxx_command_list = new(std::nothrow) mgpu::CommandList{};
 
   if(cxx_command_list == nullptr) {
     return MGPU_OUT_OF_MEMORY;

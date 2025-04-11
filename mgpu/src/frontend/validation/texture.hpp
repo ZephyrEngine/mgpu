@@ -31,6 +31,7 @@ inline MGPUResult validate_texture_format_has_aspect(MGPUTextureFormat texture_f
   return MGPU_SUCCESS;
 }
 
+// TODO(fleroviux): we only really do this for textures and texture views as far as I can tell, so it's really inconsistent.
 inline MGPUResult validate_texture_type(MGPUTextureType texture_type) {
   // TODO(fleroviux): MSVC generates suboptimal code for this (GCC and Clang emit a single comparison)
   switch(texture_type) {

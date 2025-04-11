@@ -98,6 +98,7 @@ set(HEADERS
   src/backend/texture_view.hpp
   src/backend/vertex_input_state.hpp
   src/frontend/validation/buffer.hpp
+  src/frontend/validation/sampler.hpp
   src/frontend/validation/shader_program.hpp
   src/frontend/validation/texture.hpp
   src/frontend/validation/texture_view.hpp

@@ -128,6 +128,9 @@ MGPUPhysicalDeviceLimits PhysicalDevice::GetLimits(const VkPhysicalDeviceLimits&
   mgpu_device_limits.max_texture_dimension_2d = std::min(vk_device_limits.maxImageDimension2D, vk_device_limits.maxImageDimensionCube);
   mgpu_device_limits.max_texture_dimension_3d = vk_device_limits.maxImageDimension3D;
   mgpu_device_limits.max_texture_array_layers = vk_device_limits.maxImageArrayLayers;
+  mgpu_device_limits.max_sampler_allocation_count = vk_device_limits.maxSamplerAllocationCount;
+  mgpu_device_limits.max_sampler_lod_bias = vk_device_limits.maxSamplerLodBias;
+  mgpu_device_limits.max_sampler_anisotropy = vk_device_limits.maxSamplerAnisotropy;
   mgpu_device_limits.max_color_attachments = std::min<u32>(vk_device_limits.maxColorAttachments, limits::max_color_attachments);
   mgpu_device_limits.max_attachment_dimension = std::min(vk_device_limits.maxFramebufferWidth, vk_device_limits.maxFramebufferHeight);
   mgpu_device_limits.max_vertex_input_bindings = std::min<u32>(vk_device_limits.maxVertexInputBindings, limits::max_vertex_input_bindings);

@@ -559,6 +559,9 @@ typedef struct MGPUPhysicalDeviceLimits {
   uint32_t max_texture_dimension_2d;
   uint32_t max_texture_dimension_3d;
   uint32_t max_texture_array_layers;
+  uint32_t max_sampler_allocation_count;
+  float max_sampler_lod_bias;
+  float max_sampler_anisotropy;
   uint32_t max_color_attachments;
   uint32_t max_attachment_dimension;
   uint32_t max_vertex_input_bindings;

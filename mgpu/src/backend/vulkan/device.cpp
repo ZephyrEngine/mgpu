@@ -23,6 +23,7 @@ namespace mgpu::vulkan {
 Device::Device(
   VkDevice vk_device,
   VmaAllocator vma_allocator,
+  const VkPhysicalDeviceFeatures& vk_physical_device_features,
   std::shared_ptr<DeleterQueue> deleter_queue,
   Queues&& queues,
   std::shared_ptr<RenderPassCache> render_pass_cache,
@@ -30,6 +31,7 @@ Device::Device(
 )   : DeviceBase{limits}
     , m_vk_device{vk_device}
     , m_vma_allocator{vma_allocator}
+    , m_vk_physical_device_features{vk_physical_device_features}
     , m_deleter_queue{std::move(deleter_queue)}
     , m_queues{std::move(queues)}
     , m_render_pass_cache{std::move(render_pass_cache)} {
@@ -98,9 +100,15 @@ Result<DeviceBase*> Device::Create(
     });
   }
 
-  // TODO(fleroviux): enable fillModeNonSolid feature for wireframe drawing.
+  VkPhysicalDeviceFeatures vk_physical_device_features{};
+  vkGetPhysicalDeviceFeatures(vk_physical_device.Handle(), &vk_physical_device_features);
+
   Result<VkDevice> vk_device_result = vk_physical_device.CreateLogicalDevice(
-    vk_queue_create_infos, vk_required_device_extensions, vk_required_device_layers);
+    vk_queue_create_infos,
+    vk_required_device_extensions,
+    vk_required_device_layers,
+    &vk_physical_device_features
+  );
   MGPU_FORWARD_ERROR(vk_device_result.Code());
 
   VkDevice vk_device = vk_device_result.Unwrap();
@@ -126,7 +134,15 @@ Result<DeviceBase*> Device::Create(
     async_compute_queue = async_compute_queue_result.Unwrap();
   }
 
-  return new Device{vk_device, vma_allocator_result.Unwrap(), deleter_queue, Queues{std::move(graphics_compute_queue), std::move(async_compute_queue)}, render_pass_cache, limits};
+  return new Device{
+    vk_device,
+    vma_allocator_result.Unwrap(),
+    vk_physical_device_features,
+    deleter_queue,
+    Queues{std::move(graphics_compute_queue), std::move(async_compute_queue)},
+    render_pass_cache,
+    limits
+  };
 }
 
 Result<VmaAllocator> Device::CreateVmaAllocator(VkInstance vk_instance, VkPhysicalDevice vk_physical_device, VkDevice vk_device) {

@@ -21,6 +21,8 @@ Sampler::~Sampler() {
 }
 
 Result<SamplerBase*> Sampler::Create(Device* device, const MGPUSamplerCreateInfo& create_info) {
+  const bool anisotropy_supported = device->GetVkPhysicalDeviceFeatures().samplerAnisotropy;
+
   const VkSamplerCreateInfo vk_create_info{
     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
     .pNext = nullptr,
@@ -32,7 +34,7 @@ Result<SamplerBase*> Sampler::Create(Device* device, const MGPUSamplerCreateInfo
     .addressModeV = MGPUSamplerAddressModeToVkSamplerAddressMode(create_info.address_mode_v),
     .addressModeW = MGPUSamplerAddressModeToVkSamplerAddressMode(create_info.address_mode_w),
     .mipLodBias = create_info.mip_lod_bias,
-    .anisotropyEnable = create_info.anisotropy_enable,
+    .anisotropyEnable = anisotropy_supported && create_info.anisotropy_enable,
     .maxAnisotropy = create_info.max_anisotropy,
     .compareEnable = create_info.compare_enable,
     .compareOp = MGPUCompareOpToVkCompareOp(create_info.compare_op),

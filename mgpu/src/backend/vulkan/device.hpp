@@ -34,6 +34,7 @@ class Device final : public DeviceBase {
 
     [[nodiscard]] VkDevice Handle() { return m_vk_device; }
     [[nodiscard]] VmaAllocator GetVmaAllocator() { return m_vma_allocator; }
+    [[nodiscard]] const VkPhysicalDeviceFeatures& GetVkPhysicalDeviceFeatures() const { return m_vk_physical_device_features; }
     [[nodiscard]] DeleterQueue& GetDeleterQueue() { return *m_deleter_queue; }
     [[nodiscard]] Queue& GetCommandQueue() { return *m_queues.graphics_compute; } // TODO: remove this
 
@@ -56,6 +57,7 @@ class Device final : public DeviceBase {
     Device(
       VkDevice vk_device,
       VmaAllocator vma_allocator,
+      const VkPhysicalDeviceFeatures& vk_physical_device_features,
       std::shared_ptr<DeleterQueue> deleter_queue,
       Queues&& queues,
       std::shared_ptr<RenderPassCache> render_pass_cache,
@@ -66,6 +68,7 @@ class Device final : public DeviceBase {
 
     VkDevice m_vk_device;
     VmaAllocator m_vma_allocator;
+    VkPhysicalDeviceFeatures m_vk_physical_device_features{};
     std::shared_ptr<DeleterQueue> m_deleter_queue;
     Queues m_queues;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
