@@ -155,8 +155,7 @@ typedef enum MGPUTextureFilter {
 typedef enum MGPUSamplerAddressMode {
   MGPU_SAMPLER_ADDRESS_MODE_REPEAT = 0,
   MGPU_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT = 1,
-  MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE = 2,
-  MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER = 3,
+  MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE = 2
 } MGPUSamplerRepeatMode;
 
 typedef enum MGPUResourceBindingType {
@@ -397,8 +396,6 @@ typedef struct MGPUSamplerCreateInfo {
   MGPUCompareOp compare_op;
   float min_lod;
   float max_lod;
-  MGPUColor border_color;
-  bool unnormalized_coordinates;
 } MGPUSamplerCreateInfo;
 
 typedef struct MGPUResourceSetLayoutBinding {
@@ -414,6 +411,7 @@ typedef struct MGPUResourceSetLayoutCreateInfo {
 
 typedef struct MGPUResourceTextureBinding {
   MGPUTextureView texture_view;
+  MGPUSampler sampler;
 } MGPUResourceTextureBinding;
 
 typedef struct MGPUResourceBufferBinding {

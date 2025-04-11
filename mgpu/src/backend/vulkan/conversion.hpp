@@ -95,6 +95,31 @@ inline VkImageViewType MGPUTextureViewTypeToVkImageViewType(MGPUTextureViewType 
   }
 }
 
+inline VkFilter MGPUTextureFilterToVkFilter(MGPUTextureFilter texture_filter) {
+  switch(texture_filter) {
+    case MGPU_TEXTURE_FILTER_NEAREST: return VK_FILTER_NEAREST;
+    case MGPU_TEXTURE_FILTER_LINEAR:  return VK_FILTER_LINEAR;
+    default: ATOM_PANIC("unhandled texture filter: {}", (int)texture_filter);
+  }
+}
+
+inline VkSamplerMipmapMode MGPUTextureFilterToVkSamplerMipmapMode(MGPUTextureFilter texture_filter) {
+  switch(texture_filter) {
+    case MGPU_TEXTURE_FILTER_NEAREST: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case MGPU_TEXTURE_FILTER_LINEAR:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    default: ATOM_PANIC("unhandled texture filter: {}", (int)texture_filter);
+  }
+}
+
+inline VkSamplerAddressMode MGPUSamplerAddressModeToVkSamplerAddressMode(MGPUSamplerAddressMode address_mode) {
+  switch(address_mode) {
+    case MGPU_SAMPLER_ADDRESS_MODE_REPEAT:          return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case MGPU_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case MGPU_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    default: ATOM_PANIC("unhandled sampler address mode: {}", (int)address_mode);
+  }
+}
+
 inline VkShaderStageFlagBits MGPUShaderStageBitToVkShaderStageBit(MGPUShaderStageBits shader_stage_bit) {
   switch(shader_stage_bit) {
     case MGPU_SHADER_STAGE_VERTEX:                  return VK_SHADER_STAGE_VERTEX_BIT;

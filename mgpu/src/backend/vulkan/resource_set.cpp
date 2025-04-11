@@ -4,6 +4,7 @@
 #include "lib/vulkan_result.hpp"
 #include "buffer.hpp"
 #include "device.hpp"
+#include "sampler.hpp"
 #include "resource_set_layout.hpp"
 #include "resource_set.hpp"
 #include "texture_view.hpp"
@@ -105,10 +106,22 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
     // TODO(fleroviux): we could totally just get this information from the layout
     switch(mgpu_binding.type) {
       case MGPU_RESOURCE_BINDING_TYPE_SAMPLER: {
-        ATOM_PANIC("unimplemented sampler binding");
+        vk_image_info = {
+          .sampler = ((Sampler*)mgpu_binding.texture.sampler)->Handle(),
+          .imageView = VK_NULL_HANDLE,
+          .imageLayout = VK_IMAGE_LAYOUT_MAX_ENUM
+        };
+        vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_TEXTURE_AND_SAMPLER: {
-        ATOM_PANIC("unimplemented texture and sampler binding type");
+        vk_image_info = {
+          .sampler = ((Sampler*)mgpu_binding.texture.sampler)->Handle(),
+          .imageView = ((TextureView*)mgpu_binding.texture.texture_view)->Handle(),
+          .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        };
+        vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_SAMPLED_TEXTURE: {
         vk_image_info = {

@@ -40,6 +40,7 @@ class Device final : public DeviceBase {
     QueueBase* GetQueue(MGPUQueueType queue_type) override;
     Result<BufferBase*> CreateBuffer(const MGPUBufferCreateInfo& create_info) override;
     Result<TextureBase*> CreateTexture(const MGPUTextureCreateInfo& create_info) override;
+    Result<SamplerBase*> CreateSampler(const MGPUSamplerCreateInfo& create_info) override;
     Result<ResourceSetLayoutBase*> CreateResourceSetLayout(const MGPUResourceSetLayoutCreateInfo& create_info) override;
     Result<ResourceSetBase*> CreateResourceSet(const MGPUResourceSetCreateInfo& create_info) override;
     Result<ShaderModuleBase*> CreateShaderModule(const u32* spirv_code, size_t spirv_byte_size) override;

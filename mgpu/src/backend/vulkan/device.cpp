@@ -11,6 +11,7 @@
 #include "rasterizer_state.hpp"
 #include "resource_set_layout.hpp"
 #include "resource_set.hpp"
+#include "sampler.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 #include "swap_chain.hpp"
@@ -169,6 +170,10 @@ Result<BufferBase*> Device::CreateBuffer(const MGPUBufferCreateInfo& create_info
 
 Result<TextureBase*> Device::CreateTexture(const MGPUTextureCreateInfo& create_info) {
   return Texture::Create(this, create_info);
+}
+
+Result<SamplerBase*> Device::CreateSampler(const MGPUSamplerCreateInfo& create_info) {
+  return Sampler::Create(this, create_info);
 }
 
 Result<ResourceSetLayoutBase*> Device::CreateResourceSetLayout(const MGPUResourceSetLayoutCreateInfo& create_info) {

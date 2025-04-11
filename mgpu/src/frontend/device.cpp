@@ -39,6 +39,16 @@ MGPUResult mgpuDeviceCreateTexture(MGPUDevice device, const MGPUTextureCreateInf
   return MGPU_SUCCESS;
 }
 
+MGPUResult mgpuDeviceCreateSampler(MGPUDevice device, const MGPUSamplerCreateInfo* create_info, MGPUSampler* sampler) {
+  mgpu::DeviceBase* cxx_device = (mgpu::DeviceBase*)device;
+
+  // TODO(fleroviux): implement input validation
+  mgpu::Result<mgpu::SamplerBase*> cxx_sampler_result = cxx_device->CreateSampler(*create_info);
+  MGPU_FORWARD_ERROR(cxx_sampler_result.Code());
+  *sampler = (MGPUSampler)cxx_sampler_result.Unwrap();
+  return MGPU_SUCCESS;
+}
+
 MGPUResult mgpuDeviceCreateResourceSetLayout(MGPUDevice device, const MGPUResourceSetLayoutCreateInfo* create_info, MGPUResourceSetLayout* resource_set_layout) {
   mgpu::Result<mgpu::ResourceSetLayoutBase*> cxx_resource_set_layout_result = ((mgpu::DeviceBase*)device)->CreateResourceSetLayout(*create_info);
   MGPU_FORWARD_ERROR(cxx_resource_set_layout_result.Code());
