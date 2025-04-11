@@ -308,7 +308,7 @@ MGPUResult Queue::Flush() {
   MGPU_VK_FORWARD_ERROR(vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence));
   MGPU_VK_FORWARD_ERROR(vkResetCommandBuffer(m_vk_cmd_buffer, 0u));
   MGPU_VK_FORWARD_ERROR(vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info));
-
+  m_device->GetDeleterQueue().Drain();
   return MGPU_SUCCESS;
 }
 

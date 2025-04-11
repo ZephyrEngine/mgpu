@@ -31,42 +31,44 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
   const VkDescriptorSetLayout vk_descriptor_set_layout = ((ResourceSetLayout*)create_info.layout)->Handle();
 
   // Well. It works, doesn't it?
-  const VkDescriptorPoolSize vk_descriptor_pool_sizes[] {
-    {
-      .type = VK_DESCRIPTOR_TYPE_SAMPLER,
-      .descriptorCount = 65536u
-    },
-    {
-      .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-      .descriptorCount = 65536u
-    },
-    {
-      .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-      .descriptorCount = 65536u
-    },
-    {
-      .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-      .descriptorCount = 65536u
-    },
-    {
-      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-      .descriptorCount = 65536u
-    },
-    {
-      .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-      .descriptorCount = 65536u
-    }
-  };
-  const VkDescriptorPoolCreateInfo vk_descriptor_pool_create_info{
-    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-    .pNext = nullptr,
-    .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-    .maxSets = 1u,
-    .poolSizeCount = sizeof(vk_descriptor_pool_sizes) / sizeof(VkDescriptorPoolSize),
-    .pPoolSizes = vk_descriptor_pool_sizes
-  };
-  VkDescriptorPool vk_descriptor_pool{};
-  MGPU_VK_FORWARD_ERROR(vkCreateDescriptorPool(device->Handle(), &vk_descriptor_pool_create_info, nullptr, &vk_descriptor_pool));
+  static VkDescriptorPool vk_descriptor_pool{};
+  if(vk_descriptor_pool == VK_NULL_HANDLE) {
+    const VkDescriptorPoolSize vk_descriptor_pool_sizes[] {
+      {
+        .type = VK_DESCRIPTOR_TYPE_SAMPLER,
+        .descriptorCount = 65536u
+      },
+      {
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 65536u
+      },
+      {
+        .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        .descriptorCount = 65536u
+      },
+      {
+        .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        .descriptorCount = 65536u
+      },
+      {
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 65536u
+      },
+      {
+        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 65536u
+      }
+    };
+    const VkDescriptorPoolCreateInfo vk_descriptor_pool_create_info{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+      .maxSets = 16384u,
+      .poolSizeCount = sizeof(vk_descriptor_pool_sizes) / sizeof(VkDescriptorPoolSize),
+      .pPoolSizes = vk_descriptor_pool_sizes
+    };
+    MGPU_VK_FORWARD_ERROR(vkCreateDescriptorPool(device->Handle(), &vk_descriptor_pool_create_info, nullptr, &vk_descriptor_pool));
+  }
 
   const VkDescriptorSetAllocateInfo vk_allocate_info{
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
