@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <mgpu/mgpu.h>
+
 #include <atom/float.hpp>
 #include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
@@ -12,6 +14,7 @@
 
 #include "common/bump_allocator.hpp"
 #include "common/limits.hpp"
+#include "render_command_encoder.hpp"
 
 namespace mgpu {
 
@@ -244,82 +247,77 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       m_state = {};
     }
 
-    void CmdBeginRenderPass(const MGPURenderPassBeginInfo& begin_info) {
+    RenderCommandEncoder* CmdBeginRenderPass(const MGPURenderPassBeginInfo& begin_info) {
+      // TODO(fleroviux): just allocate the encoder inside the command itself? That way we safe one alloc.
+      const auto render_command_encoder = new(AllocateMemory(sizeof(RenderCommandEncoder))) RenderCommandEncoder{this};
+
       if(m_state.inside_render_pass) {
         m_state.has_errors = true;
       }
       m_state.inside_render_pass = true;
       Push<BeginRenderPassCommand>(begin_info);
+      return render_command_encoder;
     }
 
     void CmdEndRenderPass() {
-      ErrorUnlessInsideRenderPass();
       m_state.inside_render_pass = false;
       Push<EndRenderPassCommand>();
     }
 
     void CmdUseShaderProgram(ShaderProgramBase* shader_program) {
-      ErrorUnlessInsideRenderPass();
       Push<UseShaderProgramCommand>(shader_program);
     }
 
     void CmdUseRasterizerState(RasterizerStateBase* rasterizer_state) {
-      ErrorUnlessInsideRenderPass();
       Push<UseRasterizerStateCommand>(rasterizer_state);
     }
 
     void CmdUseInputAssemblyState(InputAssemblyStateBase* input_assembly_state) {
-      ErrorUnlessInsideRenderPass();
       Push<UseInputAssemblyStateCommand>(input_assembly_state);
     }
 
     void CmdUseColorBlendState(ColorBlendStateBase* color_blend_state) {
-      ErrorUnlessInsideRenderPass();
       Push<UseColorBlendStateCommand>(color_blend_state);
     }
 
     void CmdUseVertexInputState(VertexInputStateBase* vertex_input_state) {
-      ErrorUnlessInsideRenderPass();
       Push<UseVertexInputStateCommand>(vertex_input_state);
     }
 
     void CmdUseDepthStencilState(DepthStencilStateBase* depth_stencil_state) {
-      ErrorUnlessInsideRenderPass();
       Push<UseDepthStencilStateCommand>(depth_stencil_state);
     }
 
     void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {
-      ErrorUnlessInsideRenderPass();
       Push<SetViewportCommand>(x, y, width, height);
     }
 
     void CmdSetScissor(i32 x, i32 y, u32 width, u32 height) {
-      ErrorUnlessInsideRenderPass();
       Push<SetScissorCommand>(x, y, width, height);
     }
 
     void CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset) {
-      ErrorUnlessInsideRenderPass();
       Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
     }
 
     void CmdBindResourceSet(u32 index, ResourceSetBase* resource_set) {
-      ErrorUnlessInsideRenderPass();
       Push<BindResourceSetCommand>(index, resource_set);
     }
 
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
       // TODO: validate that enough state is bound for the draw.
-      ErrorUnlessInsideRenderPass();
       Push<DrawCommand>(vertex_count, instance_count, first_vertex, first_instance);
     }
 
   private:
-    static constexpr size_t k_chunk_size = 65536;
+    static constexpr size_t k_chunk_size = 65536u;
+
+    // TODO(fleroviux): implement this in a nicer way
+    friend class RenderCommandEncoder;
 
     template<typename T, typename... Args>
     void Push(Args&&... args) {
-      CommandBase* command = new(AllocateCommandMemory(sizeof(T))) T{std::forward<Args>(args)...};
+      CommandBase* command = new(AllocateMemory(sizeof(T))) T{std::forward<Args>(args)...};
 
       if(m_head == nullptr) {
         m_head = command;
@@ -330,12 +328,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       }
     }
 
-    // TODO: remove this when we implement the RenderPassEncoder API !!!
-    void ErrorUnlessInsideRenderPass() {
-      m_state.has_errors |= !m_state.inside_render_pass;
-    }
-
-    void* AllocateCommandMemory(size_t number_of_bytes) {
+    void* AllocateMemory(size_t number_of_bytes) {
       void* address = m_memory_chunks[m_active_chunk].Allocate(number_of_bytes);
 
       if(address == nullptr) [[unlikely]] {

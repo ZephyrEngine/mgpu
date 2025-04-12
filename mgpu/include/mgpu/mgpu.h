@@ -45,6 +45,7 @@ typedef struct MGPUColorBlendStateImpl* MGPUColorBlendState;
 typedef struct MGPUVertexInputStateImpl* MGPUVertexInputState;
 typedef struct MGPUDepthStencilStateImpl* MGPUDepthStencilState;
 typedef struct MGPUCommandListImpl* MGPUCommandList;
+typedef struct MGPURenderCommandEncoderImpl* MGPURenderCommandEncoder;
 typedef struct MGPUSurfaceImpl* MGPUSurface;
 typedef struct MGPUSwapChainImpl* MGPUSwapChain;
 
@@ -694,20 +695,22 @@ void mgpuDepthStencilStateDestroy(MGPUDepthStencilState depth_stencil_state);
 
 // MGPUCommandList methods
 MGPUResult mgpuCommandListClear(MGPUCommandList command_list);
-void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
-void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list);
-void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program);
-void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state);
-void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state);
-void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state);
-void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state);
-void mgpuCommandListCmdUseDepthStencilState(MGPUCommandList command_list, MGPUDepthStencilState depth_stencil_state);
-void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height);
-void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height);
-void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);
-void mgpuCommandListCmdBindResourceSet(MGPUCommandList command_list, uint32_t index, MGPUResourceSet resource_set);
-void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+MGPURenderCommandEncoder mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info);
 void mgpuCommandListDestroy(MGPUCommandList command_list);
+
+// MGPURenderCommandEncoder methods
+void mgpuRenderCommandEncoderCmdUseShaderProgram(MGPURenderCommandEncoder render_command_encoder, MGPUShaderProgram shader_program);
+void mgpuRenderCommandEncoderCmdUseRasterizerState(MGPURenderCommandEncoder render_command_encoder, MGPURasterizerState rasterizer_state);
+void mgpuRenderCommandEncoderCmdUseInputAssemblyState(MGPURenderCommandEncoder render_command_encoder, MGPUInputAssemblyState input_assembly_state);
+void mgpuRenderCommandEncoderCmdUseColorBlendState(MGPURenderCommandEncoder render_command_encoder, MGPUColorBlendState color_blend_state);
+void mgpuRenderCommandEncoderCmdUseVertexInputState(MGPURenderCommandEncoder render_command_encoder, MGPUVertexInputState vertex_input_state);
+void mgpuRenderCommandEncoderCmdUseDepthStencilState(MGPURenderCommandEncoder render_command_encoder, MGPUDepthStencilState depth_stencil_state);
+void mgpuRenderCommandEncoderCmdSetViewport(MGPURenderCommandEncoder render_command_encoder, float x, float y, float width, float height);
+void mgpuRenderCommandEncoderCmdSetScissor(MGPURenderCommandEncoder render_command_encoder, int32_t x, int32_t y, uint32_t width, uint32_t height);
+void mgpuRenderCommandEncoderCmdBindVertexBuffer(MGPURenderCommandEncoder render_command_encoder, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);
+void mgpuRenderCommandEncoderCmdBindResourceSet(MGPURenderCommandEncoder render_command_encoder, uint32_t index, MGPUResourceSet resource_set);
+void mgpuRenderCommandEncoderCmdDraw(MGPURenderCommandEncoder render_command_encoder, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+void mgpuRenderCommandEncoderClose(MGPURenderCommandEncoder render_command_encoder);
 
 // MGPUSurface methods
 void mgpuSurfaceDestroy(MGPUSurface surface);

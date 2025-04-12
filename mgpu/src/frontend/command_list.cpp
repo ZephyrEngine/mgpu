@@ -10,7 +10,7 @@ MGPUResult mgpuCommandListClear(MGPUCommandList command_list) {
   return MGPU_SUCCESS;
 }
 
-void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info) {
+MGPURenderCommandEncoder mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPURenderPassBeginInfo* begin_info) {
   /**
    * TODO(fleroviux): validate begin_info.
    *
@@ -24,63 +24,7 @@ void mgpuCommandListCmdBeginRenderPass(MGPUCommandList command_list, const MGPUR
    *  - The depth/stencil attachment must have a format with a depth or stencil aspect
    */
 
-  ((mgpu::CommandList*)command_list)->CmdBeginRenderPass(*begin_info);
-}
-
-void mgpuCommandListCmdEndRenderPass(MGPUCommandList command_list) {
-  ((mgpu::CommandList*)command_list)->CmdEndRenderPass();
-}
-
-void mgpuCommandListCmdUseShaderProgram(MGPUCommandList command_list, MGPUShaderProgram shader_program) {
-  ((mgpu::CommandList*)command_list)->CmdUseShaderProgram((mgpu::ShaderProgramBase*)shader_program);
-}
-
-void mgpuCommandListCmdUseRasterizerState(MGPUCommandList command_list, MGPURasterizerState rasterizer_state) {
-  ((mgpu::CommandList*)command_list)->CmdUseRasterizerState((mgpu::RasterizerStateBase*)rasterizer_state);
-}
-
-void mgpuCommandListCmdUseInputAssemblyState(MGPUCommandList command_list, MGPUInputAssemblyState input_assembly_state) {
-  ((mgpu::CommandList*)command_list)->CmdUseInputAssemblyState((mgpu::InputAssemblyStateBase*)input_assembly_state);
-}
-
-void mgpuCommandListCmdUseColorBlendState(MGPUCommandList command_list, MGPUColorBlendState color_blend_state) {
-  ((mgpu::CommandList*)command_list)->CmdUseColorBlendState((mgpu::ColorBlendStateBase*)color_blend_state);
-}
-
-void mgpuCommandListCmdUseVertexInputState(MGPUCommandList command_list, MGPUVertexInputState vertex_input_state) {
-  // TODO(fleroviux): validate that vertex input state is compatible with the current vertex shader.
-
-  ((mgpu::CommandList*)command_list)->CmdUseVertexInputState((mgpu::VertexInputStateBase*)vertex_input_state);
-}
-
-void mgpuCommandListCmdUseDepthStencilState(MGPUCommandList command_list, MGPUDepthStencilState depth_stencil_state) {
-  ((mgpu::CommandList*)command_list)->CmdUseDepthStencilState((mgpu::DepthStencilStateBase*)depth_stencil_state);
-}
-
-void mgpuCommandListCmdSetViewport(MGPUCommandList command_list, float x, float y, float width, float height) {
-  ((mgpu::CommandList*)command_list)->CmdSetViewport(x, y, width, height);
-}
-
-void mgpuCommandListCmdSetScissor(MGPUCommandList command_list, int32_t x, int32_t y, uint32_t width, uint32_t height) {
-  // TODO(fleroviux): implement validation?
-  ((mgpu::CommandList*)command_list)->CmdSetScissor(x, y, width, height);
-}
-
-void mgpuCommandListCmdBindVertexBuffer(MGPUCommandList command_list, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
-  // TODO(fleroviux): implement validation? i.e. buffer usage
-
-  ((mgpu::CommandList*)command_list)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
-}
-
-void mgpuCommandListCmdBindResourceSet(MGPUCommandList command_list, uint32_t index, MGPUResourceSet resource_set) {
-  // TODO(fleroviux): implement validation?
-  ((mgpu::CommandList*)command_list)->CmdBindResourceSet(index, (mgpu::ResourceSetBase*)resource_set);
-}
-
-void mgpuCommandListCmdDraw(MGPUCommandList command_list, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
-  // TODO(fleroviux): validate that all vertex buffer bindings have something bound?
-
-  ((mgpu::CommandList*)command_list)->CmdDraw(vertex_count, instance_count, first_vertex, first_instance);
+  return (MGPURenderCommandEncoder)((mgpu::CommandList*)command_list)->CmdBeginRenderPass(*begin_info);
 }
 
 void mgpuCommandListDestroy(MGPUCommandList command_list) {

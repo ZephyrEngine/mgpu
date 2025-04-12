@@ -26,6 +26,7 @@ set(SOURCES
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
   src/backend/vulkan/vertex_input_state.cpp
+  src/backend/render_command_encoder.cpp
   src/frontend/buffer.cpp
   src/frontend/color_blend_state.cpp
   src/frontend/command_list.cpp
@@ -36,6 +37,7 @@ set(SOURCES
   src/frontend/physical_device.cpp
   src/frontend/queue.cpp
   src/frontend/rasterizer_state.cpp
+  src/frontend/render_command_encoder.cpp
   src/frontend/resource_set_layout.cpp
   src/frontend/resource_set.cpp
   src/frontend/result.cpp
@@ -87,6 +89,7 @@ set(HEADERS
   src/backend/physical_device.hpp
   src/backend/queue.hpp
   src/backend/rasterizer_state.hpp
+  src/backend/render_command_encoder.hpp
   src/backend/resource_set_layout.hpp
   src/backend/resource_set.hpp
   src/backend/sampler.hpp
