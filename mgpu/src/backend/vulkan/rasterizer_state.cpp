@@ -9,7 +9,7 @@ RasterizerState::RasterizerState(const MGPURasterizerStateCreateInfo& create_inf
     .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
     .pNext = nullptr,
     .flags = 0,
-    .depthClampEnable = create_info.depth_bias_enable,
+    .depthClampEnable = create_info.depth_clamp_enable,
     .rasterizerDiscardEnable = create_info.rasterizer_discard_enable,
     .polygonMode = MGPUPolygonModeToVkPolygonMode(create_info.polygon_mode),
     .cullMode = MGPUCullModeToVkCullMode(create_info.cull_mode),
