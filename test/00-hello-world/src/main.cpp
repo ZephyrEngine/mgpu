@@ -238,11 +238,10 @@ int main() {
       .color_attachments = render_pass_color_attachments,
       .depth_stencil_attachment = nullptr
     };
-    mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
-    mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
+    MGPURenderCommandEncoder render_cmd_encoder = mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
+    mgpuRenderCommandEncoderClose(render_cmd_encoder);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, mgpu_cmd_list));
-    // MGPU_CHECK(mgpuQueueFlush(mgpu_queue));
     MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
 
     hue = std::fmod(hue + 0.0025f, 1.0f);

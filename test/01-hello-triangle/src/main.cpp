@@ -299,17 +299,17 @@ int main() {
       .color_attachments = render_pass_color_attachments,
       .depth_stencil_attachment = nullptr
     };
-    mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
-    mgpuCommandListCmdUseShaderProgram(mgpu_cmd_list, mgpu_shader_program);
-    mgpuCommandListCmdUseRasterizerState(mgpu_cmd_list, mgpu_rasterizer_state);
-    mgpuCommandListCmdUseInputAssemblyState(mgpu_cmd_list, mgpu_input_assembly_state);
-    mgpuCommandListCmdUseColorBlendState(mgpu_cmd_list, mgpu_color_blend_state);
-    mgpuCommandListCmdUseVertexInputState(mgpu_cmd_list, mgpu_vertex_input_state);
-    mgpuCommandListCmdSetViewport(mgpu_cmd_list, 0.0f, 0.0f, 1600.f, 900.f);
-    mgpuCommandListCmdSetScissor(mgpu_cmd_list, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
-    mgpuCommandListCmdBindVertexBuffer(mgpu_cmd_list, 0u, mgpu_vbo, 0u);
-    mgpuCommandListCmdDraw(mgpu_cmd_list, 3u, 1u, 0u, 0u);
-    mgpuCommandListCmdEndRenderPass(mgpu_cmd_list);
+    MGPURenderCommandEncoder render_cmd_encoder = mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
+    mgpuRenderCommandEncoderCmdUseShaderProgram(render_cmd_encoder, mgpu_shader_program);
+    mgpuRenderCommandEncoderCmdUseRasterizerState(render_cmd_encoder, mgpu_rasterizer_state);
+    mgpuRenderCommandEncoderCmdUseInputAssemblyState(render_cmd_encoder, mgpu_input_assembly_state);
+    mgpuRenderCommandEncoderCmdUseColorBlendState(render_cmd_encoder, mgpu_color_blend_state);
+    mgpuRenderCommandEncoderCmdUseVertexInputState(render_cmd_encoder, mgpu_vertex_input_state);
+    mgpuRenderCommandEncoderCmdSetViewport(render_cmd_encoder, 0.0f, 0.0f, 1600.f, 900.f);
+    mgpuRenderCommandEncoderCmdSetScissor(render_cmd_encoder, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
+    mgpuRenderCommandEncoderCmdBindVertexBuffer(render_cmd_encoder, 0u, mgpu_vbo, 0u);
+    mgpuRenderCommandEncoderCmdDraw(render_cmd_encoder, 3u, 1u, 0u, 0u);
+    mgpuRenderCommandEncoderClose(render_cmd_encoder);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, mgpu_cmd_list));
     MGPU_CHECK(mgpuSwapChainPresent(mgpu_swap_chain));
