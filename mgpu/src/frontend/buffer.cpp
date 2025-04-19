@@ -38,8 +38,4 @@ MGPUResult mgpuBufferFlushRange(MGPUBuffer buffer, uint64_t offset, uint64_t siz
   return cxx_buffer->FlushRange(offset, size);
 }
 
-void mgpuBufferDestroy(MGPUBuffer buffer) {
-  delete (mgpu::BufferBase*)buffer;
-}
-
 }  // extern "C"

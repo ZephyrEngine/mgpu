@@ -145,8 +145,4 @@ MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreat
   return MGPU_SUCCESS;
 }
 
-void mgpuDeviceDestroy(MGPUDevice device) {
-  delete (mgpu::DeviceBase*)device;
-}
-
 }  // extern "C"

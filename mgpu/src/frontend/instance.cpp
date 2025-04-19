@@ -53,8 +53,4 @@ MGPUResult mgpuInstanceCreateSurface(MGPUInstance instance, const MGPUSurfaceCre
   return MGPU_SUCCESS;
 }
 
-void mgpuInstanceDestroy(MGPUInstance instance) {
-  delete (mgpu::InstanceBase*)instance;
-}
-
 }  // extern "C"

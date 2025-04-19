@@ -36,8 +36,4 @@ MGPUResult mgpuTextureCreateView(MGPUTexture texture, const MGPUTextureViewCreat
   return MGPU_SUCCESS;
 }
 
-void mgpuTextureDestroy(MGPUTexture texture) {
-  delete (mgpu::TextureBase*)texture;
-}
-
 }  // extern "C"

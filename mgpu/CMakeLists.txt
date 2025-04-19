@@ -29,27 +29,17 @@ set(SOURCES
   src/backend/device.cpp
   src/backend/render_command_encoder.cpp
   src/frontend/buffer.cpp
-  src/frontend/color_blend_state.cpp
   src/frontend/command_list.cpp
-  src/frontend/depth_stencil_state.cpp
+  src/frontend/destroy.cpp
   src/frontend/device.cpp
-  src/frontend/input_assembly_state.cpp
   src/frontend/instance.cpp
   src/frontend/physical_device.cpp
   src/frontend/queue.cpp
-  src/frontend/rasterizer_state.cpp
   src/frontend/render_command_encoder.cpp
-  src/frontend/resource_set_layout.cpp
-  src/frontend/resource_set.cpp
   src/frontend/result.cpp
-  src/frontend/sampler.cpp
-  src/frontend/shader_module.cpp
-  src/frontend/shader_program.cpp
   src/frontend/surface.cpp
   src/frontend/swap_chain.cpp
   src/frontend/texture.cpp
-  src/frontend/texture_view.cpp
-  src/frontend/vertex_input_state.cpp
 )
 
 set(HEADERS
