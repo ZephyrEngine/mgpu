@@ -5,7 +5,7 @@
 #include <atom/vector_n.hpp>
 #include <vulkan/vulkan.h>
 
-#include "backend/vertex_input_state.hpp"
+#include "backend/pipeline_state/vertex_input_state.hpp"
 #include "common/limits.hpp"
 
 namespace mgpu::vulkan {

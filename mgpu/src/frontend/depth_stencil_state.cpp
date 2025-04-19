@@ -1,7 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
-#include "backend/depth_stencil_state.hpp"
+#include "backend/pipeline_state/depth_stencil_state.hpp"
 
 extern "C" {
 

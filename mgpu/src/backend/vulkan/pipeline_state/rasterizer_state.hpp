@@ -4,7 +4,7 @@
 #include <mgpu/mgpu.h>
 #include <vulkan/vulkan.h>
 
-#include "backend/rasterizer_state.hpp"
+#include "backend/pipeline_state/rasterizer_state.hpp"
 
 namespace mgpu::vulkan {
 

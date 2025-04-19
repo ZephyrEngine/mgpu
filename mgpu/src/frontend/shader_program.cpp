@@ -1,7 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
-#include "backend/shader_program.hpp"
+#include "backend/pipeline_state/shader_program.hpp"
 
 extern "C" {
 

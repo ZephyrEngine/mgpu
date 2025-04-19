@@ -6,7 +6,7 @@
 #include <atom/vector_n.hpp>
 #include <vulkan/vulkan.h>
 
-#include "backend/color_blend_state.hpp"
+#include "backend/pipeline_state/color_blend_state.hpp"
 #include "common/limits.hpp"
 
 namespace mgpu::vulkan {

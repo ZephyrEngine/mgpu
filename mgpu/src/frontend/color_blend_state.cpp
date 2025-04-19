@@ -1,7 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
-#include "backend/color_blend_state.hpp"
+#include "backend/pipeline_state/color_blend_state.hpp"
 
 extern "C" {
 

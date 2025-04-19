@@ -6,7 +6,7 @@
 #include <span>
 #include <vulkan/vulkan.h>
 
-#include "backend/shader_program.hpp"
+#include "backend/pipeline_state/shader_program.hpp"
 #include "common/result.hpp"
 
 namespace mgpu::vulkan {

@@ -1,7 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
-#include "backend/vertex_input_state.hpp"
+#include "backend/pipeline_state/vertex_input_state.hpp"
 
 extern "C" {
 

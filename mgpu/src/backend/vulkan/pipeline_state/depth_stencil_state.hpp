@@ -4,7 +4,7 @@
 #include <mgpu/mgpu.h>
 #include <vulkan/vulkan.h>
 
-#include "backend/depth_stencil_state.hpp"
+#include "backend/pipeline_state/depth_stencil_state.hpp"
 
 namespace mgpu::vulkan {
 

@@ -4,7 +4,7 @@
 #include <atom/integer.hpp>
 #include <vulkan/vulkan.h>
 
-#include "backend/shader_module.hpp"
+#include "backend/pipeline_state/shader_module.hpp"
 #include "common/result.hpp"
 
 namespace mgpu::vulkan {

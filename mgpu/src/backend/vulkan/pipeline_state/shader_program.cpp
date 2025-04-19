@@ -1,10 +1,10 @@
 
 #include <vector>
 
-#include "lib/vulkan_result.hpp"
-#include "conversion.hpp"
-#include "device.hpp"
-#include "resource_set_layout.hpp"
+#include "backend/vulkan/lib/vulkan_result.hpp"
+#include "backend/vulkan/conversion.hpp"
+#include "backend/vulkan/device.hpp"
+#include "backend/vulkan/resource_set_layout.hpp"
 #include "shader_module.hpp"
 #include "shader_program.hpp"
 
