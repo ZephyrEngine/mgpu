@@ -332,8 +332,10 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
       depth_stencil_attachment.stencil_load_op, depth_stencil_attachment.stencil_store_op);
   }
 
+  auto& pipeline_query = state.render_pass.pipeline_query;
   VkRenderPass vk_render_pass = m_render_pass_cache->GetRenderPass(render_pass_query).Unwrap(); // TODO(fleroviux): handle failure
-  state.render_pass.pipeline_query.m_vk_render_pass = vk_render_pass;
+  pipeline_query = {};
+  pipeline_query.m_vk_render_pass = vk_render_pass;
 
   // Create a temporary framebuffer
   atom::Vector_N<VkImageView, limits::max_total_attachments> vk_attachment_image_views{};
