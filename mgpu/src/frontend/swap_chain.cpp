@@ -40,8 +40,4 @@ MGPUResult mgpuSwapChainPresent(MGPUSwapChain swap_chain) {
   return ((mgpu::SwapChainBase*)swap_chain)->Present();
 }
 
-void mgpuSwapChainDestroy(MGPUSwapChain swap_chain) {
-  delete (mgpu::SwapChainBase*)swap_chain;
-}
-
 }  // extern "C"

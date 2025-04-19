@@ -37,7 +37,6 @@ set(SOURCES
   src/frontend/queue.cpp
   src/frontend/render_command_encoder.cpp
   src/frontend/result.cpp
-  src/frontend/surface.cpp
   src/frontend/swap_chain.cpp
   src/frontend/texture.cpp
 )

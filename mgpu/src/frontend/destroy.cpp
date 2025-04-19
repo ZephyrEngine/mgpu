@@ -9,11 +9,14 @@
 #include "backend/pipeline_state/shader_program.hpp"
 #include "backend/pipeline_state/vertex_input_state.hpp"
 #include "backend/buffer.hpp"
+#include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "backend/instance.hpp"
 #include "backend/resource_set_layout.hpp"
 #include "backend/resource_set.hpp"
 #include "backend/sampler.hpp"
+#include "backend/surface.hpp"
+#include "backend/swap_chain.hpp"
 #include "backend/texture.hpp"
 #include "backend/texture_view.hpp"
 
@@ -77,6 +80,18 @@ void mgpuVertexInputStateDestroy(MGPUVertexInputState vertex_input_state) {
 
 void mgpuDepthStencilStateDestroy(MGPUDepthStencilState depth_stencil_state) {
   delete (mgpu::DepthStencilStateBase*)depth_stencil_state;
+}
+
+void mgpuCommandListDestroy(MGPUCommandList command_list) {
+  delete (mgpu::CommandList*)command_list;
+}
+
+void mgpuSurfaceDestroy(MGPUSurface surface) {
+  delete (mgpu::SurfaceBase*)surface;
+}
+
+void mgpuSwapChainDestroy(MGPUSwapChain swap_chain) {
+  delete (mgpu::SwapChainBase*)swap_chain;
 }
 
 } // extern "C"

@@ -27,8 +27,4 @@ MGPURenderCommandEncoder mgpuCommandListCmdBeginRenderPass(MGPUCommandList comma
   return (MGPURenderCommandEncoder)((mgpu::CommandList*)command_list)->CmdBeginRenderPass(*begin_info);
 }
 
-void mgpuCommandListDestroy(MGPUCommandList command_list) {
-  delete (mgpu::CommandList*)command_list;
-}
-
 }  // extern "C"
