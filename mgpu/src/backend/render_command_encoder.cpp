@@ -50,6 +50,7 @@ void RenderCommandEncoder::CmdDraw(u32 vertex_count, u32 instance_count, u32 fir
 
 void RenderCommandEncoder::Close() {
   m_command_list->CmdEndRenderPass();
+  m_command_list = nullptr;
 }
 
 } // namespace mgpu
