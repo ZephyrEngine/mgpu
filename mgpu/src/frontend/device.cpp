@@ -127,7 +127,7 @@ MGPUResult mgpuDeviceCreateDepthStencilState(MGPUDevice device, const MGPUDepthS
 }
 
 MGPUResult mgpuDeviceCreateCommandList(MGPUDevice device, MGPUCommandList* command_list) {
-  const auto cxx_command_list = new(std::nothrow) mgpu::CommandList{};
+  const auto cxx_command_list = new(std::nothrow) mgpu::CommandList{(mgpu::DeviceBase*)device};
 
   if(cxx_command_list == nullptr) {
     return MGPU_OUT_OF_MEMORY;

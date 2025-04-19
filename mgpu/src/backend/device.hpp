@@ -5,6 +5,7 @@
 #include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
+#include <unordered_map>
 
 #include "common/result.hpp"
 
@@ -48,8 +49,19 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     virtual Result<DepthStencilStateBase*> CreateDepthStencilState(const MGPUDepthStencilStateCreateInfo& create_info) = 0;
     virtual Result<SwapChainBase*> CreateSwapChain(const MGPUSwapChainCreateInfo& create_info) = 0;
 
+    [[nodiscard]] RasterizerStateBase* GetDefaultRasterizerState();
+    [[nodiscard]] InputAssemblyStateBase* GetDefaultInputAssemblyState();
+    [[nodiscard]] VertexInputStateBase* GetDefaultVertexInputState();
+    [[nodiscard]] DepthStencilStateBase* GetDefaultDepthStencilState();
+    [[nodiscard]] ColorBlendStateBase* GetDefaultColorBlendState(u32 attachment_count);
+
   private:
     MGPUPhysicalDeviceLimits m_limits{};
+    RasterizerStateBase* m_default_rasterizer_state{};
+    InputAssemblyStateBase* m_default_input_assembly_state{};
+    VertexInputStateBase* m_default_vertex_input_state{};
+    DepthStencilStateBase* m_default_depth_stencil_state{};
+    std::unordered_map<size_t, ColorBlendStateBase*> m_default_color_blend_states{};
 };
 
 } // namespace mgpu

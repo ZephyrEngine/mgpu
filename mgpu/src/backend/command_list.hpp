@@ -14,6 +14,7 @@
 
 #include "common/bump_allocator.hpp"
 #include "common/limits.hpp"
+#include "device.hpp"
 #include "render_command_encoder.hpp"
 
 namespace mgpu {
@@ -44,7 +45,7 @@ enum class CommandType {
   Draw
 };
 
-struct CommandBase {
+struct CommandBase : atom::NonCopyable, atom::NonMoveable {
   explicit CommandBase(CommandType command) : m_command_type{command} {}
 
   CommandType m_command_type;
@@ -69,7 +70,9 @@ struct BeginRenderPassCommand : CommandBase {
     uint32_t clear_stencil;
   };
 
-  explicit BeginRenderPassCommand(const MGPURenderPassBeginInfo& begin_info) : CommandBase{CommandType::BeginRenderPass} {
+  BeginRenderPassCommand(CommandList* command_list, const MGPURenderPassBeginInfo& begin_info)
+      : CommandBase{CommandType::BeginRenderPass}
+      , m_render_command_encoder{command_list} {
     for(size_t i = 0; i < begin_info.color_attachment_count; i++) {
       const MGPURenderPassColorAttachment& color_attachment = begin_info.color_attachments[i];
       m_color_attachments.PushBack({
@@ -95,8 +98,9 @@ struct BeginRenderPassCommand : CommandBase {
     }
   }
 
+  mutable RenderCommandEncoder m_render_command_encoder;
   atom::Vector_N<ColorAttachment, limits::max_color_attachments> m_color_attachments{};
-  DepthStencilAttachment m_depth_stencil_attachment;
+  DepthStencilAttachment m_depth_stencil_attachment{};
   bool m_have_depth_stencil_attachment{};
 };
 
@@ -229,7 +233,7 @@ struct DrawCommand : CommandBase {
 
 class CommandList : atom::NonCopyable, atom::NonMoveable {
   public:
-    CommandList() {
+    explicit CommandList(DeviceBase* device) : m_device{device} {
       m_memory_chunks.emplace_back(k_chunk_size);
       Clear();
     }
@@ -248,15 +252,20 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     }
 
     RenderCommandEncoder* CmdBeginRenderPass(const MGPURenderPassBeginInfo& begin_info) {
-      // TODO(fleroviux): just allocate the encoder inside the command itself? That way we safe one alloc.
-      const auto render_command_encoder = new(AllocateMemory(sizeof(RenderCommandEncoder))) RenderCommandEncoder{this};
-
       if(m_state.inside_render_pass) {
         m_state.has_errors = true;
       }
       m_state.inside_render_pass = true;
-      Push<BeginRenderPassCommand>(begin_info);
-      return render_command_encoder;
+
+      const auto& command = Push<BeginRenderPassCommand>(this, begin_info);
+
+      RenderCommandEncoder& encoder = command.m_render_command_encoder;
+      encoder.CmdUseRasterizerState(m_device->GetDefaultRasterizerState());
+      encoder.CmdUseColorBlendState(m_device->GetDefaultColorBlendState(begin_info.color_attachment_count));
+      encoder.CmdUseInputAssemblyState(m_device->GetDefaultInputAssemblyState());
+      encoder.CmdUseVertexInputState(m_device->GetDefaultVertexInputState());
+      encoder.CmdUseDepthStencilState(m_device->GetDefaultDepthStencilState());
+      return &encoder;
     }
 
     void CmdEndRenderPass() {
@@ -316,8 +325,8 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     friend class RenderCommandEncoder;
 
     template<typename T, typename... Args>
-    void Push(Args&&... args) {
-      CommandBase* command = new(AllocateMemory(sizeof(T))) T{std::forward<Args>(args)...};
+    const T& Push(Args&&... args) {
+      T* const command = new(AllocateMemory(sizeof(T))) T{std::forward<Args>(args)...};
 
       if(m_head == nullptr) {
         m_head = command;
@@ -326,6 +335,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
         m_tail->m_next = command;
         m_tail = command;
       }
+      return *command;
     }
 
     void* AllocateMemory(size_t number_of_bytes) {
@@ -347,6 +357,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       bool inside_render_pass{false};
     };
 
+    DeviceBase* m_device;
     std::vector<BumpAllocator> m_memory_chunks{};
     size_t m_active_chunk{};
     CommandBase* m_head{};

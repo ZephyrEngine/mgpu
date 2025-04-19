@@ -19,11 +19,8 @@ class ResourceSetBase;
 
 class RenderCommandEncoder {
   public:
-    explicit RenderCommandEncoder(CommandList* command_list)
-        : m_command_list{command_list} {
+    explicit RenderCommandEncoder(CommandList* command_list) : m_command_list{command_list} {
     }
-
-   ~RenderCommandEncoder() = delete;
 
     void CmdUseShaderProgram(ShaderProgramBase* shader_program);
     void CmdUseRasterizerState(RasterizerStateBase* rasterizer_state);

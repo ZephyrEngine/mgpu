@@ -26,6 +26,7 @@ set(SOURCES
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
   src/backend/vulkan/vertex_input_state.cpp
+  src/backend/device.cpp
   src/backend/render_command_encoder.cpp
   src/frontend/buffer.cpp
   src/frontend/color_blend_state.cpp

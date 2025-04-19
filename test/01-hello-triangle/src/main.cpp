@@ -204,47 +204,6 @@ int main() {
   MGPUShaderProgram mgpu_shader_program{};
   MGPU_CHECK(mgpuDeviceCreateShaderProgram(mgpu_device, &shader_program_create_info, &mgpu_shader_program));
 
-  const MGPURasterizerStateCreateInfo rasterizer_state_create_info{
-    .depth_clamp_enable = false,
-    .rasterizer_discard_enable = false,
-    .polygon_mode = MGPU_POLYGON_MODE_FILL,
-    .cull_mode = MGPU_CULL_MODE_BACK,
-    .front_face = MGPU_FRONT_FACE_COUNTER_CLOCKWISE,
-    .depth_bias_enable = false,
-    .depth_bias_constant_factor = 0.f,
-    .depth_bias_clamp = 0.f,
-    .depth_bias_slope_factor = 0.f,
-    .line_width = 1.f
-  };
-  MGPURasterizerState mgpu_rasterizer_state{};
-  MGPU_CHECK(mgpuDeviceCreateRasterizerState(mgpu_device, &rasterizer_state_create_info, &mgpu_rasterizer_state));
-
-  const MGPUInputAssemblyStateCreateInfo input_assembly_state_create_info{
-    .topology = MGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    .primitive_restart_enable = false
-  };
-  MGPUInputAssemblyState mgpu_input_assembly_state{};
-  MGPU_CHECK(mgpuDeviceCreateInputAssemblyState(mgpu_device, &input_assembly_state_create_info, &mgpu_input_assembly_state));
-
-  const MGPUColorBlendAttachmentState color_blend_attachment_states[1]{
-    {
-      .blend_enable = false,
-      .src_color_blend_factor = MGPU_BLEND_FACTOR_SRC_ALPHA,
-      .dst_color_blend_factor = MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-      .color_blend_op = MGPU_BLEND_OP_ADD,
-      .src_alpha_blend_factor = MGPU_BLEND_FACTOR_ONE,
-      .dst_alpha_blend_factor = MGPU_BLEND_FACTOR_ONE,
-      .alpha_blend_op = MGPU_BLEND_OP_MAX,
-      .color_write_mask = 0b1111
-    }
-  };
-  const MGPUColorBlendStateCreateInfo color_blend_state_create_info{
-    .attachment_count = sizeof(color_blend_attachment_states) / sizeof(MGPUColorBlendAttachmentState),
-    .attachments = color_blend_attachment_states
-  };
-  MGPUColorBlendState mgpu_color_blend_state{};
-  MGPU_CHECK(mgpuDeviceCreateColorBlendState(mgpu_device, &color_blend_state_create_info, &mgpu_color_blend_state));
-
   const MGPUVertexBinding vertex_input_binding{
     .binding = 0u,
     .stride = sizeof(float) * 6,
@@ -301,12 +260,7 @@ int main() {
     };
     MGPURenderCommandEncoder render_cmd_encoder = mgpuCommandListCmdBeginRenderPass(mgpu_cmd_list, &render_pass_info);
     mgpuRenderCommandEncoderCmdUseShaderProgram(render_cmd_encoder, mgpu_shader_program);
-    mgpuRenderCommandEncoderCmdUseRasterizerState(render_cmd_encoder, mgpu_rasterizer_state);
-    mgpuRenderCommandEncoderCmdUseInputAssemblyState(render_cmd_encoder, mgpu_input_assembly_state);
-    mgpuRenderCommandEncoderCmdUseColorBlendState(render_cmd_encoder, mgpu_color_blend_state);
     mgpuRenderCommandEncoderCmdUseVertexInputState(render_cmd_encoder, mgpu_vertex_input_state);
-    mgpuRenderCommandEncoderCmdSetViewport(render_cmd_encoder, 0.0f, 0.0f, 1600.f, 900.f);
-    mgpuRenderCommandEncoderCmdSetScissor(render_cmd_encoder, 0, 0, 0x7FFFFFFF, 0x7FFFFFFF);
     mgpuRenderCommandEncoderCmdBindVertexBuffer(render_cmd_encoder, 0u, mgpu_vbo, 0u);
     mgpuRenderCommandEncoderCmdDraw(render_cmd_encoder, 3u, 1u, 0u, 0u);
     mgpuRenderCommandEncoderClose(render_cmd_encoder);
@@ -324,9 +278,6 @@ int main() {
 done:
   mgpuCommandListDestroy(mgpu_cmd_list);
   mgpuVertexInputStateDestroy(mgpu_vertex_input_state);
-  mgpuColorBlendStateDestroy(mgpu_color_blend_state);
-  mgpuInputAssemblyStateDestroy(mgpu_input_assembly_state);
-  mgpuRasterizerStateDestroy(mgpu_rasterizer_state);
   mgpuShaderProgramDestroy(mgpu_shader_program);
   mgpuShaderModuleDestroy(mgpu_frag_shader);
   mgpuShaderModuleDestroy(mgpu_vert_shader);
