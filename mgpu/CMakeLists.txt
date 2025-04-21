@@ -2,6 +2,7 @@
 # TODO: allow disabling specific backends during the build
 
 set(SOURCES
+  src/backend/command_list/render_command_encoder.cpp
   src/backend/vulkan/lib/vulkan_instance.cpp
   src/backend/vulkan/lib/vulkan_physical_device.cpp
   src/backend/vulkan/pipeline_state/color_blend_state.cpp
@@ -27,7 +28,6 @@ set(SOURCES
   src/backend/vulkan/texture.cpp
   src/backend/vulkan/texture_view.cpp
   src/backend/device.cpp
-  src/backend/render_command_encoder.cpp
   src/frontend/buffer.cpp
   src/frontend/command_list.cpp
   src/frontend/destroy.cpp
@@ -69,6 +69,8 @@ set(HEADERS
   src/backend/vulkan/swap_chain.hpp
   src/backend/vulkan/texture.hpp
   src/backend/vulkan/texture_view.hpp
+  src/backend/command_list/command_list.hpp
+  src/backend/command_list/render_command_encoder.hpp
   src/backend/pipeline_state/color_blend_state.hpp
   src/backend/pipeline_state/depth_stencil_state.hpp
   src/backend/pipeline_state/input_assembly_state.hpp
@@ -77,12 +79,10 @@ set(HEADERS
   src/backend/pipeline_state/shader_program.hpp
   src/backend/pipeline_state/vertex_input_state.hpp
   src/backend/buffer.hpp
-  src/backend/command_list.hpp
   src/backend/device.hpp
   src/backend/instance.hpp
   src/backend/physical_device.hpp
   src/backend/queue.hpp
-  src/backend/render_command_encoder.hpp
   src/backend/resource_set_layout.hpp
   src/backend/resource_set.hpp
   src/backend/sampler.hpp

@@ -5,8 +5,7 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
-#include "backend/vulkan/physical_device.hpp"
-#include "backend/command_list.hpp"
+#include "backend/command_list/command_list.hpp"
 #include "backend/queue.hpp"
 #include "common/result.hpp"
 #include "common/limits.hpp"

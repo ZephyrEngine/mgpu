@@ -12,9 +12,9 @@
 #include <utility>
 #include <vector>
 
+#include "backend/device.hpp"
 #include "common/bump_allocator.hpp"
 #include "common/limits.hpp"
-#include "device.hpp"
 #include "render_command_encoder.hpp"
 
 namespace mgpu {
@@ -362,7 +362,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
     size_t m_active_chunk{};
     CommandBase* m_head{};
     CommandBase* m_tail{};
-    State m_state;
+    State m_state{};
 };
 
 }  // namespace mgpu

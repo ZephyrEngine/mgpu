@@ -1,6 +1,7 @@
 
 #include <mgpu/mgpu.h>
 
+#include "backend/command_list/command_list.hpp"
 #include "backend/pipeline_state/color_blend_state.hpp"
 #include "backend/pipeline_state/depth_stencil_state.hpp"
 #include "backend/pipeline_state/input_assembly_state.hpp"
@@ -9,7 +10,6 @@
 #include "backend/pipeline_state/shader_program.hpp"
 #include "backend/pipeline_state/vertex_input_state.hpp"
 #include "backend/buffer.hpp"
-#include "backend/command_list.hpp"
 #include "backend/device.hpp"
 #include "backend/instance.hpp"
 #include "backend/resource_set_layout.hpp"
