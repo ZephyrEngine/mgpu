@@ -70,6 +70,7 @@ set(HEADERS
   src/backend/vulkan/texture.hpp
   src/backend/vulkan/texture_view.hpp
   src/backend/command_list/command_list.hpp
+  src/backend/command_list/commands.hpp
   src/backend/command_list/render_command_encoder.hpp
   src/backend/pipeline_state/color_blend_state.hpp
   src/backend/pipeline_state/depth_stencil_state.hpp
