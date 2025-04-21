@@ -5,8 +5,8 @@
 #include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
-#include <unordered_map>
 
+#include "common/limits.hpp"
 #include "common/result.hpp"
 
 namespace mgpu {
@@ -61,7 +61,7 @@ class DeviceBase : atom::NonCopyable, atom::NonMoveable {
     InputAssemblyStateBase* m_default_input_assembly_state{};
     VertexInputStateBase* m_default_vertex_input_state{};
     DepthStencilStateBase* m_default_depth_stencil_state{};
-    std::unordered_map<size_t, ColorBlendStateBase*> m_default_color_blend_states{};
+    ColorBlendStateBase* m_default_color_blend_states[limits::max_color_attachments]{};
 };
 
 } // namespace mgpu

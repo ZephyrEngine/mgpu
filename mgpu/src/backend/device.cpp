@@ -1,5 +1,5 @@
 
-#include <vector>
+#include <atom/vector_n.hpp>
 
 #include "device.hpp"
 
@@ -62,9 +62,9 @@ DepthStencilStateBase* DeviceBase::GetDefaultDepthStencilState() {
 ColorBlendStateBase* DeviceBase::GetDefaultColorBlendState(u32 attachment_count) {
   auto& default_color_blend_state = m_default_color_blend_states[attachment_count];
   if(default_color_blend_state == nullptr) {
-    std::vector<MGPUColorBlendAttachmentState> attachment_blend_states{};
+    atom::Vector_N<MGPUColorBlendAttachmentState, limits::max_color_attachments> attachment_blend_states{};
     for(size_t i = 0; i < attachment_count; i++) {
-      attachment_blend_states.push_back({
+      attachment_blend_states.PushBack({
         .blend_enable = false,
         .src_color_blend_factor = MGPU_BLEND_FACTOR_SRC_ALPHA,
         .dst_color_blend_factor = MGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
@@ -78,7 +78,7 @@ ColorBlendStateBase* DeviceBase::GetDefaultColorBlendState(u32 attachment_count)
 
     default_color_blend_state = CreateColorBlendState({
       .attachment_count = attachment_count,
-      .attachments = attachment_blend_states.data()
+      .attachments = attachment_blend_states.Data()
     }).Unwrap();
   }
   return default_color_blend_state;
