@@ -3,7 +3,6 @@
 
 #include <mgpu/mgpu.h>
 
-#include <atom/float.hpp>
 #include <atom/integer.hpp>
 #include <atom/non_copyable.hpp>
 #include <atom/non_moveable.hpp>
@@ -25,8 +24,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       Clear();
     }
 
-    [[nodiscard]] bool HasErrors() const { return m_state.has_errors || IsIncomplete(); }
-    [[nodiscard]] bool IsIncomplete() const { return m_state.inside_render_pass; }
+    [[nodiscard]] bool HasErrors() const { return m_state.has_errors || m_state.inside_render_pass; }
 
     [[nodiscard]] const CommandBase* GetListHead() const { return m_head; }
 
@@ -46,7 +44,7 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
 
       const auto& command = Push<BeginRenderPassCommand>(this, begin_info);
 
-      RenderCommandEncoder& encoder = command.m_render_command_encoder;
+      auto& encoder = command.m_render_command_encoder;
       encoder.CmdUseRasterizerState(m_device->GetDefaultRasterizerState());
       encoder.CmdUseColorBlendState(m_device->GetDefaultColorBlendState(begin_info.color_attachment_count));
       encoder.CmdUseInputAssemblyState(m_device->GetDefaultInputAssemblyState());
@@ -55,61 +53,10 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       return &encoder;
     }
 
-    void CmdEndRenderPass() {
-      m_state.inside_render_pass = false;
-      Push<EndRenderPassCommand>();
-    }
-
-    void CmdUseShaderProgram(ShaderProgramBase* shader_program) {
-      Push<UseShaderProgramCommand>(shader_program);
-    }
-
-    void CmdUseRasterizerState(RasterizerStateBase* rasterizer_state) {
-      Push<UseRasterizerStateCommand>(rasterizer_state);
-    }
-
-    void CmdUseInputAssemblyState(InputAssemblyStateBase* input_assembly_state) {
-      Push<UseInputAssemblyStateCommand>(input_assembly_state);
-    }
-
-    void CmdUseColorBlendState(ColorBlendStateBase* color_blend_state) {
-      Push<UseColorBlendStateCommand>(color_blend_state);
-    }
-
-    void CmdUseVertexInputState(VertexInputStateBase* vertex_input_state) {
-      Push<UseVertexInputStateCommand>(vertex_input_state);
-    }
-
-    void CmdUseDepthStencilState(DepthStencilStateBase* depth_stencil_state) {
-      Push<UseDepthStencilStateCommand>(depth_stencil_state);
-    }
-
-    void CmdSetViewport(f32 x, f32 y, f32 width, f32 height) {
-      Push<SetViewportCommand>(x, y, width, height);
-    }
-
-    void CmdSetScissor(i32 x, i32 y, u32 width, u32 height) {
-      Push<SetScissorCommand>(x, y, width, height);
-    }
-
-    void CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset) {
-      Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
-    }
-
-    void CmdBindResourceSet(u32 index, ResourceSetBase* resource_set) {
-      Push<BindResourceSetCommand>(index, resource_set);
-    }
-
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
       // TODO: validate that enough state is bound for the draw.
       Push<DrawCommand>(vertex_count, instance_count, first_vertex, first_instance);
     }
-
-  private:
-    static constexpr size_t k_chunk_size = 65536u;
-
-    // TODO(fleroviux): implement this in a nicer way
-    friend class RenderCommandEncoder;
 
     template<typename T, typename... Args>
     const T& Push(Args&&... args) {
@@ -124,6 +71,11 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       }
       return *command;
     }
+
+  private:
+    static constexpr size_t k_chunk_size = 65536u;
+
+    friend class RenderCommandEncoder;
 
     void* AllocateMemory(size_t number_of_bytes) {
       void* address = m_memory_chunks[m_active_chunk].Allocate(number_of_bytes);
