@@ -27,39 +27,26 @@ Queue::Queue(
   VkDevice vk_device,
   VkQueue vk_queue,
   VkCommandPool vk_cmd_pool,
-  std::vector<VkCommandBuffer> vk_cmd_buffers,
-  std::vector<VkFence> vk_cmd_buffer_fences,
+  std::vector<FencedCommandBuffer> fenced_cmd_buffers,
   std::shared_ptr<DeleterQueue> deleter_queue,
   std::shared_ptr<RenderPassCache> render_pass_cache
 )   : m_vk_device{vk_device}
     , m_vk_queue{vk_queue}
     , m_vk_cmd_pool{vk_cmd_pool}
-    , m_vk_cmd_buffers{std::move(vk_cmd_buffers)}
-    , m_vk_cmd_buffer_fences{std::move(vk_cmd_buffer_fences)}
+    , m_fenced_cmd_buffers{std::move(fenced_cmd_buffers)}
     , m_deleter_queue{deleter_queue}
     , m_render_pass_cache{std::move(render_pass_cache)}
     , m_graphics_pipeline_cache{vk_device, std::move(deleter_queue)} {
-  m_vk_cmd_buffer = m_vk_cmd_buffers[0];
-  m_vk_cmd_buffer_fence = m_vk_cmd_buffer_fences[0];
-
-  const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
-    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-    .pNext = nullptr,
-    .flags = 0,
-    .pInheritanceInfo = nullptr
-  };
-  vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info);
-
-  vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence);
+  BeginNextCommandBuffer();
 }
 
 Queue::~Queue() {
   Flush();
 
-  for(const auto vk_fence : m_vk_cmd_buffer_fences) {
-    vkDestroyFence(m_vk_device, vk_fence, nullptr);
+  for(const auto& fenced_cmd_buffer : m_fenced_cmd_buffers) {
+    vkDestroyFence(m_vk_device, fenced_cmd_buffer.vk_fence, nullptr);
+    vkFreeCommandBuffers(m_vk_device, m_vk_cmd_pool, 1u, &fenced_cmd_buffer.vk_cmd_buffer);
   }
-  vkFreeCommandBuffers(m_vk_device, m_vk_cmd_pool, (u32)m_vk_cmd_buffers.size(), m_vk_cmd_buffers.data());
   vkDestroyCommandPool(m_vk_device, m_vk_cmd_pool, nullptr);
 }
 
@@ -82,7 +69,7 @@ Result<std::unique_ptr<Queue>> Queue::Create(
   };
   MGPU_VK_FORWARD_ERROR(vkCreateCommandPool(vk_device, &vk_cmd_pool_create_info, nullptr, &vk_cmd_pool));
 
-  // TODO: how many command buffers is ideal? Make it dependent on the number of frames in flight?
+  // TODO: how many command buffers is ideal? Make it dependent on the number of swap chain images?
   static constexpr size_t k_command_buffer_count = 16u;
 
   const VkCommandBufferAllocateInfo vk_cmd_buffer_alloc_info{
@@ -96,29 +83,28 @@ Result<std::unique_ptr<Queue>> Queue::Create(
   const VkFenceCreateInfo vk_fence_create_info{
     .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
     .pNext = nullptr,
-    .flags = VK_FENCE_CREATE_SIGNALED_BIT
+    .flags = 0
   };
 
-  std::vector<VkCommandBuffer> vk_command_buffers{};
-  std::vector<VkFence> vk_command_buffer_fences{};
+  std::vector<FencedCommandBuffer> fenced_cmd_buffers{};
 
   for(size_t i = 0; i < k_command_buffer_count; i++) {
+    // TODO(fleroviux): if this fails we will leak memory
     VkCommandBuffer vk_cmd_buffer{};
-    MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer)); // TODO(fleroviux): this leaks memory
+    MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer));
 
-    VkFence vk_cmd_buffer_fence{};
-    MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
+    // TODO(fleroviux): if this fails we will leak memory
+    VkFence vk_fence{};
+    MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_fence));
 
-    vk_command_buffers.push_back(vk_cmd_buffer);
-    vk_command_buffer_fences.push_back(vk_cmd_buffer_fence);
+    fenced_cmd_buffers.push_back({vk_cmd_buffer, vk_fence});
   }
 
   return std::unique_ptr<Queue>{new Queue{
     vk_device,
     vk_queue,
     vk_cmd_pool,
-    std::move(vk_command_buffers),
-    std::move(vk_command_buffer_fences),
+    std::move(fenced_cmd_buffers),
     std::move(deleter_queue),
     std::move(render_pass_cache)
   }};
@@ -290,6 +276,13 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
 }
 
 MGPUResult Queue::Flush() {
+  // TODO: begin and submit on demand instead?
+  MGPU_FORWARD_ERROR(SubmitCurrentCommandBuffer());
+  MGPU_FORWARD_ERROR(BeginNextCommandBuffer());
+  return MGPU_SUCCESS;
+}
+
+MGPUResult Queue::SubmitCurrentCommandBuffer() {
   const VkPipelineStageFlags vk_wait_dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
   VkSubmitInfo vk_submit_info{
@@ -313,13 +306,16 @@ MGPUResult Queue::Flush() {
     vk_submit_info.pSignalSemaphores = &vk_swap_chain_acquire_semaphore;
   }
 
-
   MGPU_VK_FORWARD_ERROR(vkEndCommandBuffer(m_vk_cmd_buffer));
   MGPU_VK_FORWARD_ERROR(vkQueueSubmit(m_vk_queue, 1u, &vk_submit_info, m_vk_cmd_buffer_fence));
+  m_fenced_cmd_buffers[m_current_cmd_buffer].submitted = true;
+  return MGPU_SUCCESS;
+}
 
-  m_current_cmd_buffer = (m_current_cmd_buffer + 1u) % m_vk_cmd_buffers.size();
-  m_vk_cmd_buffer = m_vk_cmd_buffers[m_current_cmd_buffer];
-  m_vk_cmd_buffer_fence = m_vk_cmd_buffer_fences[m_current_cmd_buffer];
+MGPUResult Queue::BeginNextCommandBuffer() {
+  m_current_cmd_buffer = (m_current_cmd_buffer + 1u) % m_fenced_cmd_buffers.size();
+  m_vk_cmd_buffer = m_fenced_cmd_buffers[m_current_cmd_buffer].vk_cmd_buffer;
+  m_vk_cmd_buffer_fence = m_fenced_cmd_buffers[m_current_cmd_buffer].vk_fence;
 
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -327,11 +323,17 @@ MGPUResult Queue::Flush() {
     .flags = 0,
     .pInheritanceInfo = nullptr
   };
-  MGPU_VK_FORWARD_ERROR(vkWaitForFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence, VK_TRUE, ~0ull));
-  MGPU_VK_FORWARD_ERROR(vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence));
+  if(m_fenced_cmd_buffers[m_current_cmd_buffer].submitted) {
+    MGPU_VK_FORWARD_ERROR(vkWaitForFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence, VK_TRUE, ~0ull));
+    MGPU_VK_FORWARD_ERROR(vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence));
+    m_fenced_cmd_buffers[m_current_cmd_buffer].submitted = false;
+  }
   MGPU_VK_FORWARD_ERROR(vkResetCommandBuffer(m_vk_cmd_buffer, 0u));
   MGPU_VK_FORWARD_ERROR(vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info));
-  m_device->GetDeleterQueue().Drain();
+  if(m_device) {
+    // TODO: this is broken with multiple command buffers in flight
+    m_device->GetDeleterQueue().Drain();
+  }
   return MGPU_SUCCESS;
 }
 

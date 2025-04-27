@@ -46,12 +46,17 @@ class Queue final : public QueueBase {
     MGPUResult Flush() override;
 
   private:
+    struct FencedCommandBuffer {
+      VkCommandBuffer vk_cmd_buffer{};
+      VkFence vk_fence{};
+      bool submitted{false};
+    };
+
     Queue(
       VkDevice vk_device,
       VkQueue vk_queue,
       VkCommandPool vk_cmd_pool,
-      std::vector<VkCommandBuffer> vk_cmd_buffers,
-      std::vector<VkFence> vk_cmd_buffer_fences,
+      std::vector<FencedCommandBuffer> fenced_cmd_buffers,
       std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
@@ -64,6 +69,9 @@ class Queue final : public QueueBase {
         bool require_pipeline_switch{true};
       } render_pass{};
     };
+
+    MGPUResult SubmitCurrentCommandBuffer();
+    MGPUResult BeginNextCommandBuffer();
 
     void HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command);
     void HandleCmdEndRenderPass(CommandListState& state);
@@ -88,9 +96,8 @@ class Queue final : public QueueBase {
     VkCommandPool m_vk_cmd_pool;
     VkCommandBuffer m_vk_cmd_buffer;
     VkFence m_vk_cmd_buffer_fence;
+    std::vector<FencedCommandBuffer> m_fenced_cmd_buffers;
 
-    std::vector<VkCommandBuffer> m_vk_cmd_buffers;
-    std::vector<VkFence> m_vk_cmd_buffer_fences;
     std::shared_ptr<DeleterQueue> m_deleter_queue;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
     GraphicsPipelineCache m_graphics_pipeline_cache;
