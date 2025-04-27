@@ -4,6 +4,7 @@
 #include <atom/vector_n.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
+#include <vector>
 
 #include "backend/command_list/command_list.hpp"
 #include "backend/queue.hpp"
@@ -49,8 +50,8 @@ class Queue final : public QueueBase {
       VkDevice vk_device,
       VkQueue vk_queue,
       VkCommandPool vk_cmd_pool,
-      VkCommandBuffer vk_cmd_buffer,
-      VkFence vk_cmd_buffer_fence,
+      std::vector<VkCommandBuffer> vk_cmd_buffers,
+      std::vector<VkFence> vk_cmd_buffer_fences,
       std::shared_ptr<DeleterQueue> deleter_queue,
       std::shared_ptr<RenderPassCache> render_pass_cache
     );
@@ -83,9 +84,13 @@ class Queue final : public QueueBase {
     Device* m_device;
     VkDevice m_vk_device;
     VkQueue m_vk_queue;
+    size_t m_current_cmd_buffer{};
     VkCommandPool m_vk_cmd_pool;
     VkCommandBuffer m_vk_cmd_buffer;
     VkFence m_vk_cmd_buffer_fence;
+
+    std::vector<VkCommandBuffer> m_vk_cmd_buffers;
+    std::vector<VkFence> m_vk_cmd_buffer_fences;
     std::shared_ptr<DeleterQueue> m_deleter_queue;
     std::shared_ptr<RenderPassCache> m_render_pass_cache;
     GraphicsPipelineCache m_graphics_pipeline_cache;

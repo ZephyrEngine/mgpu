@@ -23,24 +23,25 @@
 
 namespace mgpu::vulkan {
 
-// TODO(fleroviux): keep multiple command buffers around to a) avoid stalling and b) allow submission of multiple, smaller command buffers.
-
 Queue::Queue(
   VkDevice vk_device,
   VkQueue vk_queue,
   VkCommandPool vk_cmd_pool,
-  VkCommandBuffer vk_cmd_buffer,
-  VkFence vk_cmd_buffer_fence,
+  std::vector<VkCommandBuffer> vk_cmd_buffers,
+  std::vector<VkFence> vk_cmd_buffer_fences,
   std::shared_ptr<DeleterQueue> deleter_queue,
   std::shared_ptr<RenderPassCache> render_pass_cache
 )   : m_vk_device{vk_device}
     , m_vk_queue{vk_queue}
     , m_vk_cmd_pool{vk_cmd_pool}
-    , m_vk_cmd_buffer{vk_cmd_buffer}
-    , m_vk_cmd_buffer_fence{vk_cmd_buffer_fence}
+    , m_vk_cmd_buffers{std::move(vk_cmd_buffers)}
+    , m_vk_cmd_buffer_fences{std::move(vk_cmd_buffer_fences)}
     , m_deleter_queue{deleter_queue}
     , m_render_pass_cache{std::move(render_pass_cache)}
     , m_graphics_pipeline_cache{vk_device, std::move(deleter_queue)} {
+  m_vk_cmd_buffer = m_vk_cmd_buffers[0];
+  m_vk_cmd_buffer_fence = m_vk_cmd_buffer_fences[0];
+
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
     .pNext = nullptr,
@@ -48,13 +49,17 @@ Queue::Queue(
     .pInheritanceInfo = nullptr
   };
   vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info);
+
+  vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence);
 }
 
 Queue::~Queue() {
   Flush();
 
-  vkDestroyFence(m_vk_device, m_vk_cmd_buffer_fence, nullptr);
-  vkFreeCommandBuffers(m_vk_device, m_vk_cmd_pool, 1u, &m_vk_cmd_buffer);
+  for(const auto vk_fence : m_vk_cmd_buffer_fences) {
+    vkDestroyFence(m_vk_device, vk_fence, nullptr);
+  }
+  vkFreeCommandBuffers(m_vk_device, m_vk_cmd_pool, (u32)m_vk_cmd_buffers.size(), m_vk_cmd_buffers.data());
   vkDestroyCommandPool(m_vk_device, m_vk_cmd_pool, nullptr);
 }
 
@@ -68,8 +73,6 @@ Result<std::unique_ptr<Queue>> Queue::Create(
   vkGetDeviceQueue(vk_device, queue_family_index, 0u, &vk_queue);
 
   VkCommandPool vk_cmd_pool{};
-  VkCommandBuffer vk_cmd_buffer{};
-  VkFence vk_cmd_buffer_fence{};
 
   const VkCommandPoolCreateInfo vk_cmd_pool_create_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -79,6 +82,9 @@ Result<std::unique_ptr<Queue>> Queue::Create(
   };
   MGPU_VK_FORWARD_ERROR(vkCreateCommandPool(vk_device, &vk_cmd_pool_create_info, nullptr, &vk_cmd_pool));
 
+  // TODO: how many command buffers is ideal? Make it dependent on the number of frames in flight?
+  static constexpr size_t k_command_buffer_count = 16u;
+
   const VkCommandBufferAllocateInfo vk_cmd_buffer_alloc_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
     .pNext = nullptr,
@@ -86,21 +92,33 @@ Result<std::unique_ptr<Queue>> Queue::Create(
     .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
     .commandBufferCount = 1u
   };
-  MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer)); // TODO(fleroviux): this leaks memory
 
   const VkFenceCreateInfo vk_fence_create_info{
     .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
     .pNext = nullptr,
-    .flags = 0
+    .flags = VK_FENCE_CREATE_SIGNALED_BIT
   };
-  MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
+
+  std::vector<VkCommandBuffer> vk_command_buffers{};
+  std::vector<VkFence> vk_command_buffer_fences{};
+
+  for(size_t i = 0; i < k_command_buffer_count; i++) {
+    VkCommandBuffer vk_cmd_buffer{};
+    MGPU_VK_FORWARD_ERROR(vkAllocateCommandBuffers(vk_device, &vk_cmd_buffer_alloc_info, &vk_cmd_buffer)); // TODO(fleroviux): this leaks memory
+
+    VkFence vk_cmd_buffer_fence{};
+    MGPU_VK_FORWARD_ERROR(vkCreateFence(vk_device, &vk_fence_create_info, nullptr, &vk_cmd_buffer_fence)); // TODO(fleroviux): this leaks memory
+
+    vk_command_buffers.push_back(vk_cmd_buffer);
+    vk_command_buffer_fences.push_back(vk_cmd_buffer_fence);
+  }
 
   return std::unique_ptr<Queue>{new Queue{
     vk_device,
     vk_queue,
     vk_cmd_pool,
-    vk_cmd_buffer,
-    vk_cmd_buffer_fence,
+    std::move(vk_command_buffers),
+    std::move(vk_command_buffer_fences),
     std::move(deleter_queue),
     std::move(render_pass_cache)
   }};
@@ -295,8 +313,13 @@ MGPUResult Queue::Flush() {
     vk_submit_info.pSignalSemaphores = &vk_swap_chain_acquire_semaphore;
   }
 
+
   MGPU_VK_FORWARD_ERROR(vkEndCommandBuffer(m_vk_cmd_buffer));
   MGPU_VK_FORWARD_ERROR(vkQueueSubmit(m_vk_queue, 1u, &vk_submit_info, m_vk_cmd_buffer_fence));
+
+  m_current_cmd_buffer = (m_current_cmd_buffer + 1u) % m_vk_cmd_buffers.size();
+  m_vk_cmd_buffer = m_vk_cmd_buffers[m_current_cmd_buffer];
+  m_vk_cmd_buffer_fence = m_vk_cmd_buffer_fences[m_current_cmd_buffer];
 
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
