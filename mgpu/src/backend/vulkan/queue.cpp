@@ -44,6 +44,9 @@ Queue::~Queue() {
   Flush();
 
   for(const auto& fenced_cmd_buffer : m_fenced_cmd_buffers) {
+    if(fenced_cmd_buffer.submitted) {
+      vkWaitForFences(m_vk_device, 1u, &fenced_cmd_buffer.vk_fence, VK_TRUE, ~0ull);
+    }
     vkDestroyFence(m_vk_device, fenced_cmd_buffer.vk_fence, nullptr);
     vkFreeCommandBuffers(m_vk_device, m_vk_cmd_pool, 1u, &fenced_cmd_buffer.vk_cmd_buffer);
   }
@@ -276,7 +279,7 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
 }
 
 MGPUResult Queue::Flush() {
-  // TODO: begin and submit on demand instead?
+  // TODO: begin and submit command buffers on demand instead?
   MGPU_FORWARD_ERROR(SubmitCurrentCommandBuffer());
   MGPU_FORWARD_ERROR(BeginNextCommandBuffer());
   return MGPU_SUCCESS;
@@ -309,13 +312,16 @@ MGPUResult Queue::SubmitCurrentCommandBuffer() {
   MGPU_VK_FORWARD_ERROR(vkEndCommandBuffer(m_vk_cmd_buffer));
   MGPU_VK_FORWARD_ERROR(vkQueueSubmit(m_vk_queue, 1u, &vk_submit_info, m_vk_cmd_buffer_fence));
   m_fenced_cmd_buffers[m_current_cmd_buffer].submitted = true;
+  m_fenced_cmd_buffers[m_current_cmd_buffer].timestamp_submitted = m_device->GetDeleterQueue().GetTimestamp();
+  m_device->GetDeleterQueue().BumpTimestamp();
+  m_current_cmd_buffer = (m_current_cmd_buffer + 1u) % m_fenced_cmd_buffers.size();
   return MGPU_SUCCESS;
 }
 
 MGPUResult Queue::BeginNextCommandBuffer() {
-  m_current_cmd_buffer = (m_current_cmd_buffer + 1u) % m_fenced_cmd_buffers.size();
-  m_vk_cmd_buffer = m_fenced_cmd_buffers[m_current_cmd_buffer].vk_cmd_buffer;
-  m_vk_cmd_buffer_fence = m_fenced_cmd_buffers[m_current_cmd_buffer].vk_fence;
+  FencedCommandBuffer& fenced_cmd_buffer = m_fenced_cmd_buffers[m_current_cmd_buffer];
+  m_vk_cmd_buffer = fenced_cmd_buffer.vk_cmd_buffer;
+  m_vk_cmd_buffer_fence = fenced_cmd_buffer.vk_fence;
 
   const VkCommandBufferBeginInfo vk_cmd_buffer_begin_info{
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -323,17 +329,14 @@ MGPUResult Queue::BeginNextCommandBuffer() {
     .flags = 0,
     .pInheritanceInfo = nullptr
   };
-  if(m_fenced_cmd_buffers[m_current_cmd_buffer].submitted) {
+  if(fenced_cmd_buffer.submitted) {
     MGPU_VK_FORWARD_ERROR(vkWaitForFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence, VK_TRUE, ~0ull));
     MGPU_VK_FORWARD_ERROR(vkResetFences(m_vk_device, 1u, &m_vk_cmd_buffer_fence));
-    m_fenced_cmd_buffers[m_current_cmd_buffer].submitted = false;
+    m_device->GetDeleterQueue().Drain(fenced_cmd_buffer.timestamp_submitted);
+    fenced_cmd_buffer.submitted = false;
   }
   MGPU_VK_FORWARD_ERROR(vkResetCommandBuffer(m_vk_cmd_buffer, 0u));
   MGPU_VK_FORWARD_ERROR(vkBeginCommandBuffer(m_vk_cmd_buffer, &vk_cmd_buffer_begin_info));
-  if(m_device) {
-    // TODO: this is broken with multiple command buffers in flight
-    m_device->GetDeleterQueue().Drain();
-  }
   return MGPU_SUCCESS;
 }
 

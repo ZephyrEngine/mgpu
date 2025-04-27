@@ -45,7 +45,7 @@ Device::Device(
 Device::~Device() {
   m_queues = {};               // HACK: ensure that the queues is destroyed before the device
   m_render_pass_cache.reset(); // HACK: ensure that render pass cache is destroyed before the device
-  m_deleter_queue->Drain();
+  m_deleter_queue->DrainAll();
 
   vkDeviceWaitIdle(m_vk_device);
   vmaDestroyAllocator(m_vma_allocator);

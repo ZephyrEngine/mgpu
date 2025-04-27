@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <atom/integer.hpp>
 #include <atom/vector_n.hpp>
 #include <memory>
 #include <vulkan/vulkan.h>
@@ -50,6 +51,7 @@ class Queue final : public QueueBase {
       VkCommandBuffer vk_cmd_buffer{};
       VkFence vk_fence{};
       bool submitted{false};
+      u64 timestamp_submitted{};
     };
 
     Queue(
