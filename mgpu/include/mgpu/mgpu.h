@@ -257,6 +257,11 @@ typedef enum MGPUVertexFormat {
   MGPU_VERTEX_FORMAT_STUB_XY3232 = 2
 } MGPUVertexFormat;
 
+typedef enum MGPUIndexFormat {
+  MGPU_INDEX_FORMAT_U16 = 0,
+  MGPU_INDEX_FORMAT_U32 = 1
+} MGPUIndexFormat;
+
 typedef enum MGPUCompareOp {
   MGPU_COMPARE_OP_NEVER = 0,
   MGPU_COMPARE_OP_LESS = 1,
@@ -708,8 +713,10 @@ void mgpuRenderCommandEncoderCmdUseDepthStencilState(MGPURenderCommandEncoder re
 void mgpuRenderCommandEncoderCmdSetViewport(MGPURenderCommandEncoder render_command_encoder, float x, float y, float width, float height);
 void mgpuRenderCommandEncoderCmdSetScissor(MGPURenderCommandEncoder render_command_encoder, int32_t x, int32_t y, uint32_t width, uint32_t height);
 void mgpuRenderCommandEncoderCmdBindVertexBuffer(MGPURenderCommandEncoder render_command_encoder, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset);
+void mgpuRenderCommandEncoderCmdBindIndexBuffer(MGPURenderCommandEncoder render_command_encoder, MGPUBuffer buffer, uint64_t buffer_offset, MGPUIndexFormat index_format);
 void mgpuRenderCommandEncoderCmdBindResourceSet(MGPURenderCommandEncoder render_command_encoder, uint32_t index, MGPUResourceSet resource_set);
 void mgpuRenderCommandEncoderCmdDraw(MGPURenderCommandEncoder render_command_encoder, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance);
+void mgpuRenderCommandEncoderCmdDrawIndexed(MGPURenderCommandEncoder render_command_encoder, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance);
 void mgpuRenderCommandEncoderClose(MGPURenderCommandEncoder render_command_encoder);
 
 // MGPUSurface methods

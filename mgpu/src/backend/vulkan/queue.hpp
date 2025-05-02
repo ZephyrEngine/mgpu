@@ -86,8 +86,10 @@ class Queue final : public QueueBase {
     void HandleCmdSetViewport(CommandListState& state, const SetViewportCommand& command);
     void HandleCmdSetScissor(CommandListState& state, const SetScissorCommand& command);
     void HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command);
+    void HandleCmdBindIndexBuffer(CommandListState& state, const BindIndexBufferCommand& command);
     void HandleCmdBindResourceSet(CommandListState& state, const BindResourceSetCommand& command);
     void HandleCmdDraw(CommandListState& state, const DrawCommand& command);
+    void HandleCmdDrawIndexed(CommandListState& state, const DrawIndexedCommand& command);
 
     void BindGraphicsPipelineForCurrentState(CommandListState& state);
 

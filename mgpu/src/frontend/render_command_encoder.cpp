@@ -42,8 +42,12 @@ void mgpuRenderCommandEncoderCmdSetScissor(MGPURenderCommandEncoder render_comma
 
 void mgpuRenderCommandEncoderCmdBindVertexBuffer(MGPURenderCommandEncoder render_command_encoder, uint32_t binding, MGPUBuffer buffer, uint64_t buffer_offset) {
   // TODO(fleroviux): implement validation? i.e. buffer usage
-
   ((mgpu::RenderCommandEncoder*)render_command_encoder)->CmdBindVertexBuffer(binding, (mgpu::BufferBase*)buffer, buffer_offset);
+}
+
+void mgpuRenderCommandEncoderCmdBindIndexBuffer(MGPURenderCommandEncoder render_command_encoder, MGPUBuffer buffer, uint64_t buffer_offset, MGPUIndexFormat index_format) {
+  // TODO(fleroviux): implement validation? i.e. buffer usage
+  ((mgpu::RenderCommandEncoder*)render_command_encoder)->CmdBindIndexBuffer((mgpu::BufferBase*)buffer, buffer_offset, index_format);
 }
 
 void mgpuRenderCommandEncoderCmdBindResourceSet(MGPURenderCommandEncoder render_command_encoder, uint32_t index, MGPUResourceSet resource_set) {
@@ -53,9 +57,15 @@ void mgpuRenderCommandEncoderCmdBindResourceSet(MGPURenderCommandEncoder render_
 
 void mgpuRenderCommandEncoderCmdDraw(MGPURenderCommandEncoder render_command_encoder, uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
   // TODO(fleroviux): validate that all vertex buffer bindings have something bound?
-
   ((mgpu::RenderCommandEncoder*)render_command_encoder)->CmdDraw(vertex_count, instance_count, first_vertex, first_instance);
 }
+
+void mgpuRenderCommandEncoderCmdDrawIndexed(MGPURenderCommandEncoder render_command_encoder, uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset, uint32_t first_instance) {
+  // TODO(fleroviux): validate that all vertex buffer bindings have something bound?
+  // Validate that an index buffer is bound?
+  ((mgpu::RenderCommandEncoder*)render_command_encoder)->CmdDrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
+}
+
 
 void mgpuRenderCommandEncoderClose(MGPURenderCommandEncoder render_command_encoder) {
   ((mgpu::RenderCommandEncoder*)render_command_encoder)->Close();

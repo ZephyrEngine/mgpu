@@ -36,8 +36,10 @@ enum class CommandType {
   SetViewport,
   SetScissor,
   BindVertexBuffer,
+  BindIndexBuffer,
   BindResourceSet,
-  Draw
+  Draw,
+  DrawIndexed
 };
 
 struct CommandBase : atom::NonCopyable, atom::NonMoveable {
@@ -200,6 +202,19 @@ struct BindVertexBufferCommand : CommandBase {
   u64 m_buffer_offset;
 };
 
+struct BindIndexBufferCommand : CommandBase {
+  BindIndexBufferCommand(BufferBase* buffer, u64 buffer_offset, MGPUIndexFormat index_format)
+      : CommandBase{CommandType::BindIndexBuffer}
+      , m_buffer{buffer}
+      , m_buffer_offset{buffer_offset}
+      , m_index_format{index_format} {
+  }
+
+  BufferBase* m_buffer;
+  u64 m_buffer_offset;
+  MGPUIndexFormat m_index_format;
+};
+
 struct BindResourceSetCommand : CommandBase {
   BindResourceSetCommand(u32 index, ResourceSetBase* resource_set)
       : CommandBase{CommandType::BindResourceSet}
@@ -223,6 +238,23 @@ struct DrawCommand : CommandBase {
   u32 m_vertex_count;
   u32 m_instance_count;
   u32 m_first_vertex;
+  u32 m_first_instance;
+};
+
+struct DrawIndexedCommand: CommandBase {
+  DrawIndexedCommand(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance)
+      : CommandBase{CommandType::DrawIndexed}
+      , m_index_count{index_count}
+      , m_instance_count{instance_count}
+      , m_first_index{first_index}
+      , m_vertex_offset{vertex_offset}
+      , m_first_instance{first_instance} {
+  }
+
+  u32 m_index_count;
+  u32 m_instance_count;
+  u32 m_first_index;
+  i32 m_vertex_offset;
   u32 m_first_instance;
 };
 

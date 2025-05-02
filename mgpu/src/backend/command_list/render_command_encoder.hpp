@@ -31,8 +31,10 @@ class RenderCommandEncoder {
     void CmdSetViewport(f32 x, f32 y, f32 width, f32 height);
     void CmdSetScissor(i32 x, i32 y, u32 width, u32 height);
     void CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset);
+    void CmdBindIndexBuffer(BufferBase* buffer, u64 buffer_offset, MGPUIndexFormat index_format);
     void CmdBindResourceSet(u32 index, ResourceSetBase* resource_set);
     void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance);
+    void CmdDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance);
     void Close();
 
   private:

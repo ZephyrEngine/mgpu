@@ -40,12 +40,20 @@ void RenderCommandEncoder::CmdBindVertexBuffer(u32 binding, BufferBase* buffer, 
   m_command_list->Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
 }
 
+void RenderCommandEncoder::CmdBindIndexBuffer(BufferBase* buffer, u64 buffer_offset, MGPUIndexFormat index_format) {
+  m_command_list->Push<BindIndexBufferCommand>(buffer, buffer_offset, index_format);
+}
+
 void RenderCommandEncoder::CmdBindResourceSet(u32 index, ResourceSetBase* resource_set) {
   m_command_list->Push<BindResourceSetCommand>(index, resource_set);
 }
 
 void RenderCommandEncoder::CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
   m_command_list->Push<DrawCommand>(vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void RenderCommandEncoder::CmdDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) {
+  m_command_list->Push<DrawIndexedCommand>(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void RenderCommandEncoder::Close() {

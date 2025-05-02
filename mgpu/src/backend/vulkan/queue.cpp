@@ -176,8 +176,10 @@ MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {
       case CommandType::SetViewport: HandleCmdSetViewport(state, *(SetViewportCommand*)command); break;
       case CommandType::SetScissor: HandleCmdSetScissor(state, *(SetScissorCommand*)command); break;
       case CommandType::BindVertexBuffer: HandleCmdBindVertexBuffer(state, *(BindVertexBufferCommand*)command); break;
+      case CommandType::BindIndexBuffer: HandleCmdBindIndexBuffer(state, *(BindIndexBufferCommand*)command); break;
       case CommandType::BindResourceSet: HandleCmdBindResourceSet(state, *(BindResourceSetCommand*)command); break;
       case CommandType::Draw: HandleCmdDraw(state, *(DrawCommand*)command); break;
+      case CommandType::DrawIndexed: HandleCmdDrawIndexed(state, *(DrawIndexedCommand*)command); break;
       default: {
         ATOM_PANIC("mgpu: Vulkan: unhandled command type: {}", (int)command_type);
       }
@@ -589,6 +591,11 @@ void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexB
   vkCmdBindVertexBuffers(m_vk_cmd_buffer, command.m_binding, 1u, &vk_buffer, &command.m_buffer_offset);
 }
 
+void Queue::HandleCmdBindIndexBuffer(CommandListState& state, const BindIndexBufferCommand& command) {
+  // TODO(fleroviux): implement a resource barrier
+  vkCmdBindIndexBuffer(m_vk_cmd_buffer, ((Buffer*)command.m_buffer)->Handle(), command.m_buffer_offset, MGPUIndexFormatToVkIndexType(command.m_index_format));
+}
+
 void Queue::HandleCmdBindResourceSet(CommandListState& state, const BindResourceSetCommand& command) {
   const auto vk_pipeline_layout = state.render_pass.pipeline_query.m_shader_program->GetVkPipelineLayout();
   const auto vk_descriptor_set = ((ResourceSet*)command.m_resource_set)->Handle();
@@ -599,6 +606,11 @@ void Queue::HandleCmdBindResourceSet(CommandListState& state, const BindResource
 void Queue::HandleCmdDraw(CommandListState& state, const DrawCommand& command) {
   BindGraphicsPipelineForCurrentState(state);
   vkCmdDraw(m_vk_cmd_buffer, command.m_vertex_count, command.m_instance_count, command.m_first_vertex, command.m_first_instance);
+}
+
+void Queue::HandleCmdDrawIndexed(CommandListState& state, const DrawIndexedCommand& command) {
+  BindGraphicsPipelineForCurrentState(state);
+  vkCmdDrawIndexed(m_vk_cmd_buffer, command.m_index_count, command.m_instance_count, command.m_first_index, command.m_vertex_offset, command.m_first_instance);
 }
 
 void Queue::BindGraphicsPipelineForCurrentState(CommandListState& state) {

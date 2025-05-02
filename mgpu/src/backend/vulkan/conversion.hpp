@@ -239,6 +239,14 @@ inline VkFormat MGPUVertexFormatToVkFormat(MGPUVertexFormat vertex_format) {
   }
 }
 
+inline VkIndexType MGPUIndexFormatToVkIndexType(MGPUIndexFormat index_format) {
+  switch(index_format) {
+    case MGPU_INDEX_FORMAT_U16: return VK_INDEX_TYPE_UINT16;
+    case MGPU_INDEX_FORMAT_U32: return VK_INDEX_TYPE_UINT32;
+    default: ATOM_PANIC("unhandled index format: {}", (int)index_format);
+  }
+}
+
 inline VkCompareOp MGPUCompareOpToVkCompareOp(MGPUCompareOp compare_op) {
   switch(compare_op) {
     case MGPU_COMPARE_OP_NEVER:            return VK_COMPARE_OP_NEVER;
