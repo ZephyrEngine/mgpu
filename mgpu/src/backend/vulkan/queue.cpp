@@ -120,7 +120,7 @@ void Queue::SetDevice(Device* device) {
 void Queue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
   // If we still have another semaphore around for some reason, destroy it now.
   DestroySwapChainAcquireSemaphore();
-  
+
   m_vk_swap_chain_acquire_semaphore = vk_swap_chain_acquire_semaphore;
 }
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <vector>
 
 #include "backend/vulkan/instance.hpp"
 #include "backend/physical_device.hpp"
@@ -40,6 +41,45 @@ MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t*
     std::memcpy(physical_devices, cxx_physical_devices.data(), copy_size * sizeof(MGPUPhysicalDevice));
     if(copy_size < cxx_physical_devices.size()) {
       return MGPU_INCOMPLETE;
+    }
+  }
+
+  return MGPU_SUCCESS;
+}
+
+MGPUResult mgpuInstanceSelectPhysicalDevice(MGPUInstance instance, MGPUPowerPreference power_preference, MGPUPhysicalDevice* physical_device) {
+  uint32_t mgpu_physical_device_count{};
+  std::vector<MGPUPhysicalDevice> mgpu_physical_devices{};
+  MGPU_FORWARD_ERROR(mgpuInstanceEnumeratePhysicalDevices(instance, &mgpu_physical_device_count, nullptr));
+  mgpu_physical_devices.resize(mgpu_physical_device_count);
+  MGPU_FORWARD_ERROR(mgpuInstanceEnumeratePhysicalDevices(instance, &mgpu_physical_device_count, mgpu_physical_devices.data()));
+
+  std::optional<MGPUPhysicalDevice> discrete_gpu{};
+  std::optional<MGPUPhysicalDevice> integrated_gpu{};
+  std::optional<MGPUPhysicalDevice> virtual_gpu{};
+
+  for(MGPUPhysicalDevice mgpu_physical_device : mgpu_physical_devices) {
+    MGPUPhysicalDeviceInfo info{};
+    MGPU_FORWARD_ERROR(mgpuPhysicalDeviceGetInfo(mgpu_physical_device, &info));
+    switch(info.device_type) {
+      case MGPU_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:     discrete_gpu = mgpu_physical_device; break;
+      case MGPU_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: integrated_gpu = mgpu_physical_device; break;
+      case MGPU_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:       virtual_gpu = mgpu_physical_device; break;
+    }
+  }
+
+  switch(power_preference) {
+    case MGPU_POWER_PREFERENCE_LOW_POWER: {
+      *physical_device = integrated_gpu.value_or(
+        discrete_gpu.value_or(
+          virtual_gpu.value_or((MGPUPhysicalDevice)MGPU_NULL_HANDLE)));
+      break;
+    }
+    case MGPU_POWER_PREFERENCE_HIGH_PERFORMANCE: {
+      *physical_device = discrete_gpu.value_or(
+        integrated_gpu.value_or(
+          virtual_gpu.value_or((MGPUPhysicalDevice)MGPU_NULL_HANDLE)));
+      break;
     }
   }
 

@@ -91,6 +91,11 @@ typedef enum MGPUPhysicalDeviceType {
   MGPU_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU = 2
 } MGPUPhysicalDeviceType;
 
+typedef enum MGPUPowerPreference {
+  MGPU_POWER_PREFERENCE_LOW_POWER = 0,
+  MGPU_POWER_PREFERENCE_HIGH_PERFORMANCE = 1
+} MGPUPowerPreference;
+
 typedef enum MGPUBufferUsageBits {
   MGPU_BUFFER_USAGE_COPY_SRC = 0x00000001,
   MGPU_BUFFER_USAGE_COPY_DST = 0x00000002,
@@ -622,6 +627,7 @@ const char* mgpuResultCodeToString(MGPUResult result);
 
 // MGPUInstance methods
 MGPUResult mgpuInstanceEnumeratePhysicalDevices(MGPUInstance instance, uint32_t* physical_device_count, MGPUPhysicalDevice* physical_devices);
+MGPUResult mgpuInstanceSelectPhysicalDevice(MGPUInstance instance, MGPUPowerPreference power_preference, MGPUPhysicalDevice* physical_device);
 MGPUResult mgpuInstanceCreateSurface(MGPUInstance instance, const MGPUSurfaceCreateInfo* create_info, MGPUSurface* surface);
 void mgpuInstanceDestroy(MGPUInstance instance);
 

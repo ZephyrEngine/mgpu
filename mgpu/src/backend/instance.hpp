@@ -7,9 +7,10 @@
 
 #include "common/result.hpp"
 #include "physical_device.hpp"
-#include "surface.hpp"
 
 namespace mgpu {
+
+class SurfaceBase;
 
 class InstanceBase : atom::NonCopyable, atom::NonMoveable {
   public:

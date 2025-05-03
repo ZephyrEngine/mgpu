@@ -56,34 +56,10 @@ Application::Application() {
     MGPU_CHECK(mgpuInstanceCreateSurface(m_mgpu_instance, &surface_create_info, &m_mgpu_surface));
   }
 
-  uint32_t mgpu_physical_device_count{};
-  std::vector<MGPUPhysicalDevice> mgpu_physical_devices{};
-  MGPU_CHECK(mgpuInstanceEnumeratePhysicalDevices(m_mgpu_instance, &mgpu_physical_device_count, nullptr));
-  mgpu_physical_devices.resize(mgpu_physical_device_count);
-  MGPU_CHECK(mgpuInstanceEnumeratePhysicalDevices(m_mgpu_instance, &mgpu_physical_device_count, mgpu_physical_devices.data()));
-
-  std::optional<MGPUPhysicalDevice> discrete_gpu{};
-  std::optional<MGPUPhysicalDevice> integrated_gpu{};
-  std::optional<MGPUPhysicalDevice> virtual_gpu{};
-
-  for(MGPUPhysicalDevice mgpu_physical_device : mgpu_physical_devices) {
-    MGPUPhysicalDeviceInfo info{};
-    MGPU_CHECK(mgpuPhysicalDeviceGetInfo(mgpu_physical_device, &info));
-    switch(info.device_type) {
-      case MGPU_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:     discrete_gpu = mgpu_physical_device; break;
-      case MGPU_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: integrated_gpu = mgpu_physical_device; break;
-      case MGPU_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:       virtual_gpu = mgpu_physical_device; break;
-    }
-  }
-
-  m_mgpu_physical_device = discrete_gpu.value_or(
-    integrated_gpu.value_or(
-      virtual_gpu.value_or((MGPUPhysicalDevice)MGPU_NULL_HANDLE)));
-
+  MGPU_CHECK(mgpuInstanceSelectPhysicalDevice(m_mgpu_instance, MGPU_POWER_PREFERENCE_HIGH_PERFORMANCE, &m_mgpu_physical_device));
   if(m_mgpu_physical_device == MGPU_NULL_HANDLE) {
-    ATOM_PANIC("failed to find a suitable physical device");
+    ATOM_PANIC("failed to find a suitable MGPU physical device");
   }
-
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(m_mgpu_physical_device, &m_mgpu_device));
 
   CreateSwapChain();
