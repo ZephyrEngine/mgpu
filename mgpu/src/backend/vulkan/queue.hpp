@@ -93,6 +93,8 @@ class Queue final : public QueueBase {
 
     void BindGraphicsPipelineForCurrentState(CommandListState& state);
 
+    void DestroySwapChainAcquireSemaphore();
+
     Device* m_device;
     VkDevice m_vk_device;
     VkQueue m_vk_queue;

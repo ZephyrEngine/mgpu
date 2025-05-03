@@ -87,7 +87,7 @@ Application::Application() {
   MGPU_CHECK(mgpuPhysicalDeviceCreateDevice(m_mgpu_physical_device, &m_mgpu_device));
 
   CreateSwapChain();
-  
+
   MGPUQueue mgpu_queue = mgpuDeviceGetQueue(m_mgpu_device, MGPU_QUEUE_TYPE_GRAPHICS_COMPUTE);
 
   const float vertices[] {

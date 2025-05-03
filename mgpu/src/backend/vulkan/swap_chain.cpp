@@ -101,6 +101,7 @@ Result<u32> SwapChain::AcquireNextTexture() {
 }
 
 MGPUResult SwapChain::Present() {
+  // TODO(fleroviux): use the queue the acquired swap chain texture is currently owned by (this needs to be implemented/tracked in the first place)
   // TODO(fleroviux): error out if no texture has been acquired
   return m_device->GetCommandQueue().Present(this, m_acquired_texture_index);
 }

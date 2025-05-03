@@ -118,6 +118,9 @@ void Queue::SetDevice(Device* device) {
 }
 
 void Queue::SetSwapChainAcquireSemaphore(VkSemaphore vk_swap_chain_acquire_semaphore) {
+  // If we still have another semaphore around for some reason, destroy it now.
+  DestroySwapChainAcquireSemaphore();
+  
   m_vk_swap_chain_acquire_semaphore = vk_swap_chain_acquire_semaphore;
 }
 
@@ -147,11 +150,7 @@ MGPUResult Queue::Present(SwapChain* swap_chain, u32 texture_index) {
   MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(m_vk_queue, &vk_present_info));
 
   // Delete the temporary semaphore at the next opportunity.
-  VkDevice vk_device = m_vk_device;
-  m_deleter_queue->Schedule([vk_device, vk_swap_chain_acquire_semaphore]() {
-    vkDestroySemaphore(vk_device,vk_swap_chain_acquire_semaphore, nullptr);
-  });
-  m_vk_swap_chain_acquire_semaphore = nullptr;
+  DestroySwapChainAcquireSemaphore();
 
   return MGPU_SUCCESS;
 }
@@ -636,6 +635,18 @@ void Queue::BindGraphicsPipelineForCurrentState(CommandListState& state) {
   // TODO(fleroviux): handle failure to create the graphics pipeline.
   Result<VkPipeline> vk_pipeline_result = m_graphics_pipeline_cache.GetPipeline(pipeline_query);
   vkCmdBindPipeline(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline_result.Unwrap());
+}
+
+void Queue::DestroySwapChainAcquireSemaphore() {
+  VkDevice vk_device = m_vk_device;
+  VkSemaphore vk_semaphore = m_vk_swap_chain_acquire_semaphore;
+
+  if(vk_semaphore) {
+    m_deleter_queue->Schedule([vk_device, vk_semaphore]() {
+      vkDestroySemaphore(vk_device, vk_semaphore, nullptr);
+    });
+    m_vk_swap_chain_acquire_semaphore = nullptr;
+  }
 }
 
 }  // namespace mgpu::vulkan
