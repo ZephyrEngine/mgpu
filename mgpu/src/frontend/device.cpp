@@ -3,6 +3,7 @@
 
 #include "backend/command_list/command_list.hpp"
 #include "backend/device.hpp"
+#include "backend/surface.hpp"
 #include "validation/buffer.hpp"
 #include "validation/sampler.hpp"
 #include "validation/shader_program.hpp"
@@ -141,7 +142,12 @@ MGPUResult mgpuDeviceCreateSwapChain(MGPUDevice device, const MGPUSwapChainCreat
   // TODO(fleroviux): implement input validation
   mgpu::Result<mgpu::SwapChainBase*> cxx_swap_chain_result = ((mgpu::DeviceBase*)device)->CreateSwapChain(*create_info);
   MGPU_FORWARD_ERROR(cxx_swap_chain_result.Code());
-  *swap_chain = (MGPUSwapChain)cxx_swap_chain_result.Unwrap();
+
+  const auto cxx_swap_chain = cxx_swap_chain_result.Unwrap();
+  const auto cxx_surface = (mgpu::SurfaceBase*)create_info->surface;
+  cxx_surface->SetAssociatedSwapChain(cxx_swap_chain);
+
+  *swap_chain = (MGPUSwapChain)cxx_swap_chain;
   return MGPU_SUCCESS;
 }
 

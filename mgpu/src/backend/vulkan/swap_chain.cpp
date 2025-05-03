@@ -46,11 +46,13 @@ SwapChain::~SwapChain() {
 }
 
 Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCreateInfo& create_info) {
+  const auto surface = (Surface*)create_info.surface;
+
   VkSwapchainCreateInfoKHR vk_swap_chain_create_info{
     .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
     .pNext = nullptr,
     .flags = 0,
-    .surface = ((Surface*)create_info.surface)->Handle(),
+    .surface = surface->Handle(),
     .minImageCount = create_info.min_texture_count,
     .imageFormat = MGPUTextureFormatToVkFormat(create_info.format),
     .imageColorSpace = MGPUColorSpaceToVkColorSpace(create_info.color_space),
@@ -70,9 +72,9 @@ Result<SwapChainBase*> SwapChain::Create(Device* device, const MGPUSwapChainCrea
     .oldSwapchain = nullptr
   };
 
-  // TODO(fleroviux): investigate if this even works as intended
-  if(create_info.old_swap_chain) {
-    vk_swap_chain_create_info.oldSwapchain = ((SwapChain*)create_info.old_swap_chain)->Handle();
+  const auto old_swap_chain = surface->GetAssociatedSwapChain();
+  if(old_swap_chain) {
+    vk_swap_chain_create_info.oldSwapchain = ((SwapChain*)old_swap_chain)->Handle();
   }
 
   VkSwapchainKHR vk_swap_chain{};

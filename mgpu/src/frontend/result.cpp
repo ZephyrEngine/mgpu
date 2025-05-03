@@ -25,6 +25,7 @@ const char* mgpuResultCodeToString(MGPUResult result) {
     REGISTER(MGPU_BAD_COMMAND_LIST)
     REGISTER(MGPU_INVALID_ARGUMENT)
     REGISTER(MGPU_SWAP_CHAIN_SUBOPTIMAL)
+    REGISTER(MGPU_SWAP_CHAIN_RETIRED)
     default: ATOM_PANIC("internal error (missing result code to string translation)")
   }
 

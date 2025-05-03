@@ -30,7 +30,12 @@ MGPUResult mgpuSwapChainEnumerateTextures(MGPUSwapChain swap_chain, uint32_t* te
 }
 
 MGPUResult mgpuSwapChainAcquireNextTexture(MGPUSwapChain swap_chain, uint32_t* texture_index) {
-  mgpu::Result<u32> texture_index_result = ((mgpu::SwapChainBase*)swap_chain)->AcquireNextTexture();
+  const auto cxx_swap_chain = (mgpu::SwapChainBase*)swap_chain;
+
+  if(cxx_swap_chain->WasRetired()) {
+    return MGPU_SWAP_CHAIN_RETIRED;
+  }
+  mgpu::Result<u32> texture_index_result = cxx_swap_chain->AcquireNextTexture();
   MGPU_FORWARD_ERROR(texture_index_result.Code());
   *texture_index = texture_index_result.Unwrap();
   return MGPU_SUCCESS;

@@ -21,7 +21,6 @@ class Surface final : public SurfaceBase {
 
     VkInstance m_vk_instance;
     VkSurfaceKHR m_vk_surface;
-
 };
 
 }  // namespace mgpu::vulkan

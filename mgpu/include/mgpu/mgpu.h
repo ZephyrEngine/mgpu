@@ -72,7 +72,8 @@ typedef enum MGPUResult {
   MGPU_NOT_READY = 13,
   MGPU_BAD_COMMAND_LIST = 14,
   MGPU_INVALID_ARGUMENT = 15,
-  MGPU_SWAP_CHAIN_SUBOPTIMAL = 16
+  MGPU_SWAP_CHAIN_SUBOPTIMAL = 16,
+  MGPU_SWAP_CHAIN_RETIRED = 17
 } MGPUResult;
 
 typedef enum MGPUBackendType {
@@ -554,7 +555,6 @@ typedef struct MGPUSwapChainCreateInfo {
   MGPUTextureUsage usage;
   MGPUExtent2D extent;
   uint32_t min_texture_count;
-  MGPUSwapChain old_swap_chain;
 } MGPUSwapChainCreateInfo;
 
 // ======================================================= //
