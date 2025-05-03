@@ -182,48 +182,53 @@ Application::Application() {
 
   const float vertices[] {
     // POSITION         | NORMAL
+
+     // Front
     -1.f, -1.f, -1.f,     0.f,  0.f, -1.f,
-     1.f, -1.f, -1.f,     0.f,  0.f, -1.f,
-    -1.f,  1.f, -1.f,     0.f,  0.f, -1.f,
      1.f, -1.f, -1.f,     0.f,  0.f, -1.f,
      1.f,  1.f, -1.f,     0.f,  0.f, -1.f,
     -1.f,  1.f, -1.f,     0.f,  0.f, -1.f,
 
+     // Rear
     -1.f, -1.f,  1.f,     0.f,  0.f,  1.f,
-     1.f, -1.f,  1.f,     0.f,  0.f,  1.f,
-    -1.f,  1.f,  1.f,     0.f,  0.f,  1.f,
      1.f, -1.f,  1.f,     0.f,  0.f,  1.f,
      1.f,  1.f,  1.f,     0.f,  0.f,  1.f,
     -1.f,  1.f,  1.f,     0.f,  0.f,  1.f,
 
+     // Left
     -1.f, -1.f, -1.f,    -1.f,  0.f,  0.f,
-    -1.f,  1.f, -1.f,    -1.f,  0.f,  0.f,
     -1.f, -1.f,  1.f,    -1.f,  0.f,  0.f,
-    -1.f, -1.f,  1.f,    -1.f,  0.f,  0.f,
-    -1.f,  1.f, -1.f,    -1.f,  0.f,  0.f,
     -1.f,  1.f,  1.f,    -1.f,  0.f,  0.f,
+    -1.f,  1.f, -1.f,    -1.f,  0.f,  0.f,
 
+     // Right
      1.f, -1.f, -1.f,     1.f,  0.f,  0.f,
-     1.f,  1.f, -1.f,     1.f,  0.f,  0.f,
      1.f, -1.f,  1.f,     1.f,  0.f,  0.f,
-     1.f, -1.f,  1.f,     1.f,  0.f,  0.f,
-     1.f,  1.f, -1.f,     1.f,  0.f,  0.f,
      1.f,  1.f,  1.f,     1.f,  0.f,  0.f,
+     1.f,  1.f, -1.f,     1.f,  0.f,  0.f,
 
-    -1.f, -1.f, -1.f,     0.f, -1.f, 0.f,
-     1.f, -1.f, -1.f,     0.f, -1.f, 0.f,
-     1.f, -1.f,  1.f,     0.f, -1.f, 0.f,
-     1.f, -1.f,  1.f,     0.f, -1.f, 0.f,
-    -1.f, -1.f,  1.f,     0.f, -1.f, 0.f,
-    -1.f, -1.f, -1.f,     0.f, -1.f, 0.f,
+     // Top
+    -1.f, -1.f, -1.f,     0.f, -1.f,  0.f,
+     1.f, -1.f, -1.f,     0.f, -1.f,  0.f,
+     1.f, -1.f,  1.f,     0.f, -1.f,  0.f,
+    -1.f, -1.f,  1.f,     0.f, -1.f,  0.f,
 
-    -1.f,  1.f, -1.f,     0.f,  1.f, 0.f,
-     1.f,  1.f, -1.f,     0.f,  1.f, 0.f,
-     1.f,  1.f,  1.f,     0.f,  1.f, 0.f,
-     1.f,  1.f,  1.f,     0.f,  1.f, 0.f,
-    -1.f,  1.f,  1.f,     0.f,  1.f, 0.f,
-    -1.f,  1.f, -1.f,     0.f,  1.f, 0.f,
+    // Bottom
+   -1.f,  1.f, -1.f,     0.f,  1.f,  0.f,
+    1.f,  1.f, -1.f,     0.f,  1.f,  0.f,
+    1.f,  1.f,  1.f,     0.f,  1.f,  0.f,
+   -1.f,  1.f,  1.f,     0.f,  1.f,  0.f,
   };
+
+  const u16 indices[] {
+     0,  1,  2,  2,  3,  0,
+     6,  5,  4,  4,  7,  6,
+    10,  9,  8,  8, 11, 10,
+    12, 13, 14, 14, 15, 12,
+    18, 17, 16, 16, 19, 18,
+    20, 21, 22, 22, 23, 20
+  };
+
   const MGPUBufferCreateInfo vbo_create_info{
     .size = sizeof(vertices),
     .usage = MGPU_BUFFER_USAGE_VERTEX_BUFFER | MGPU_BUFFER_USAGE_COPY_DST,
@@ -231,6 +236,14 @@ Application::Application() {
   };
   MGPU_CHECK(mgpuDeviceCreateBuffer(m_mgpu_device, &vbo_create_info, &m_mgpu_vbo));
   MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_vbo, 0u, sizeof(vertices), vertices));
+
+  const MGPUBufferCreateInfo ibo_create_info{
+    .size = sizeof(indices),
+    .usage = MGPU_BUFFER_USAGE_INDEX_BUFFER | MGPU_BUFFER_USAGE_COPY_DST,
+    .flags = 0
+  };
+  MGPU_CHECK(mgpuDeviceCreateBuffer(m_mgpu_device, &ibo_create_info, &m_mgpu_ibo));
+  MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_ibo, 0u, sizeof(indices), indices));
 
   const MGPUBufferCreateInfo ubo_create_info{
     .size = 192u, // Fits three 4x4 f32 matrices
@@ -327,7 +340,7 @@ Application::Application() {
     .depth_clamp_enable = false,
     .rasterizer_discard_enable = false,
     .polygon_mode = MGPU_POLYGON_MODE_FILL,
-    .cull_mode = 0,
+    .cull_mode = MGPU_CULL_MODE_BACK,
     .front_face = MGPU_FRONT_FACE_COUNTER_CLOCKWISE,
     .depth_bias_enable = false,
     .depth_bias_constant_factor = 0.f,
@@ -361,6 +374,7 @@ Application::~Application() {
   mgpuResourceSetDestroy(m_mgpu_resource_set);
   mgpuResourceSetLayoutDestroy(m_mgpu_resource_set_layout);
   mgpuBufferDestroy(m_mgpu_ubo);
+  mgpuBufferDestroy(m_mgpu_ibo);
   mgpuBufferDestroy(m_mgpu_vbo);
   mgpuTextureViewDestroy(m_mgpu_depth_texture_view);
   mgpuTextureDestroy(m_mgpu_depth_texture);
@@ -382,7 +396,7 @@ void Application::MainLoop() {
     MGPU_CHECK(mgpuSwapChainAcquireNextTexture(m_mgpu_swap_chain, &texture_index));
 
     atom::Matrix4 model_matrix = atom::Matrix4::RotationY(m_y_rotation);
-    atom::Matrix4 view_matrix = atom::Matrix4::Translation(0.f, 0.f, -5.f);
+    atom::Matrix4 view_matrix = atom::Matrix4::Translation(0.f, -2.f, -5.f);
     atom::Matrix4 modelview_matrix = view_matrix * model_matrix;
     MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_ubo,  64u, sizeof(modelview_matrix), &modelview_matrix));
     MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_ubo, 128u, sizeof(view_matrix), &view_matrix));
@@ -418,8 +432,9 @@ void Application::MainLoop() {
     mgpuRenderCommandEncoderCmdUseDepthStencilState(render_cmd_encoder, m_mgpu_depth_stencil_state);
     mgpuRenderCommandEncoderCmdUseVertexInputState(render_cmd_encoder, m_mgpu_vertex_input_state);
     mgpuRenderCommandEncoderCmdBindVertexBuffer(render_cmd_encoder, 0u, m_mgpu_vbo, 0u);
+    mgpuRenderCommandEncoderCmdBindIndexBuffer(render_cmd_encoder, m_mgpu_ibo, 0u, MGPU_INDEX_FORMAT_U16);
     mgpuRenderCommandEncoderCmdBindResourceSet(render_cmd_encoder, 0u, m_mgpu_resource_set);
-    mgpuRenderCommandEncoderCmdDraw(render_cmd_encoder, 36u, 1u, 0u, 0u);
+    mgpuRenderCommandEncoderCmdDrawIndexed(render_cmd_encoder, 36u, 1u, 0u, 0u, 0u);
     mgpuRenderCommandEncoderClose(render_cmd_encoder);
 
     MGPU_CHECK(mgpuQueueSubmitCommandList(mgpu_queue, m_mgpu_cmd_list));

@@ -25,6 +25,7 @@ class Application {
     MGPUTexture m_mgpu_depth_texture{};
     MGPUTextureView m_mgpu_depth_texture_view{};
     MGPUBuffer m_mgpu_vbo{};
+    MGPUBuffer m_mgpu_ibo{};
     MGPUBuffer m_mgpu_ubo{};
     MGPUResourceSetLayout m_mgpu_resource_set_layout{};
     MGPUResourceSet m_mgpu_resource_set{};
