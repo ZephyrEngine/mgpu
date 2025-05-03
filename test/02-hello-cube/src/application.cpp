@@ -396,7 +396,7 @@ void Application::MainLoop() {
     MGPU_CHECK(mgpuSwapChainAcquireNextTexture(m_mgpu_swap_chain, &texture_index));
 
     atom::Matrix4 model_matrix = atom::Matrix4::RotationY(m_y_rotation);
-    atom::Matrix4 view_matrix = atom::Matrix4::Translation(0.f, -2.f, -5.f);
+    atom::Matrix4 view_matrix = atom::Matrix4::Translation(0.f, 0.f, -5.f);
     atom::Matrix4 modelview_matrix = view_matrix * model_matrix;
     MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_ubo,  64u, sizeof(modelview_matrix), &modelview_matrix));
     MGPU_CHECK(mgpuQueueBufferUpload(mgpu_queue, m_mgpu_ubo, 128u, sizeof(view_matrix), &view_matrix));
