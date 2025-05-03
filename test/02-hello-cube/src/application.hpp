@@ -14,10 +14,13 @@ class Application {
    ~Application();
 
   private:
+    void CreateSwapChain();
+    void DestroySwapChain();
     void MainLoop();
 
     SDL_Window* m_sdl_window{};
     MGPUInstance m_mgpu_instance{};
+    MGPUPhysicalDevice m_mgpu_physical_device{};
     MGPUSurface m_mgpu_surface{};
     MGPUDevice m_mgpu_device{};
     MGPUSwapChain m_mgpu_swap_chain{};
@@ -37,5 +40,6 @@ class Application {
     MGPUDepthStencilState m_mgpu_depth_stencil_state{};
     MGPUCommandList m_mgpu_cmd_list{};
 
+    f32 m_aspect_ratio{};
     f32 m_y_rotation{};
 };
