@@ -11,10 +11,11 @@
 
 namespace mgpu::vulkan {
 
-ResourceSet::ResourceSet(Device* device, VkDescriptorPool vk_descriptor_pool, VkDescriptorSet vk_descriptor_set)
+ResourceSet::ResourceSet(Device* device, VkDescriptorPool vk_descriptor_pool, VkDescriptorSet vk_descriptor_set, BoundResources bound_resources)
     : m_device{device}
     , m_vk_descriptor_pool{vk_descriptor_pool}
-    , m_vk_descriptor_set{vk_descriptor_set} {
+    , m_vk_descriptor_set{vk_descriptor_set}
+    , m_bound_resources{std::move(bound_resources)} {
 }
 
 ResourceSet::~ResourceSet() {
@@ -84,6 +85,8 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
   std::vector<VkWriteDescriptorSet> vk_descriptor_writes{};
   vk_descriptor_writes.resize(create_info.binding_count);
 
+  BoundResources bound_resources{};
+
   for(size_t i = 0u; i < create_info.binding_count; i++) {
     const MGPUResourceSetBinding& mgpu_binding = create_info.bindings[i];
 
@@ -105,7 +108,7 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
     };
 
     // TODO(fleroviux): this probably could be shortened quite a bit.
-    // TODO(fleroviux): we could totally just get this information from the layout
+    // TODO(fleroviux): we could totally just get the type from the layout
     switch(mgpu_binding.type) {
       case MGPU_RESOURCE_BINDING_TYPE_SAMPLER: {
         vk_image_info = {
@@ -117,48 +120,58 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
         break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_TEXTURE_AND_SAMPLER: {
+        const auto texture_view = (TextureView*)mgpu_binding.texture.texture_view;
         vk_image_info = {
           .sampler = ((Sampler*)mgpu_binding.texture.sampler)->Handle(),
-          .imageView = ((TextureView*)mgpu_binding.texture.texture_view)->Handle(),
+          .imageView = texture_view->Handle(),
           .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         };
         vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bound_resources.m_sampled_textures.push_back(texture_view);
         break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_SAMPLED_TEXTURE: {
+        const auto texture_view = (TextureView*)mgpu_binding.texture.texture_view;
         vk_image_info = {
           .sampler = VK_NULL_HANDLE,
-          .imageView = ((TextureView*)mgpu_binding.texture.texture_view)->Handle(),
+          .imageView = texture_view->Handle(),
           .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         };
         vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bound_resources.m_sampled_textures.push_back(texture_view);
         break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_STORAGE_TEXTURE: {
+        const auto texture_view = (TextureView*)mgpu_binding.texture.texture_view;
         vk_image_info = {
           .sampler = VK_NULL_HANDLE,
-          .imageView = ((TextureView*)mgpu_binding.texture.texture_view)->Handle(),
+          .imageView = texture_view->Handle(),
           .imageLayout = VK_IMAGE_LAYOUT_GENERAL
         };
         vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        bound_resources.m_storage_textures.push_back(texture_view);
         break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_UNIFORM_BUFFER: {
+        const auto buffer = (Buffer*)mgpu_binding.buffer.buffer;
         vk_buffer_info = {
-          .buffer = ((Buffer*)mgpu_binding.buffer.buffer)->Handle(),
+          .buffer = buffer->Handle(),
           .offset = mgpu_binding.buffer.offset,
           .range = mgpu_binding.buffer.size
         };
         vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        bound_resources.m_uniform_buffers.push_back(buffer);
         break;
       }
       case MGPU_RESOURCE_BINDING_TYPE_STORAGE_BUFFER: {
+        const auto buffer = (Buffer*)mgpu_binding.buffer.buffer;
         vk_buffer_info = {
           .buffer = ((Buffer*)mgpu_binding.buffer.buffer)->Handle(),
           .offset = mgpu_binding.buffer.offset,
           .range = mgpu_binding.buffer.size
         };
         vk_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bound_resources.m_storage_buffers.push_back(buffer);
         break;
       }
       default: {
@@ -168,7 +181,7 @@ Result<ResourceSetBase*> ResourceSet::Create(Device* device, const MGPUResourceS
   }
 
   vkUpdateDescriptorSets(device->Handle(), (u32)vk_descriptor_writes.size(), vk_descriptor_writes.data(), 0u, nullptr);
-  return new ResourceSet{device, vk_descriptor_pool, vk_descriptor_set};
+  return new ResourceSet{device, vk_descriptor_pool, vk_descriptor_set, std::move(bound_resources)};
 }
 
 } // namespace mgpu::vulkan

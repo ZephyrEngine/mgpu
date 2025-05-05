@@ -15,7 +15,7 @@ class Texture final : public TextureBase {
     struct State {
       VkImageLayout m_image_layout{VK_IMAGE_LAYOUT_UNDEFINED};
       VkAccessFlags m_access{VK_ACCESS_NONE};
-      VkPipelineStageFlagBits m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+      VkPipelineStageFlags m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
 
       bool operator==(const State& other_state) const;
     };

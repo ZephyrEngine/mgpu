@@ -37,14 +37,17 @@ void RenderCommandEncoder::CmdSetScissor(i32 x, i32 y, u32 width, u32 height) {
 }
 
 void RenderCommandEncoder::CmdBindVertexBuffer(u32 binding, BufferBase* buffer, u64 buffer_offset) {
+  m_bound_vertex_buffers.insert(buffer);
   m_command_list->Push<BindVertexBufferCommand>(binding, buffer, buffer_offset);
 }
 
 void RenderCommandEncoder::CmdBindIndexBuffer(BufferBase* buffer, u64 buffer_offset, MGPUIndexFormat index_format) {
+  m_bound_index_buffers.insert(buffer);
   m_command_list->Push<BindIndexBufferCommand>(buffer, buffer_offset, index_format);
 }
 
 void RenderCommandEncoder::CmdBindResourceSet(u32 index, ResourceSetBase* resource_set) {
+  m_bound_resource_sets.insert(resource_set);
   m_command_list->Push<BindResourceSetCommand>(index, resource_set);
 }
 

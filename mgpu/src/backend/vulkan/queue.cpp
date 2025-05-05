@@ -342,6 +342,65 @@ MGPUResult Queue::BeginNextCommandBuffer() {
 }
 
 void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
+  // TODO(fleroviux): move this into a separate method
+  {
+    // TODO(fleroviux): deal with resources which are used in multiple ways
+
+    // TODO(fleroviux): make attachment transitions part of this system?
+
+    const auto& render_command_encoder = command.m_render_command_encoder;
+
+    for(const auto buffer : render_command_encoder.GetBoundVertexBuffers()) {
+      ((Buffer*)buffer)->TransitionState({VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
+    }
+
+    for(const auto buffer : render_command_encoder.GetBoundIndexBuffers()) {
+      ((Buffer*)buffer)->TransitionState({VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
+    }
+
+    // TODO(fleroviux): inform this by the shader stage visibility in the resource set layout
+    const auto all_shader_stages =
+      VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+      // VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+      VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+      VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+
+    for(const auto resource_set : render_command_encoder.GetBoundResourceSets()) {
+      for(const auto texture_view : ((ResourceSet *) resource_set)->GetBoundSampledTextureViews()) {
+        texture_view->GetTexture()->TransitionState({
+          .m_image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          .m_access = VK_ACCESS_SHADER_READ_BIT,
+          .m_pipeline_stages = all_shader_stages
+        }, m_vk_cmd_buffer);
+      }
+
+      // TODO(fleroviux): it would be nice if we could limit the scope of the barrier based on how the texture is actually used
+      for(const auto texture_view : ((ResourceSet *) resource_set)->GetBoundStorageTextureViews()) {
+        texture_view->GetTexture()->TransitionState({
+          .m_image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          .m_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+          .m_pipeline_stages = all_shader_stages
+        }, m_vk_cmd_buffer);
+      }
+
+      for(const auto buffer : ((ResourceSet*)resource_set)->GetBoundUniformBuffers()) {
+        buffer->TransitionState({
+          .m_access = VK_ACCESS_UNIFORM_READ_BIT,
+          .m_pipeline_stages = all_shader_stages
+        }, m_vk_cmd_buffer);
+      }
+
+      // TODO(fleroviux): it would be nice if we could limit the scope of the barrier based on how the texture is actually used
+      for(const auto buffer : ((ResourceSet*)resource_set)->GetBoundStorageBuffers()) {
+        buffer->TransitionState({
+          .m_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+          .m_pipeline_stages = all_shader_stages
+        }, m_vk_cmd_buffer);
+      }
+    }
+  }
+
   const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
   const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
 
@@ -582,23 +641,17 @@ void Queue::HandleCmdSetScissor(CommandListState& state, const SetScissorCommand
 }
 
 void Queue::HandleCmdBindVertexBuffer(CommandListState& state, const BindVertexBufferCommand& command) {
-  const auto buffer = (Buffer*)command.m_buffer;
-  // TODO(fleroviux): this breaks since we're inside of a render pass already. How to fix?
-  //buffer->TransitionState({VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
-
-  VkBuffer vk_buffer = buffer->Handle();
+  VkBuffer vk_buffer = ((Buffer*)command.m_buffer)->Handle();
   vkCmdBindVertexBuffers(m_vk_cmd_buffer, command.m_binding, 1u, &vk_buffer, &command.m_buffer_offset);
 }
 
 void Queue::HandleCmdBindIndexBuffer(CommandListState& state, const BindIndexBufferCommand& command) {
-  // TODO(fleroviux): implement a resource barrier
   vkCmdBindIndexBuffer(m_vk_cmd_buffer, ((Buffer*)command.m_buffer)->Handle(), command.m_buffer_offset, MGPUIndexFormatToVkIndexType(command.m_index_format));
 }
 
 void Queue::HandleCmdBindResourceSet(CommandListState& state, const BindResourceSetCommand& command) {
   const auto vk_pipeline_layout = state.render_pass.pipeline_query.m_shader_program->GetVkPipelineLayout();
   const auto vk_descriptor_set = ((ResourceSet*)command.m_resource_set)->Handle();
-  // TODO(fleroviux): transition resources bound to the resource set to their required states
   vkCmdBindDescriptorSets(m_vk_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline_layout, command.m_index, 1u, &vk_descriptor_set, 0u, nullptr);
 }
 

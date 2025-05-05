@@ -14,7 +14,7 @@ class Buffer final : public BufferBase {
   public:
     struct State {
       VkAccessFlags m_access{VK_ACCESS_NONE};
-      VkPipelineStageFlagBits m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+      VkPipelineStageFlags m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
 
       bool operator==(const State& other_state) const;
     };

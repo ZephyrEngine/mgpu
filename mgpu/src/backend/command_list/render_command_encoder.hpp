@@ -3,6 +3,7 @@
 
 #include <atom/integer.hpp>
 #include <atom/float.hpp>
+#include <unordered_set>
 
 namespace mgpu {
 
@@ -37,8 +38,25 @@ class RenderCommandEncoder {
     void CmdDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance);
     void Close();
 
+    [[nodiscard]] const std::unordered_set<BufferBase*>& GetBoundVertexBuffers() const {
+      return m_bound_vertex_buffers;
+    }
+
+    [[nodiscard]] const std::unordered_set<BufferBase*>& GetBoundIndexBuffers() const {
+      return m_bound_index_buffers;
+    }
+
+    [[nodiscard]] const std::unordered_set<ResourceSetBase*>& GetBoundResourceSets() const {
+      return m_bound_resource_sets;
+    }
+
   private:
     CommandList* m_command_list;
+
+    // TODO(fleroviux): this probably leaks memory since we never destroy the render command encoder?
+    std::unordered_set<BufferBase*> m_bound_vertex_buffers{};
+    std::unordered_set<BufferBase*> m_bound_index_buffers{};
+    std::unordered_set<ResourceSetBase*> m_bound_resource_sets{};
 };
 
 } // namespace mgpu
