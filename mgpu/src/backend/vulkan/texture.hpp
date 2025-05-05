@@ -14,8 +14,8 @@ class Texture final : public TextureBase {
   public:
     struct State {
       VkImageLayout m_image_layout{VK_IMAGE_LAYOUT_UNDEFINED};
-      VkAccessFlags m_access{VK_ACCESS_NONE};
-      VkPipelineStageFlags m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+      VkAccessFlags m_access{};
+      VkPipelineStageFlags m_pipeline_stages{};
 
       bool operator==(const State& other_state) const;
     };
@@ -37,7 +37,11 @@ class Texture final : public TextureBase {
     Device* m_device;
     VkImage m_vk_image;
     VmaAllocation m_vma_allocation;
-    State m_state{};
+    State m_state{
+      .m_image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .m_access = VK_ACCESS_NONE,
+      .m_pipeline_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+    };
 };
 
 }  // namespace mgpu::vulkan

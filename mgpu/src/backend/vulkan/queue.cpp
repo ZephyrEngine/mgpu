@@ -2,6 +2,7 @@
 #include <atom/float.hpp>
 #include <atom/panic.hpp>
 #include <cstring>
+#include <unordered_map>
 
 #include "backend/vulkan/lib/vulkan_result.hpp"
 #include "common/texture.hpp"
@@ -342,20 +343,78 @@ MGPUResult Queue::BeginNextCommandBuffer() {
 }
 
 void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderPassCommand& command) {
+  const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
+  const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
+
   // TODO(fleroviux): move this into a separate method
   {
+    // TODO(fleroviux): how to deal with textures views that overlap?
+
     // TODO(fleroviux): deal with resources which are used in multiple ways
 
     // TODO(fleroviux): make attachment transitions part of this system?
+    // TODO(fleroviux): "Use VK_IMAGE_LAYOUT_UNDEFINED when the previous content of the image is not needed."
+
+    // Use KHR_synchornization_2 to batch barriers?: https://developer.nvidia.com/blog/vulkan-dos-donts/
 
     const auto& render_command_encoder = command.m_render_command_encoder;
 
+    // TODO(fleroviux): performance-wise it probably makes sense to cache these maps for better memory allocation reuse
+    std::unordered_map<BufferBase*, Buffer::State> new_buffer_states{};
+    std::unordered_map<TextureViewBase*, Texture::State> new_texture_view_states{};
+
+    const auto AddBufferState = [&](BufferBase* buffer, const Buffer::State& new_state) {
+      auto& new_buffer_state = new_buffer_states[buffer];
+      new_buffer_state.m_access |= new_state.m_access;
+      new_buffer_state.m_pipeline_stages |= new_state.m_pipeline_stages;
+    };
+
+    const auto AddTextureViewState = [&](TextureViewBase* texture_view, const Texture::State& new_state) {
+      auto& new_texture_view_state = new_texture_view_states[texture_view];
+      if(new_texture_view_state.m_image_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        new_texture_view_state.m_image_layout = new_state.m_image_layout;
+      }
+      if(new_texture_view_state.m_image_layout != new_state.m_image_layout) {
+        new_texture_view_state.m_image_layout = VK_IMAGE_LAYOUT_GENERAL;
+      }
+      new_texture_view_state.m_access |= new_state.m_access;
+      new_texture_view_state.m_pipeline_stages |= new_state.m_pipeline_stages;
+    };
+
+    // Framebuffer attachments
+
+    for(const auto& color_attachment : command.m_color_attachments) {
+      if(color_attachment.texture_view != nullptr) {
+        AddTextureViewState(color_attachment.texture_view, {
+          .m_image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          .m_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .m_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        });
+      }
+    }
+
+    if(have_depth_stencil_attachment) {
+      AddTextureViewState(depth_stencil_attachment.texture_view, {
+        .m_image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        .m_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        .m_pipeline_stages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+      });
+    }
+
+    // Buffers and textures bound inside of the render pass
+
     for(const auto buffer : render_command_encoder.GetBoundVertexBuffers()) {
-      ((Buffer*)buffer)->TransitionState({VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
+      AddBufferState(buffer, {
+        .m_access = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+        .m_pipeline_stages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+      });
     }
 
     for(const auto buffer : render_command_encoder.GetBoundIndexBuffers()) {
-      ((Buffer*)buffer)->TransitionState({VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT}, m_vk_cmd_buffer);
+      AddBufferState(buffer, {
+        .m_access = VK_ACCESS_INDEX_READ_BIT,
+        .m_pipeline_stages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+      });
     }
 
     // TODO(fleroviux): inform this by the shader stage visibility in the resource set layout
@@ -367,42 +426,49 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
       VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
 
     for(const auto resource_set : render_command_encoder.GetBoundResourceSets()) {
-      for(const auto texture_view : ((ResourceSet *) resource_set)->GetBoundSampledTextureViews()) {
-        texture_view->GetTexture()->TransitionState({
+      for(const auto texture_view : ((ResourceSet*)resource_set)->GetBoundSampledTextureViews()) {
+        AddTextureViewState(texture_view, {
           .m_image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
           .m_access = VK_ACCESS_SHADER_READ_BIT,
           .m_pipeline_stages = all_shader_stages
-        }, m_vk_cmd_buffer);
+        });
       }
 
       // TODO(fleroviux): it would be nice if we could limit the scope of the barrier based on how the texture is actually used
-      for(const auto texture_view : ((ResourceSet *) resource_set)->GetBoundStorageTextureViews()) {
-        texture_view->GetTexture()->TransitionState({
-          .m_image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      for(const auto texture_view : ((ResourceSet*)resource_set)->GetBoundStorageTextureViews()) {
+        AddTextureViewState(texture_view, {
+          .m_image_layout = VK_IMAGE_LAYOUT_GENERAL,
           .m_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
           .m_pipeline_stages = all_shader_stages
-        }, m_vk_cmd_buffer);
+        });
       }
 
       for(const auto buffer : ((ResourceSet*)resource_set)->GetBoundUniformBuffers()) {
-        buffer->TransitionState({
+        AddBufferState(buffer, {
           .m_access = VK_ACCESS_UNIFORM_READ_BIT,
           .m_pipeline_stages = all_shader_stages
-        }, m_vk_cmd_buffer);
+        });
       }
 
-      // TODO(fleroviux): it would be nice if we could limit the scope of the barrier based on how the texture is actually used
+      // TODO(fleroviux): it would be nice if we could limit the scope of the barrier based on how the buffer is actually used
       for(const auto buffer : ((ResourceSet*)resource_set)->GetBoundStorageBuffers()) {
-        buffer->TransitionState({
+        AddBufferState(buffer, {
           .m_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
           .m_pipeline_stages = all_shader_stages
-        }, m_vk_cmd_buffer);
+        });
       }
     }
-  }
 
-  const bool have_depth_stencil_attachment = command.m_have_depth_stencil_attachment;
-  const auto& depth_stencil_attachment = command.m_depth_stencil_attachment;
+    // Finally add the actual resource barriers to the current command buffer
+
+    for(const auto& [buffer, new_buffer_state] : new_buffer_states) {
+      ((Buffer*)buffer)->TransitionState(new_buffer_state, m_vk_cmd_buffer);
+    }
+
+    for(const auto& [texture_view, new_texture_view_state] : new_texture_view_states) {
+      ((TextureView*)texture_view)->GetTexture()->TransitionState(new_texture_view_state, m_vk_cmd_buffer);
+    }
+  }
 
   RenderPassQuery render_pass_query{};
 
@@ -487,12 +553,6 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
           }
         }
       });
-
-      ((Texture*)color_attachment.texture_view->GetTexture())->TransitionState({
-        .m_image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .m_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .m_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-      }, m_vk_cmd_buffer);
     }
   }
 
@@ -503,12 +563,6 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
         .stencil = depth_stencil_attachment.clear_stencil
       }
     });
-
-    ((Texture*)depth_stencil_attachment.texture_view->GetTexture())->TransitionState({
-      .m_image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-      .m_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-      .m_pipeline_stages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
-    }, m_vk_cmd_buffer);
   }
 
   const VkRenderPassBeginInfo vk_render_pass_begin_info{

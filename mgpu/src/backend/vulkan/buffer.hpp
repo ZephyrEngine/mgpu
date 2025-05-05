@@ -13,8 +13,8 @@ namespace mgpu::vulkan {
 class Buffer final : public BufferBase {
   public:
     struct State {
-      VkAccessFlags m_access{VK_ACCESS_NONE};
-      VkPipelineStageFlags m_pipeline_stages{VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+      VkAccessFlags m_access{};
+      VkPipelineStageFlags m_pipeline_stages{};
 
       bool operator==(const State& other_state) const;
     };
@@ -40,7 +40,10 @@ class Buffer final : public BufferBase {
     VkBuffer m_vk_buffer{};
     VmaAllocation m_vma_allocation{};
     void* m_mapped_address{};
-    State m_state{};
+    State m_state{
+      .m_access = VK_ACCESS_NONE,
+      .m_pipeline_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+    };
 };
 
 }  // namespace mgpu::vulkan
