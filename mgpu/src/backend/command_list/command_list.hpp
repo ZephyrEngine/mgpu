@@ -53,11 +53,6 @@ class CommandList : atom::NonCopyable, atom::NonMoveable {
       return &encoder;
     }
 
-    void CmdDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
-      // TODO: validate that enough state is bound for the draw.
-      Push<DrawCommand>(vertex_count, instance_count, first_vertex, first_instance);
-    }
-
     template<typename T, typename... Args>
     const T& Push(Args&&... args) {
       T* const command = new(AllocateMemory(sizeof(T))) T{std::forward<Args>(args)...};
