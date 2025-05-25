@@ -56,7 +56,7 @@ struct Rect {
 
 struct TextureSubresourceState {
   public:
-    TextureSubresourceState() = default;
+    TextureSubresourceState() = default; // TODO: get rid of this entirely
     TextureSubresourceState(Rect rect, TextureState state) : m_rect{rect}, m_state{state} {}
 
     TextureSubresourceState(u32 base_array_layer, u32 array_layer_count, u32 base_mip, u32 mip_count, TextureState state)
@@ -92,9 +92,8 @@ struct TextureSubresourceState {
     }
 
   private:
-    // TODO: get rid of these
+    // TODO: get rid of this
     friend class TextureStateTracker;
-    friend class TextureStateCombiner;
 
     Rect m_rect{};
     TextureState m_state{};
@@ -109,22 +108,16 @@ struct TextureSubresourceState {
  */
 class TextureStateTracker {
   public:
-    TextureStateTracker(u32 width, u32 height) {
+    TextureStateTracker(u32 array_layer_count, u32 mip_count) {
       // This ensures we don't invalidate iterators when adding new rects to the vector.
-      m_rects.reserve(MaxSimultaneousRects(width, height));
+      m_rects.reserve(MaxSimultaneousRects(array_layer_count, mip_count));
 
       // Add an initial rect that covers the entire grid.
-      // TODO: we do not want this in all use-cases
-      TextureSubresourceState* rect = new TextureSubresourceState{};
-      rect->m_rect.min[0] = 0;
-      rect->m_rect.max[0] = (i32)width - 1;
-      rect->m_rect.min[1] = 0;
-      rect->m_rect.max[1] = (i32)height - 1;
-      rect->m_state = {
+      const auto rect = new TextureSubresourceState{0u, array_layer_count, 0u, mip_count, {
         .m_image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
         .m_access = 0,
         .m_pipeline_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-      };
+      }};
       m_rects.push_back(rect);
     }
 
@@ -132,7 +125,7 @@ class TextureStateTracker {
       return m_rects;
     }
 
-    void TransitionRect(const TextureSubresourceState& rect_spec, std::function<void(TextureSubresourceState)> on_intersection) {
+    void TransitionRect(const TextureSubresourceState& rect_spec, std::function<void(TextureSubresourceState)> on_intersection = [](TextureSubresourceState) {}) {
       std::vector<TextureSubresourceState*>::iterator next_iter_rect;
 
       for(auto iter_rect = m_rects.begin(); iter_rect != m_rects.end(); iter_rect = next_iter_rect) {
@@ -202,10 +195,10 @@ class TextureStateTracker {
     }
 
   private:
-    static constexpr size_t MaxSimultaneousRects(u32 width, u32 height) {
+    static constexpr size_t MaxSimultaneousRects(u32 array_layer_count, u32 mip_count) {
       // Allocate enough rectangles to fill the entire grid.
       // Also allocate one extra for safety, not sure if needed!?
-      return width * height + 1u;
+      return array_layer_count * mip_count + 1u;
     }
 
     void TryMergeWithNeighbours(TextureSubresourceState& rect) {
@@ -258,7 +251,8 @@ class TextureStateTracker {
  * - being able to know the state of rectangles we intersect and being able to control what state is written to the new rectangles based on this information
  * - we also need to know the intersecting areas
  */
-class TextureStateCombiner {
+using TextureStateCombiner = TextureStateTracker;
+/*class TextureStateCombiner {
   public:
     TextureStateCombiner(u32 width, u32 height) {
       // This ensures we don't invalidate iterators when adding new rects to the vector.
@@ -386,6 +380,6 @@ class TextureStateCombiner {
     }
 
     std::vector<TextureSubresourceState*> m_rects{};
-};
+};*/
 
 } // namespace mgpu::vulkan
