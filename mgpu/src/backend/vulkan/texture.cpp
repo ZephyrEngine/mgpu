@@ -88,18 +88,16 @@ Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& cr
 }
 
 void Texture::TransitionState(const TextureSubresourceState& texture_state_rect, VkCommandBuffer vk_command_buffer) {
-  m_state_tracker.TransitionRect(texture_state_rect, [&](TextureSubresourceState intersecting_rect) {
+  m_state_tracker.TransitionSubresource(texture_state_rect, [&](TextureSubresourceState intersecting_rect) {
     // TODO: avoid read-read barriers?
-
-    //fmt::print("transing: ({}, {}) - ({}, {}) from [{}, {}, {}]\n", intersecting_rect.min[0], intersecting_rect.min[1], intersecting_rect.max[0], intersecting_rect.max[1], intersecting_rect.state.m_pipeline_stages, intersecting_rect.state.m_access, intersecting_rect.state.m_image_layout);//
 
     const VkImageMemoryBarrier vk_image_memory_barrier{
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
       .pNext = nullptr,
-      .srcAccessMask = intersecting_rect.State().m_access,
-      .dstAccessMask = texture_state_rect.State().m_access,
-      .oldLayout = intersecting_rect.State().m_image_layout,
-      .newLayout = texture_state_rect.State().m_image_layout,
+      .srcAccessMask = intersecting_rect.GetState().m_access,
+      .dstAccessMask = texture_state_rect.GetState().m_access,
+      .oldLayout = intersecting_rect.GetState().m_image_layout,
+      .newLayout = texture_state_rect.GetState().m_image_layout,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .image = m_vk_image,
@@ -112,7 +110,7 @@ void Texture::TransitionState(const TextureSubresourceState& texture_state_rect,
       }
     };
 
-    vkCmdPipelineBarrier(vk_command_buffer, intersecting_rect.State().m_pipeline_stages, texture_state_rect.State().m_pipeline_stages, 0, 0u, nullptr, 0u, nullptr, 1u, &vk_image_memory_barrier);
+    vkCmdPipelineBarrier(vk_command_buffer, intersecting_rect.GetState().m_pipeline_stages, texture_state_rect.GetState().m_pipeline_stages, 0, 0u, nullptr, 0u, nullptr, 1u, &vk_image_memory_barrier);
   });
 }
 

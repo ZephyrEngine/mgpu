@@ -388,7 +388,7 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
         new_state_combiner = new TextureStateCombiner{texture_view->ArrayLayerCount(), texture_view->MipCount()};
       }
       // TODO(fleroviux): deal with overlapping rects, OR access and pipeline stages and force GENERAL image layout in overlapping areas of different image layouts.
-      new_state_combiner->TransitionRect(TextureSubresourceState{Rect{
+      new_state_combiner->TransitionSubresource(TextureSubresourceState{U32Rect2D{
         .min = {texture_view->BaseArrayLayer(), texture_view->BaseMip()},
         .max = {
           texture_view->BaseArrayLayer() + texture_view->ArrayLayerCount() - 1u,
@@ -482,7 +482,7 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
     }
 
     for(const auto [texture, new_texture_state_combiner] : new_texture_state_combiners) {
-      for(auto rect : new_texture_state_combiner->GetRects()) {
+      for(auto rect : new_texture_state_combiner->GetSubresourceStates()) {
         texture->TransitionState(*rect, m_vk_cmd_buffer);
       }
       delete new_texture_state_combiner;

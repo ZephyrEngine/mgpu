@@ -24,21 +24,21 @@ struct TextureState {
   }
 };
 
-struct Rect {
+struct U32Rect2D {
   u32 min[2];
   u32 max[2];
 
-  [[nodiscard]] bool Intersects(const Rect& other_rect) const {
+  [[nodiscard]] bool Intersects(const U32Rect2D& other_rect) const {
     // Use >= instead of > because 'max' refers to the highest included cell and thus lies within the geometric rectangle.
     const bool result = max[0] >= other_rect.min[0] && other_rect.max[0] >= min[0] &&
                         max[1] >= other_rect.min[1] && other_rect.max[1] >= min[1];
     return result;
   }
 
-  [[nodiscard]] std::optional<Rect> GetIntersectionWith(const Rect& other_rect) const {
+  [[nodiscard]] std::optional<U32Rect2D> GetIntersectionWith(const U32Rect2D& other_rect) const {
     if(Intersects(other_rect)) {
       // TODO: refactor the texture state out of this.
-      return Rect{
+      return U32Rect2D{
         .min = { std::max(min[0], other_rect.min[0]), std::max(min[1], other_rect.min[1]) },
         .max = { std::min(max[0], other_rect.max[0]), std::min(max[1], other_rect.max[1]) },
       };
@@ -46,7 +46,7 @@ struct Rect {
     return std::nullopt;
   }
 
-  [[nodiscard]] bool IsCongruentTo(const Rect& other_rect) const {
+  [[nodiscard]] bool IsCongruentTo(const U32Rect2D& other_rect) const {
     return min[0] == other_rect.min[0] &&
            min[1] == other_rect.min[1] &&
            max[0] == other_rect.max[0] &&
@@ -56,14 +56,18 @@ struct Rect {
 
 struct TextureSubresourceState {
   public:
-    TextureSubresourceState() = default; // TODO: get rid of this entirely
-    TextureSubresourceState(Rect rect, TextureState state) : m_rect{rect}, m_state{state} {}
+    TextureSubresourceState(U32Rect2D rect, TextureState state)
+        : m_rect{rect}
+        , m_state{state} {
+    }
 
     TextureSubresourceState(u32 base_array_layer, u32 array_layer_count, u32 base_mip, u32 mip_count, TextureState state)
-        : m_rect{Rect{
-          .min = {base_array_layer, base_mip},
-          .max = {base_array_layer + array_layer_count - 1u, base_mip + mip_count - 1u}
-        }}
+        : m_rect{
+          U32Rect2D{
+            .min = {base_array_layer, base_mip},
+            .max = {base_array_layer + array_layer_count - 1u, base_mip + mip_count - 1u}
+          }
+        }
         , m_state{state} {
     }
 
@@ -83,19 +87,24 @@ struct TextureSubresourceState {
       return m_rect.max[1] - m_rect.min[1] + 1u;
     }
 
-    [[nodiscard]] const Rect& GetRect() const {
+    [[nodiscard]] const U32Rect2D& Rect() const {
       return m_rect;
     }
 
-    [[nodiscard]] const TextureState& State() const {
+    [[nodiscard]] U32Rect2D& Rect() {
+      return m_rect;
+    }
+
+    [[nodiscard]] const TextureState& GetState() const {
       return m_state;
     }
 
-  private:
-    // TODO: get rid of this
-    friend class TextureStateTracker;
+    void SetState(const TextureState& state) {
+      m_state = state;
+    }
 
-    Rect m_rect{};
+  private:
+    U32Rect2D m_rect{};
     TextureState m_state{};
 };
 
@@ -110,140 +119,159 @@ class TextureStateTracker {
   public:
     TextureStateTracker(u32 array_layer_count, u32 mip_count) {
       // This ensures we don't invalidate iterators when adding new rects to the vector.
-      m_rects.reserve(MaxSimultaneousRects(array_layer_count, mip_count));
+      m_subresource_states.reserve(MaxSimultaneousSubresourceStates(array_layer_count, mip_count));
 
       // Add an initial rect that covers the entire grid.
+      // TODO: this isn't desirable for the TextureStateCombiner
       const auto rect = new TextureSubresourceState{0u, array_layer_count, 0u, mip_count, {
         .m_image_layout = VK_IMAGE_LAYOUT_UNDEFINED,
         .m_access = 0,
         .m_pipeline_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
       }};
-      m_rects.push_back(rect);
+      m_subresource_states.push_back(rect);
     }
 
-    [[nodiscard]] std::span<const TextureSubresourceState* const> GetRects() const {
-      return m_rects;
+    [[nodiscard]] std::span<const TextureSubresourceState* const> GetSubresourceStates() const {
+      return m_subresource_states;
     }
 
-    void TransitionRect(const TextureSubresourceState& rect_spec, std::function<void(TextureSubresourceState)> on_intersection = [](TextureSubresourceState) {}) {
-      std::vector<TextureSubresourceState*>::iterator next_iter_rect;
+    void TransitionSubresource(
+      const TextureSubresourceState& transition,
+      std::function<void(TextureSubresourceState)> on_intersection = [](TextureSubresourceState) {}
+    ) {
+      std::vector<TextureSubresourceState*>::iterator next_iter;
 
-      for(auto iter_rect = m_rects.begin(); iter_rect != m_rects.end(); iter_rect = next_iter_rect) {
-        TextureSubresourceState& maybe_intersecting_rect = **iter_rect;
+      for(auto iter = m_subresource_states.begin(); iter != m_subresource_states.end(); iter = next_iter) {
+        next_iter = std::next(iter);
 
-        next_iter_rect = std::next(iter_rect);
-
-        std::optional<Rect> intersection_rect = rect_spec.m_rect.GetIntersectionWith(maybe_intersecting_rect.m_rect);
+        TextureSubresourceState& subresource_state = **iter;
+        std::optional<U32Rect2D> intersection_rect = transition.Rect().GetIntersectionWith(subresource_state.Rect());
         if(!intersection_rect.has_value()) {
           continue;
         }
-        on_intersection(TextureSubresourceState{intersection_rect.value(), maybe_intersecting_rect.m_state});
+        on_intersection(TextureSubresourceState{intersection_rect.value(), subresource_state.GetState()});
 
-        if(rect_spec.m_rect.IsCongruentTo(maybe_intersecting_rect.m_rect)) {
-          if(maybe_intersecting_rect.m_state != rect_spec.m_state) {
-            maybe_intersecting_rect.m_state = rect_spec.m_state;
-            TryMergeWithNeighbours(maybe_intersecting_rect);
+        if(transition.Rect().IsCongruentTo(subresource_state.Rect())) {
+          if(subresource_state.GetState() != transition.GetState()) {
+            subresource_state.SetState(transition.GetState());
+            TryMergeWithNeighbours(subresource_state);
           }
           return;
         }
 
         // Create up to four new rects with the same state in each direction
 
-        if(rect_spec.m_rect.min[0] > maybe_intersecting_rect.m_rect.min[0]) {
-          const auto new_rect = new TextureSubresourceState{};
-          *new_rect = maybe_intersecting_rect;
-          new_rect->m_rect.max[0] = rect_spec.m_rect.min[0] - 1;
-          m_rects.push_back(new_rect);
+        const U32Rect2D& subresource_rect = subresource_state.Rect();
+        const U32Rect2D& transition_rect = transition.Rect();
+
+        if(transition_rect.min[0] > subresource_rect.min[0]) {
+          const auto new_subresource_state = new TextureSubresourceState{
+            U32Rect2D{
+              .min = {subresource_rect.min[0], subresource_rect.min[1] },
+              .max = { transition_rect.min[0] - 1u, subresource_rect.max[1]}
+            },
+            subresource_state.GetState()
+          };
+          m_subresource_states.push_back(new_subresource_state);
         }
 
-        if(rect_spec.m_rect.max[0] < maybe_intersecting_rect.m_rect.max[0]) {
-          const auto new_rect = new TextureSubresourceState{};
-          *new_rect = maybe_intersecting_rect;
-          new_rect->m_rect.min[0] = rect_spec.m_rect.max[0] + 1;
-          m_rects.push_back(new_rect);
+        if(transition_rect.max[0] < subresource_rect.max[0]) {
+          const auto new_subresource_state = new TextureSubresourceState{
+            U32Rect2D{
+              .min = { transition_rect.max[0] + 1, subresource_rect.min[1] },
+              .max = {subresource_rect.max[0], subresource_rect.max[1] }
+            },
+            subresource_state.GetState()
+          };
+          m_subresource_states.push_back(new_subresource_state);
         }
 
-        if(rect_spec.m_rect.min[1] > maybe_intersecting_rect.m_rect.min[1]) {
-          const auto new_rect = new TextureSubresourceState{};
-          new_rect->m_rect.min[0] = rect_spec.m_rect.min[0];
-          new_rect->m_rect.max[0] = rect_spec.m_rect.max[0];
-          new_rect->m_rect.min[1] = maybe_intersecting_rect.m_rect.min[1];
-          new_rect->m_rect.max[1] = rect_spec.m_rect.min[1] - 1;
-          new_rect->m_state = maybe_intersecting_rect.State();
-          m_rects.push_back(new_rect);
+        if(transition_rect.min[1] > subresource_rect.min[1]) {
+          const auto new_subresource_state = new TextureSubresourceState{
+            U32Rect2D{
+              .min = {transition_rect.min[0], subresource_rect.min[1] },
+              .max = { transition_rect.max[0], transition_rect.min[1] - 1u }
+            },
+            subresource_state.GetState()
+          };
+          m_subresource_states.push_back(new_subresource_state);
         }
 
-        if(rect_spec.m_rect.max[1] < maybe_intersecting_rect.m_rect.max[1]) {
-          const auto new_rect = new TextureSubresourceState{};
-          new_rect->m_rect.min[0] = rect_spec.m_rect.min[0];
-          new_rect->m_rect.max[0] = rect_spec.m_rect.max[0];
-          new_rect->m_rect.min[1] = rect_spec.m_rect.max[1] + 1;
-          new_rect->m_rect.max[1] = maybe_intersecting_rect.m_rect.max[1];
-          new_rect->m_state = maybe_intersecting_rect.State();
-          m_rects.push_back(new_rect);
+        if(transition_rect.max[1] < subresource_rect.max[1]) {
+          const auto new_subresource_state = new TextureSubresourceState{
+            U32Rect2D{
+              .min = { transition_rect.min[0], transition_rect.max[1] + 1u },
+              .max = {transition_rect.max[0], subresource_rect.max[1] }
+            },
+            subresource_state.GetState()
+          };
+          m_subresource_states.push_back(new_subresource_state);
         }
 
         // Remove the original overlapping rect and release its memory to the pool
-        delete &maybe_intersecting_rect;
-        next_iter_rect = m_rects.erase(iter_rect);
+        delete &subresource_state;
+        next_iter = m_subresource_states.erase(iter);
       }
 
-      const auto new_rect = new TextureSubresourceState{};
-      *new_rect = rect_spec;
-      m_rects.push_back(new_rect);
-      TryMergeWithNeighbours(*new_rect);
+      const auto new_subresource_state = new TextureSubresourceState{transition};
+      m_subresource_states.push_back(new_subresource_state);
+      TryMergeWithNeighbours(*new_subresource_state);
     }
 
   private:
-    static constexpr size_t MaxSimultaneousRects(u32 array_layer_count, u32 mip_count) {
+    static constexpr size_t MaxSimultaneousSubresourceStates(u32 array_layer_count, u32 mip_count) {
       // Allocate enough rectangles to fill the entire grid.
       // Also allocate one extra for safety, not sure if needed!?
       return array_layer_count * mip_count + 1u;
     }
 
-    void TryMergeWithNeighbours(TextureSubresourceState& rect) {
-      std::vector<TextureSubresourceState*>::iterator next_iter_rect;
+    void TryMergeWithNeighbours(TextureSubresourceState& subresource_state) {
+      std::vector<TextureSubresourceState*>::iterator next_iter;
 
-      for(auto iter_rect = m_rects.begin(); iter_rect != m_rects.end(); iter_rect = next_iter_rect) {
-        TextureSubresourceState& maybe_neighbour_rect = **iter_rect;
+      for(auto iter = m_subresource_states.begin(); iter != m_subresource_states.end(); iter = next_iter) {
+        TextureSubresourceState& other_subresource_state = **iter;
 
-        next_iter_rect = std::next(iter_rect);
+        next_iter = std::next(iter);
 
-        if(maybe_neighbour_rect.m_state != rect.m_state || &maybe_neighbour_rect == &rect) {
+        if(&other_subresource_state == &subresource_state) {
+          continue;
+        }
+
+        if(other_subresource_state.GetState() != subresource_state.GetState()) {
           continue;
         }
 
         for(int axis = 0; axis < 2; axis++) {
           const int other_axis = axis ^ 1;
 
-          if(maybe_neighbour_rect.m_rect.min[other_axis] != rect.m_rect.min[other_axis]) {
+          if(other_subresource_state.Rect().min[other_axis] != subresource_state.Rect().min[other_axis]) {
             continue;
           }
 
-          if(maybe_neighbour_rect.m_rect.max[other_axis] != rect.m_rect.max[other_axis]) {
+          if(other_subresource_state.Rect().max[other_axis] != subresource_state.Rect().max[other_axis]) {
             continue;
           }
 
-          if(maybe_neighbour_rect.m_rect.max[axis] + 1u == rect.m_rect.min[axis]) {
-            rect.m_rect.min[axis] = maybe_neighbour_rect.m_rect.min[axis];
-            delete &maybe_neighbour_rect;
-            m_rects.erase(iter_rect);
-            next_iter_rect = m_rects.begin();
+          if(other_subresource_state.Rect().max[axis] + 1u == subresource_state.Rect().min[axis]) {
+            subresource_state.Rect().min[axis] = other_subresource_state.Rect().min[axis];
+            delete &other_subresource_state;
+            m_subresource_states.erase(iter);
+            next_iter = m_subresource_states.begin();
             break;
           }
 
-          if(maybe_neighbour_rect.m_rect.min[axis] == rect.m_rect.max[axis] + 1u) {
-            rect.m_rect.max[axis] = maybe_neighbour_rect.m_rect.max[axis];
-            delete &maybe_neighbour_rect;
-            m_rects.erase(iter_rect);
-            next_iter_rect = m_rects.begin();
+          if(other_subresource_state.Rect().min[axis] == subresource_state.Rect().max[axis] + 1u) {
+            subresource_state.Rect().max[axis] = other_subresource_state.Rect().max[axis];
+            delete &other_subresource_state;
+            m_subresource_states.erase(iter);
+            next_iter = m_subresource_states.begin();
             break;
           }
         }
       }
     }
 
-    std::vector<TextureSubresourceState*> m_rects{};
+    std::vector<TextureSubresourceState*> m_subresource_states{};
 };
 
 /**
@@ -252,134 +280,5 @@ class TextureStateTracker {
  * - we also need to know the intersecting areas
  */
 using TextureStateCombiner = TextureStateTracker;
-/*class TextureStateCombiner {
-  public:
-    TextureStateCombiner(u32 width, u32 height) {
-      // This ensures we don't invalidate iterators when adding new rects to the vector.
-      m_rects.reserve(MaxSimultaneousRects(width, height));
-    }
-
-    [[nodiscard]] std::span<const TextureSubresourceState* const> GetRects() const {
-      return m_rects;
-    }
-
-    void TransitionRect(const TextureSubresourceState& rect_spec) {
-      std::vector<TextureSubresourceState*>::iterator next_iter_rect;
-
-      for(auto iter_rect = m_rects.begin(); iter_rect != m_rects.end(); iter_rect = next_iter_rect) {
-        TextureSubresourceState& maybe_intersecting_rect = **iter_rect;
-
-        next_iter_rect = std::next(iter_rect);
-
-        if(!rect_spec.m_rect.Intersects(maybe_intersecting_rect.m_rect)) {
-          continue;
-        }
-
-        if(rect_spec.m_rect.IsCongruentTo(maybe_intersecting_rect.m_rect)) {
-          if(maybe_intersecting_rect.m_state != rect_spec.m_state) {
-            maybe_intersecting_rect.m_state = rect_spec.m_state;
-            TryMergeWithNeighbours(maybe_intersecting_rect);
-          }
-          return;
-        }
-
-        // Create up to four new rects with the same state in each direction
-
-        if(rect_spec.m_rect.min[0] > maybe_intersecting_rect.m_rect.min[0]) {
-          const auto new_rect = new TextureSubresourceState{};
-          *new_rect = maybe_intersecting_rect;
-          new_rect->m_rect.max[0] = rect_spec.m_rect.min[0] - 1;
-          m_rects.push_back(new_rect);
-        }
-
-        if(rect_spec.m_rect.max[0] < maybe_intersecting_rect.m_rect.max[0]) {
-          const auto new_rect = new TextureSubresourceState{};
-          *new_rect = maybe_intersecting_rect;
-          new_rect->m_rect.min[0] = rect_spec.m_rect.max[0] + 1;
-          m_rects.push_back(new_rect);
-        }
-
-        if(rect_spec.m_rect.min[1] > maybe_intersecting_rect.m_rect.min[1]) {
-          const auto new_rect = new TextureSubresourceState{};
-          new_rect->m_rect.min[0] = rect_spec.m_rect.min[0];
-          new_rect->m_rect.max[0] = rect_spec.m_rect.max[0];
-          new_rect->m_rect.min[1] = maybe_intersecting_rect.m_rect.min[1];
-          new_rect->m_rect.max[1] = rect_spec.m_rect.min[1] - 1;
-          new_rect->m_state = maybe_intersecting_rect.m_state;
-          m_rects.push_back(new_rect);
-        }
-
-        if(rect_spec.m_rect.max[1] < maybe_intersecting_rect.m_rect.max[1]) {
-          const auto new_rect = new TextureSubresourceState{};
-          new_rect->m_rect.min[0] = rect_spec.m_rect.min[0];
-          new_rect->m_rect.max[0] = rect_spec.m_rect.max[0];
-          new_rect->m_rect.min[1] = rect_spec.m_rect.max[1] + 1;
-          new_rect->m_rect.max[1] = maybe_intersecting_rect.m_rect.max[1];
-          new_rect->m_state = maybe_intersecting_rect.m_state;
-          m_rects.push_back(new_rect);
-        }
-
-        // Remove the original overlapping rect and release its memory to the pool
-        delete &maybe_intersecting_rect;
-        next_iter_rect = m_rects.erase(iter_rect);
-      }
-
-      const auto new_rect = new TextureSubresourceState{};
-      *new_rect = rect_spec;
-      m_rects.push_back(new_rect);
-      TryMergeWithNeighbours(*new_rect);
-    }
-
-  private:
-    static constexpr size_t MaxSimultaneousRects(u32 width, u32 height) {
-      // Allocate enough rectangles to fill the entire grid.
-      // Also allocate one extra for safety, not sure if needed!?
-      return width * height + 1u;
-    }
-
-    void TryMergeWithNeighbours(TextureSubresourceState& rect) {
-      std::vector<TextureSubresourceState*>::iterator next_iter_rect;
-
-      for(auto iter_rect = m_rects.begin(); iter_rect != m_rects.end(); iter_rect = next_iter_rect) {
-        TextureSubresourceState& maybe_neighbour_rect = **iter_rect;
-
-        next_iter_rect = std::next(iter_rect);
-
-        if(maybe_neighbour_rect.m_state != rect.m_state || &maybe_neighbour_rect == &rect) {
-          continue;
-        }
-
-        for(int axis = 0; axis < 2; axis++) {
-          const int other_axis = axis ^ 1;
-
-          if(maybe_neighbour_rect.m_rect.min[other_axis] != rect.m_rect.min[other_axis]) {
-            continue;
-          }
-
-          if(maybe_neighbour_rect.m_rect.max[other_axis] != rect.m_rect.max[other_axis]) {
-            continue;
-          }
-
-          if(maybe_neighbour_rect.m_rect.max[axis] + 1u == rect.m_rect.min[axis]) {
-            rect.m_rect.min[axis] = maybe_neighbour_rect.m_rect.min[axis];
-            delete &maybe_neighbour_rect;
-            m_rects.erase(iter_rect);
-            next_iter_rect = m_rects.begin();
-            break;
-          }
-
-          if(maybe_neighbour_rect.m_rect.min[axis] == rect.m_rect.max[axis] + 1u) {
-            rect.m_rect.max[axis] = maybe_neighbour_rect.m_rect.max[axis];
-            delete &maybe_neighbour_rect;
-            m_rects.erase(iter_rect);
-            next_iter_rect = m_rects.begin();
-            break;
-          }
-        }
-      }
-    }
-
-    std::vector<TextureSubresourceState*> m_rects{};
-};*/
 
 } // namespace mgpu::vulkan
