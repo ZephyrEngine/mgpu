@@ -24,7 +24,7 @@ class Texture final : public TextureBase {
 
     Result<TextureViewBase*> CreateView(const MGPUTextureViewCreateInfo& create_info) override;
 
-    void TransitionState(State new_state, VkCommandBuffer vk_command_buffer, u32 base_array_layer, u32 array_layer_count, u32 base_mip, u32 mip_count);
+    void TransitionState(const TextureSubresourceState& texture_state_rect, VkCommandBuffer vk_command_buffer);
 
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);

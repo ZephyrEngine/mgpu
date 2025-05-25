@@ -141,12 +141,11 @@ MGPUResult Queue::Present(SwapChain* swap_chain, u32 texture_index) {
   };
 
   const auto texture = (Texture*)swap_chain->EnumerateTextures().Unwrap()[texture_index];
-  const Texture::State new_texture_state{
+  texture->TransitionState(TextureSubresourceState{0u, 1u, 0u, 1u, {
     .m_image_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     .m_access = VK_ACCESS_TRANSFER_READ_BIT,
     .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
-  };
-  texture->TransitionState(new_texture_state, m_vk_cmd_buffer, 0u, 1u, 0u, 1u);
+  }}, m_vk_cmd_buffer);
 
   Flush();
 
@@ -257,19 +256,11 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
   std::memcpy(map_address, data, size_bytes);
   staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
 
-  const Texture::State new_texture_state{
+  dst_texture->TransitionState(TextureSubresourceState{region.base_array_layer, region.array_layer_count, region.mip_level, 1u, {
     .m_image_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
     .m_access = VK_ACCESS_TRANSFER_WRITE_BIT,
     .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
-  };
-  dst_texture->TransitionState(
-    new_texture_state,
-    m_vk_cmd_buffer,
-    region.base_array_layer,
-    region.array_layer_count,
-    region.mip_level,
-    1u
-  );
+  }}, m_vk_cmd_buffer);
 
   const VkBufferImageCopy vk_buffer_image_copy{
     .bufferOffset = 0u,
@@ -397,14 +388,13 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
         new_state_combiner = new TextureStateCombiner{texture_view->ArrayLayerCount(), texture_view->MipCount()};
       }
       // TODO(fleroviux): deal with overlapping rects, OR access and pipeline stages and force GENERAL image layout in overlapping areas of different image layouts.
-      new_state_combiner->TransitionRect({
+      new_state_combiner->TransitionRect(TextureSubresourceState{Rect{
         .min = {texture_view->BaseArrayLayer(), texture_view->BaseMip()},
         .max = {
           texture_view->BaseArrayLayer() + texture_view->ArrayLayerCount() - 1u,
           texture_view->BaseMip() + texture_view->MipCount() - 1u
         },
-        .state = new_state
-      });
+      }, new_state});
     };
 
     // Framebuffer attachments
@@ -493,11 +483,7 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
 
     for(const auto [texture, new_texture_state_combiner] : new_texture_state_combiners) {
       for(auto rect : new_texture_state_combiner->GetRects()) {
-        const u32 base_array_layer = rect->min[0];
-        const u32 base_mip = rect->min[1];
-        const u32 array_layer_count = rect->max[0] - rect->min[0] + 1u;
-        const u32 mip_count = rect->max[1] - rect->min[1] + 1u;
-        texture->TransitionState(rect->state, m_vk_cmd_buffer, base_array_layer, array_layer_count, base_mip, mip_count);
+        texture->TransitionState(*rect, m_vk_cmd_buffer);
       }
       delete new_texture_state_combiner;
     }

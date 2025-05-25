@@ -87,12 +87,8 @@ Result<TextureViewBase*> Texture::CreateView(const MGPUTextureViewCreateInfo& cr
   return TextureView::Create(m_device, this, create_info);
 }
 
-void Texture::TransitionState(State new_state, VkCommandBuffer vk_command_buffer, u32 base_array_layer, u32 array_layer_count, u32 base_mip, u32 mip_count) {
-  m_state_tracker.TransitionRect({
-    .min = {base_array_layer, base_mip},
-    .max = {base_array_layer + array_layer_count - 1u, base_mip + mip_count - 1u},
-    .state = new_state
-  }, [&](TextureRect intersecting_rect) {
+void Texture::TransitionState(const TextureSubresourceState& texture_state_rect, VkCommandBuffer vk_command_buffer) {
+  m_state_tracker.TransitionRect(texture_state_rect, [&](TextureSubresourceState intersecting_rect) {
     // TODO: avoid read-read barriers?
 
     //fmt::print("transing: ({}, {}) - ({}, {}) from [{}, {}, {}]\n", intersecting_rect.min[0], intersecting_rect.min[1], intersecting_rect.max[0], intersecting_rect.max[1], intersecting_rect.state.m_pipeline_stages, intersecting_rect.state.m_access, intersecting_rect.state.m_image_layout);//
@@ -100,23 +96,23 @@ void Texture::TransitionState(State new_state, VkCommandBuffer vk_command_buffer
     const VkImageMemoryBarrier vk_image_memory_barrier{
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
       .pNext = nullptr,
-      .srcAccessMask = intersecting_rect.state.m_access,
-      .dstAccessMask = new_state.m_access,
-      .oldLayout = intersecting_rect.state.m_image_layout,
-      .newLayout = new_state.m_image_layout,
+      .srcAccessMask = intersecting_rect.State().m_access,
+      .dstAccessMask = texture_state_rect.State().m_access,
+      .oldLayout = intersecting_rect.State().m_image_layout,
+      .newLayout = texture_state_rect.State().m_image_layout,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .image = m_vk_image,
       .subresourceRange = {
         .aspectMask = MGPUTextureAspectToVkImageAspect(MGPUTextureFormatToMGPUTextureAspect(Format())),
-        .baseMipLevel = intersecting_rect.min[1],
-        .levelCount = intersecting_rect.max[1] - intersecting_rect.min[1] + 1u,
-        .baseArrayLayer = intersecting_rect.min[0],
-        .layerCount = intersecting_rect.max[0] - intersecting_rect.min[0] + 1u
+        .baseMipLevel = intersecting_rect.BaseMip(),
+        .levelCount = intersecting_rect.MipCount(),
+        .baseArrayLayer = intersecting_rect.BaseArrayLayer(),
+        .layerCount = intersecting_rect.ArrayLayerCount()
       }
     };
 
-    vkCmdPipelineBarrier(vk_command_buffer, intersecting_rect.state.m_pipeline_stages, new_state.m_pipeline_stages, 0, 0u, nullptr, 0u, nullptr, 1u, &vk_image_memory_barrier);
+    vkCmdPipelineBarrier(vk_command_buffer, intersecting_rect.State().m_pipeline_stages, texture_state_rect.State().m_pipeline_stages, 0, 0u, nullptr, 0u, nullptr, 1u, &vk_image_memory_barrier);
   });
 }
 
