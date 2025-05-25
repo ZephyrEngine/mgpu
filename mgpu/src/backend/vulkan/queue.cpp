@@ -140,12 +140,14 @@ MGPUResult Queue::Present(SwapChain* swap_chain, u32 texture_index) {
     .pResults = nullptr
   };
 
-  // TODO(fleroviux): clean this up and ensure that the barrier is correct.
-  ((Texture*)swap_chain->EnumerateTextures().Unwrap()[texture_index])->TransitionState({
+  const auto texture = (Texture*)swap_chain->EnumerateTextures().Unwrap()[texture_index];
+  const Texture::State new_texture_state{
     .m_image_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     .m_access = VK_ACCESS_TRANSFER_READ_BIT,
     .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
-  }, m_vk_cmd_buffer);
+  };
+  texture->TransitionState(new_texture_state, m_vk_cmd_buffer, 0u, 1u, 0u, 1u);
+
   Flush();
 
   MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(m_vk_queue, &vk_present_info));
@@ -255,11 +257,19 @@ MGPUResult Queue::TextureUpload(const TextureBase* texture, const MGPUTextureUpl
   std::memcpy(map_address, data, size_bytes);
   staging_buffer->FlushRange(0u, MGPU_WHOLE_SIZE);
 
-  dst_texture->TransitionState({
+  const Texture::State new_texture_state{
     .m_image_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
     .m_access = VK_ACCESS_TRANSFER_WRITE_BIT,
     .m_pipeline_stages = VK_PIPELINE_STAGE_TRANSFER_BIT
-  }, m_vk_cmd_buffer);
+  };
+  dst_texture->TransitionState(
+    new_texture_state,
+    m_vk_cmd_buffer,
+    region.base_array_layer,
+    region.array_layer_count,
+    region.mip_level,
+    1u
+  );
 
   const VkBufferImageCopy vk_buffer_image_copy{
     .bufferOffset = 0u,
@@ -352,7 +362,6 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
 
     // TODO(fleroviux): deal with resources which are used in multiple ways
 
-    // TODO(fleroviux): make attachment transitions part of this system?
     // TODO(fleroviux): "Use VK_IMAGE_LAYOUT_UNDEFINED when the previous content of the image is not needed."
 
     // Use KHR_synchornization_2 to batch barriers?: https://developer.nvidia.com/blog/vulkan-dos-donts/
@@ -360,32 +369,49 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
     const auto& render_command_encoder = command.m_render_command_encoder;
 
     // TODO(fleroviux): performance-wise it probably makes sense to cache these maps for better memory allocation reuse
-    std::unordered_map<BufferBase*, Buffer::State> new_buffer_states{};
-    std::unordered_map<TextureViewBase*, Texture::State> new_texture_view_states{};
+    std::unordered_map<Buffer*, Buffer::State> new_buffer_states{};
+    std::unordered_map<Texture*, TextureStateCombiner*> new_texture_state_combiners{};
 
-    const auto AddBufferState = [&](BufferBase* buffer, const Buffer::State& new_state) {
+    const auto AddBufferState = [&](Buffer* buffer, const Buffer::State& new_state) {
       auto& new_buffer_state = new_buffer_states[buffer];
       new_buffer_state.m_access |= new_state.m_access;
       new_buffer_state.m_pipeline_stages |= new_state.m_pipeline_stages;
     };
 
-    const auto AddTextureViewState = [&](TextureViewBase* texture_view, const Texture::State& new_state) {
-      auto& new_texture_view_state = new_texture_view_states[texture_view];
-      if(new_texture_view_state.m_image_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-        new_texture_view_state.m_image_layout = new_state.m_image_layout;
+    const auto AddTextureViewState = [&](TextureView* texture_view, const Texture::State& new_state) {
+//      auto& new_texture_view_state = new_texture_view_states[texture_view];
+//      if(new_texture_view_state.m_image_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+//        new_texture_view_state.m_image_layout = new_state.m_image_layout;
+//      }
+//      if(new_texture_view_state.m_image_layout != new_state.m_image_layout) {
+//        new_texture_view_state.m_image_layout = VK_IMAGE_LAYOUT_GENERAL;
+//      }
+//      new_texture_view_state.m_access |= new_state.m_access;
+//      new_texture_view_state.m_pipeline_stages |= new_state.m_pipeline_stages;
+
+      const auto texture = texture_view->GetTexture();
+
+      auto& new_state_combiner = new_texture_state_combiners[texture];
+      if(new_state_combiner == nullptr) {
+        // TODO(fleroviux): cache these texture state trackers instead of creating them over and over again
+        new_state_combiner = new TextureStateCombiner{texture_view->ArrayLayerCount(), texture_view->MipCount()};
       }
-      if(new_texture_view_state.m_image_layout != new_state.m_image_layout) {
-        new_texture_view_state.m_image_layout = VK_IMAGE_LAYOUT_GENERAL;
-      }
-      new_texture_view_state.m_access |= new_state.m_access;
-      new_texture_view_state.m_pipeline_stages |= new_state.m_pipeline_stages;
+      // TODO(fleroviux): deal with overlapping rects, OR access and pipeline stages and force GENERAL image layout in overlapping areas of different image layouts.
+      new_state_combiner->TransitionRect({
+        .min = {texture_view->BaseArrayLayer(), texture_view->BaseMip()},
+        .max = {
+          texture_view->BaseArrayLayer() + texture_view->ArrayLayerCount() - 1u,
+          texture_view->BaseMip() + texture_view->MipCount() - 1u
+        },
+        .state = new_state
+      });
     };
 
     // Framebuffer attachments
 
     for(const auto& color_attachment : command.m_color_attachments) {
       if(color_attachment.texture_view != nullptr) {
-        AddTextureViewState(color_attachment.texture_view, {
+        AddTextureViewState((TextureView*)color_attachment.texture_view, {
           .m_image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           .m_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
           .m_pipeline_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -394,7 +420,7 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
     }
 
     if(have_depth_stencil_attachment) {
-      AddTextureViewState(depth_stencil_attachment.texture_view, {
+      AddTextureViewState((TextureView*)depth_stencil_attachment.texture_view, {
         .m_image_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         .m_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
         .m_pipeline_stages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
@@ -404,14 +430,14 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
     // Buffers and textures bound inside of the render pass
 
     for(const auto buffer : render_command_encoder.GetBoundVertexBuffers()) {
-      AddBufferState(buffer, {
+      AddBufferState((Buffer*)buffer, {
         .m_access = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
         .m_pipeline_stages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
       });
     }
 
     for(const auto buffer : render_command_encoder.GetBoundIndexBuffers()) {
-      AddBufferState(buffer, {
+      AddBufferState((Buffer*)buffer, {
         .m_access = VK_ACCESS_INDEX_READ_BIT,
         .m_pipeline_stages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
       });
@@ -462,11 +488,18 @@ void Queue::HandleCmdBeginRenderPass(CommandListState& state, const BeginRenderP
     // Finally add the actual resource barriers to the current command buffer
 
     for(const auto& [buffer, new_buffer_state] : new_buffer_states) {
-      ((Buffer*)buffer)->TransitionState(new_buffer_state, m_vk_cmd_buffer);
+      buffer->TransitionState(new_buffer_state, m_vk_cmd_buffer);
     }
 
-    for(const auto& [texture_view, new_texture_view_state] : new_texture_view_states) {
-      ((TextureView*)texture_view)->GetTexture()->TransitionState(new_texture_view_state, m_vk_cmd_buffer);
+    for(const auto [texture, new_texture_state_combiner] : new_texture_state_combiners) {
+      for(auto rect : new_texture_state_combiner->GetRects()) {
+        const u32 base_array_layer = rect->min[0];
+        const u32 base_mip = rect->min[1];
+        const u32 array_layer_count = rect->max[0] - rect->min[0] + 1u;
+        const u32 mip_count = rect->max[1] - rect->min[1] + 1u;
+        texture->TransitionState(rect->state, m_vk_cmd_buffer, base_array_layer, array_layer_count, base_mip, mip_count);
+      }
+      delete new_texture_state_combiner;
     }
   }
 

@@ -18,7 +18,10 @@ class TextureViewBase : atom::NonCopyable, atom::NonMoveable {
 
     [[nodiscard]] MGPUTextureViewType Type() const { return m_create_info.type; }
     [[nodiscard]] MGPUTextureFormat Format() const { return m_create_info.format; }
-    [[nodiscard]] MGPUTextureAspect Aspect() const { return m_create_info.aspect; }
+    [[nodiscard]] u32 BaseMip() const { return m_create_info.base_mip; }
+    [[nodiscard]] u32 MipCount() const { return m_create_info.mip_count; }
+    [[nodiscard]] u32 BaseArrayLayer() const { return m_create_info.base_array_layer; }
+    [[nodiscard]] u32 ArrayLayerCount() const { return m_create_info.array_layer_count; }
 
     virtual TextureBase* GetTexture() = 0;
 

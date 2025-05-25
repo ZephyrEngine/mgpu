@@ -7,18 +7,13 @@
 #include "backend/texture.hpp"
 #include "common/result.hpp"
 #include "device.hpp"
+#include "texture_state_tracker.hpp"
 
 namespace mgpu::vulkan {
 
 class Texture final : public TextureBase {
   public:
-    struct State {
-      VkImageLayout m_image_layout{VK_IMAGE_LAYOUT_UNDEFINED};
-      VkAccessFlags m_access{};
-      VkPipelineStageFlags m_pipeline_stages{};
-
-      bool operator==(const State& other_state) const;
-    };
+    using State = TextureState;
 
    ~Texture() override;
 
@@ -29,7 +24,7 @@ class Texture final : public TextureBase {
 
     Result<TextureViewBase*> CreateView(const MGPUTextureViewCreateInfo& create_info) override;
 
-    void TransitionState(State new_state, VkCommandBuffer vk_command_buffer);
+    void TransitionState(State new_state, VkCommandBuffer vk_command_buffer, u32 base_array_layer, u32 array_layer_count, u32 base_mip, u32 mip_count);
 
   private:
     Texture(Device* device, VkImage vk_image, VmaAllocation vma_allocation, const MGPUTextureCreateInfo& create_info);
@@ -42,6 +37,7 @@ class Texture final : public TextureBase {
       .m_access = VK_ACCESS_NONE,
       .m_pipeline_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
     };
+    TextureStateTracker m_state_tracker;
 };
 
 }  // namespace mgpu::vulkan

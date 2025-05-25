@@ -68,6 +68,7 @@ set(HEADERS
   src/backend/vulkan/surface.hpp
   src/backend/vulkan/swap_chain.hpp
   src/backend/vulkan/texture.hpp
+  src/backend/vulkan/texture_state_tracker.hpp
   src/backend/vulkan/texture_view.hpp
   src/backend/command_list/command_list.hpp
   src/backend/command_list/commands.hpp
