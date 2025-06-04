@@ -82,15 +82,20 @@ int main() {
     surface_create_info.metal = {
       .metal_layer = TMP_Cocoa_CreateMetalLayer(wm_info.info.cocoa.window)
     };
-#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
-    if(wm_info.subsystem == SDL_SYSWM_WAYLAND) {
-      surface_create_info.wayland.display = wm_info.info.wl.display;
-      surface_create_info.wayland.surface = wm_info.info.wl.surface;
-    }
-#elif defined(SDL_VIDEO_DRIVER_X11)
-    // NOTE: probably should just pass the X11 window and surface and let MGPU deal with XCB
-    if(wm_info.subsystem == SDL_SYSWM_X11) {
-      ATOM_PANIC("unimplemented X11 surface creation");
+#elif defined(SDL_VIDEO_DRIVER_WAYLAND)  || defined(SDL_VIDEO_DRIVER_X11)
+    switch(wm_info.subsystem) {
+      case SDL_SYSWM_WAYLAND: {
+        surface_create_info.wayland.display = wm_info.info.wl.display;
+        surface_create_info.wayland.surface = wm_info.info.wl.surface;
+        break;
+      }
+      case SDL_SYSWM_X11: {
+        // NOTE: probably should just pass the X11 window and surface and let MGPU deal with XCB
+        ATOM_PANIC("unimplemented X11 surface creation");
+      }
+      default: {
+        ATOM_PANIC("unexpected wm_info.subsystem: {}", wm_info.subsystem);
+      }
     }
 #else
   #error "Unsupported SDL video driver"
