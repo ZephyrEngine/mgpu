@@ -354,7 +354,7 @@ typedef struct MGPUSurfaceCapabilities {
   // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
   uint32_t min_texture_count;
   uint32_t max_texture_count;
-  MGPUExtent2D current_extent;
+  MGPUExtent2D current_extent; // can be (MAX_U32, MAX_U32) if the extent is determined by the swap chain targetting the surface
   MGPUExtent2D min_texture_extent;
   MGPUExtent2D max_texture_extent;
   MGPUTextureUsage supported_usage;
@@ -538,16 +538,21 @@ typedef struct MGPUDepthStencilStateCreateInfo {
 } MGPUDepthStencilStateCreateInfo;
 
 typedef struct MGPUSurfaceCreateInfo {
-#ifdef WIN32
+#if defined(WIN32)
   struct {
     HINSTANCE hinstance;
     HWND hwnd;
   } win32;
-#endif
-#ifdef __APPLE__
+#elif defined(__APPLE__)
   struct {
     const CAMetalLayer* metal_layer;
   } metal;
+#else
+  // TODO: proper detection for Linux and BSD etc...
+  struct {
+    struct wl_display* display;
+    struct wl_surface* surface;
+  } wayland;
 #endif
 } MGPUSurfaceCreateInfo;
 

@@ -3,8 +3,10 @@
 
 #include <atom/integer.hpp>
 #include <atom/panic.hpp>
+#include <algorithm>
 #include <SDL.h>
 #include <SDL_syswm.h>
+#include <SDL_vulkan.h>
 #include <optional>
 #include <vector>
 
@@ -42,6 +44,11 @@ MGPUColor hsv_to_rgb(float h, float s, float v) {
 }
 
 int main() {
+  // Uncomment this to force X11 for testing
+// #ifdef SDL_VIDEO_DRIVER_X11
+//   setenv("SDL_VIDEODRIVER", "x11", 1);
+// #endif
+
   SDL_Init(SDL_INIT_VIDEO);
 
   SDL_Window* sdl_window = SDL_CreateWindow(
@@ -50,7 +57,7 @@ int main() {
     SDL_WINDOWPOS_CENTERED,
     1600,
     900,
-    SDL_WINDOW_VULKAN
+    SDL_WINDOW_VULKAN | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
   MGPUInstance mgpu_instance{};
@@ -59,7 +66,10 @@ int main() {
   MGPUSurface mgpu_surface{};
   {
     SDL_SysWMinfo wm_info{};
-    SDL_GetWindowWMInfo(sdl_window, &wm_info);
+    SDL_VERSION(&wm_info.version);
+    if(!SDL_GetWindowWMInfo(sdl_window, &wm_info)) {
+      ATOM_PANIC("SDL_GetWindowWMInfo failed()");
+    }
 
     MGPUSurfaceCreateInfo surface_create_info{};
 
@@ -72,6 +82,16 @@ int main() {
     surface_create_info.metal = {
       .metal_layer = TMP_Cocoa_CreateMetalLayer(wm_info.info.cocoa.window)
     };
+#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
+    if(wm_info.subsystem == SDL_SYSWM_WAYLAND) {
+      surface_create_info.wayland.display = wm_info.info.wl.display;
+      surface_create_info.wayland.surface = wm_info.info.wl.surface;
+    }
+#elif defined(SDL_VIDEO_DRIVER_X11)
+    // NOTE: probably should just pass the X11 window and surface and let MGPU deal with XCB
+    if(wm_info.subsystem == SDL_SYSWM_X11) {
+      ATOM_PANIC("unimplemented X11 surface creation");
+    }
 #else
   #error "Unsupported SDL video driver"
 #endif
@@ -174,15 +194,24 @@ int main() {
     fmt::print("\tmax_texture_extent=({}, {})\n", surface_capabilities.max_texture_extent.width, surface_capabilities.max_texture_extent.height);
     fmt::print("\tsupported_usage={}\n", surface_capabilities.supported_usage);
 
+    int drawable_width{};
+    int drawable_height{};
+    SDL_Vulkan_GetDrawableSize(sdl_window, &drawable_width, &drawable_height);
+
+    const u32 swap_chain_width = std::clamp((u32)drawable_width, surface_capabilities.min_texture_extent.width, surface_capabilities.max_texture_extent.width);
+    const u32 swap_chain_height = std::clamp((u32)drawable_height, surface_capabilities.min_texture_extent.height, surface_capabilities.max_texture_extent.height);
+
     const MGPUSwapChainCreateInfo swap_chain_create_info{
       .surface = mgpu_surface,
       .format = MGPU_TEXTURE_FORMAT_B8G8R8A8_SRGB,
       .color_space = MGPU_COLOR_SPACE_SRGB_NONLINEAR,
       .present_mode = MGPU_PRESENT_MODE_FIFO,
       .usage = MGPU_TEXTURE_USAGE_RENDER_ATTACHMENT,
-      .extent = surface_capabilities.current_extent,
-      .min_texture_count = 2u,
-      .old_swap_chain = nullptr
+      .extent = {
+        .width = swap_chain_width,
+        .height = swap_chain_height,
+      },
+      .min_texture_count = surface_capabilities.min_texture_count
     };
     MGPU_CHECK(mgpuDeviceCreateSwapChain(mgpu_device, &swap_chain_create_info, &mgpu_swap_chain));
 

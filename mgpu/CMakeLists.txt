@@ -117,6 +117,12 @@ elseif(APPLE)
     src/backend/vulkan/platform/metal/physical_device.cpp
     src/backend/vulkan/platform/metal/surface.mm
   )
+elseif(UNIX)
+  # TODO: how to deal with X11 and Wayland at the same time?
+  list(APPEND SOURCES
+    src/backend/vulkan/platform/wayland_x11/physical_device.cpp
+    src/backend/vulkan/platform/wayland_x11/surface.cpp
+  )
 else()
   message(FATAL_ERROR "Unsupported platform")
 endif()
