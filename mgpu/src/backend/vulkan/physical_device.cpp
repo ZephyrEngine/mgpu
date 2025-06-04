@@ -24,9 +24,16 @@ Result<MGPUSurfaceCapabilities> PhysicalDevice::GetSurfaceCapabilities(mgpu::Sur
   VkSurfaceCapabilitiesKHR vk_surface_capabilities{};
   MGPU_VK_FORWARD_ERROR(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vk_physical_device.Handle(), ((Surface*)surface)->Handle(), &vk_surface_capabilities));
 
+  // VkSurfaceCapabilitiesKHR::maxImageCount may be zero if there is no limit on the number of images.
+  // In this case we want to return MAX_U32 instead, since it seems more intuitive.
+  u32 max_texture_count = vk_surface_capabilities.maxImageCount;
+  if(max_texture_count == 0u) {
+    max_texture_count = std::numeric_limits<u32>::max();
+  }
+
   return MGPUSurfaceCapabilities{
     .min_texture_count = vk_surface_capabilities.minImageCount,
-    .max_texture_count = vk_surface_capabilities.maxImageCount,
+    .max_texture_count = max_texture_count,
     .current_extent = {
       .width = vk_surface_capabilities.currentExtent.width,
       .height = vk_surface_capabilities.currentExtent.height,
