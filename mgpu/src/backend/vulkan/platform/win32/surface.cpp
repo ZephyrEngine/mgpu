@@ -6,10 +6,12 @@
 #include "backend/vulkan/lib/vulkan_result.hpp"
 #include "backend/vulkan/platform/surface.hpp"
 
+#include <vector>
+
 namespace mgpu::vulkan {
 
-const char* PlatformGetSurfaceInstanceExtension() {
-  return "VK_KHR_win32_surface";
+std::vector<const char*> PlatformGetSurfaceInstanceExtensions() {
+  return {VK_KHR_WIN32_SURFACE_EXTENSION_NAME};
 }
 
 Result<VkSurfaceKHR> PlatformCreateSurface(VkInstance vk_instance, const MGPUSurfaceCreateInfo& create_info) {

@@ -28,10 +28,11 @@ Result<InstanceBase*> Instance::Create() {
     .apiVersion = VK_API_VERSION_1_2
   };
 
-  std::vector<const char*> vk_required_instance_extensions{
-    "VK_KHR_surface",
-    PlatformGetSurfaceInstanceExtension()
-  };
+  std::vector<const char*> vk_required_instance_extensions{VK_KHR_SURFACE_EXTENSION_NAME};
+  for(auto instance_extension : PlatformGetSurfaceInstanceExtensions()) {
+    vk_required_instance_extensions.push_back(instance_extension);
+  }
+
   std::vector<const char*> vk_required_instance_layers{};
 
   // Enable validation layers in debug builds

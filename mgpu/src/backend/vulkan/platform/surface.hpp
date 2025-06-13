@@ -9,7 +9,7 @@
 
 namespace mgpu::vulkan {
 
-const char* PlatformGetSurfaceInstanceExtension();
+std::vector<const char*> PlatformGetSurfaceInstanceExtensions();
 Result<VkSurfaceKHR> PlatformCreateSurface(VkInstance vk_instance, const MGPUSurfaceCreateInfo& create_info);
 
 }  // namespace mgpu::vulkan

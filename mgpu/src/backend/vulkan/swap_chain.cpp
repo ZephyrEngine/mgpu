@@ -96,7 +96,8 @@ Result<u32> SwapChain::AcquireNextTexture() {
   MGPU_VK_FORWARD_ERROR(vkCreateSemaphore(m_device->Handle(), &vk_semaphore_create_info, nullptr, &vk_semaphore));
   m_device->GetCommandQueue().SetSwapChainAcquireSemaphore(vk_semaphore);
 
-  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, 0ull, vk_semaphore, VK_NULL_HANDLE, &m_acquired_texture_index));
+  // TODO: why is ~0ull timeout required on X11 but not Wayland, macOS and Windows?
+  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, ~0ull, vk_semaphore, VK_NULL_HANDLE, &m_acquired_texture_index));
   return m_acquired_texture_index;
 }
 
