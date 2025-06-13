@@ -90,8 +90,9 @@ int main() {
         break;
       }
       case SDL_SYSWM_X11: {
-        // NOTE: probably should just pass the X11 window and surface and let MGPU deal with XCB
-        ATOM_PANIC("unimplemented X11 surface creation");
+        surface_create_info.x11.display = wm_info.info.x11.display;
+        surface_create_info.x11.window = wm_info.info.x11.window;
+        break;
       }
       default: {
         ATOM_PANIC("unexpected wm_info.subsystem: {}", wm_info.subsystem);

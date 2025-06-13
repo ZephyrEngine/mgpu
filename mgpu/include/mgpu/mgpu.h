@@ -6,12 +6,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#ifdef WIN32
+#if defined(WIN32)
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
-#endif
-
-#ifdef __APPLE__
+#elif defined(__APPLE__)
   #ifdef __OBJC__
     @class CAMetalLayer;
   #else
@@ -548,11 +546,15 @@ typedef struct MGPUSurfaceCreateInfo {
     const CAMetalLayer* metal_layer;
   } metal;
 #else
-  // TODO: proper detection for Linux and BSD etc...
   struct {
     struct wl_display* display;
     struct wl_surface* surface;
   } wayland;
+
+  struct {
+    void* display;
+    uint64_t window;
+  } x11;
 #endif
 } MGPUSurfaceCreateInfo;
 
