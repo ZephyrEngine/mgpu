@@ -147,12 +147,9 @@ MGPUResult Queue::Present(SwapChain* swap_chain, u32 texture_index) {
   }, m_vk_cmd_buffer);
   Flush();
 
-  MGPU_VK_FORWARD_ERROR(vkQueuePresentKHR(m_vk_queue, &vk_present_info));
-
-  // Delete the temporary semaphore at the next opportunity.
+  VkResult vk_result = vkQueuePresentKHR(m_vk_queue, &vk_present_info);
   DestroySwapChainAcquireSemaphore();
-
-  return MGPU_SUCCESS;
+  return VkResultToMGPUResult(vk_result);
 }
 
 MGPUResult Queue::SubmitCommandList(const CommandList* command_list) {

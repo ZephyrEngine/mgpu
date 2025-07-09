@@ -86,7 +86,7 @@ Result<std::span<TextureBase* const>> SwapChain::EnumerateTextures() {
   return std::span<TextureBase* const>{m_textures};
 }
 
-Result<u32> SwapChain::AcquireNextTexture() {
+MGPUResult SwapChain::AcquireNextTexture(u32& acquired_texture_index) {
   const VkSemaphoreCreateInfo vk_semaphore_create_info{
     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
     .pNext = nullptr,
@@ -97,8 +97,10 @@ Result<u32> SwapChain::AcquireNextTexture() {
   m_device->GetCommandQueue().SetSwapChainAcquireSemaphore(vk_semaphore);
 
   // TODO: why is ~0ull timeout required on X11 but not Wayland, macOS and Windows?
-  MGPU_VK_FORWARD_ERROR(vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, ~0ull, vk_semaphore, VK_NULL_HANDLE, &m_acquired_texture_index));
-  return m_acquired_texture_index;
+  VkResult vk_result = vkAcquireNextImageKHR(m_device->Handle(), m_vk_swap_chain, ~0ull, vk_semaphore, VK_NULL_HANDLE, &m_acquired_texture_index);
+  acquired_texture_index = m_acquired_texture_index;
+  MGPU_VK_FORWARD_ERROR(vk_result);
+  return MGPU_SUCCESS;
 }
 
 MGPUResult SwapChain::Present() {
