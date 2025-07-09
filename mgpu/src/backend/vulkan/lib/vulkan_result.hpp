@@ -25,9 +25,9 @@ inline MGPUResult VkResultToMGPUResult(VkResult vk_result) {
 
 #define MGPU_VK_FORWARD_ERROR(expression) \
   do { \
-    const VkResult vk_result = (expression); \
-    if(vk_result != VK_SUCCESS) { \
-      return VkResultToMGPUResult(vk_result); \
+    const VkResult vk_result__ = (expression); \
+    if(vk_result__ != VK_SUCCESS) { \
+      return VkResultToMGPUResult(vk_result__); \
     } \
   } while(0)
 
