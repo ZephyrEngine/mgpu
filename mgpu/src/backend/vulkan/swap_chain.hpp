@@ -19,7 +19,7 @@ class SwapChain final : public SwapChainBase {
     [[nodiscard]] VkSwapchainKHR Handle() { return m_vk_swap_chain; }
 
     Result<std::span<TextureBase* const>> EnumerateTextures() override;
-    Result<u32> AcquireNextTexture() override;
+    MGPUResult AcquireNextTexture(u32& acquired_texture_index) override;
     MGPUResult Present() override;
 
   private:

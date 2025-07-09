@@ -35,10 +35,7 @@ MGPUResult mgpuSwapChainAcquireNextTexture(MGPUSwapChain swap_chain, uint32_t* t
   if(cxx_swap_chain->WasRetired()) {
     return MGPU_SWAP_CHAIN_RETIRED;
   }
-  mgpu::Result<u32> texture_index_result = cxx_swap_chain->AcquireNextTexture();
-  MGPU_FORWARD_ERROR(texture_index_result.Code());
-  *texture_index = texture_index_result.Unwrap();
-  return MGPU_SUCCESS;
+  return cxx_swap_chain->AcquireNextTexture(*texture_index);
 }
 
 MGPUResult mgpuSwapChainPresent(MGPUSwapChain swap_chain) {
