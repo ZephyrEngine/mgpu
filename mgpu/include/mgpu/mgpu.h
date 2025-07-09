@@ -352,7 +352,7 @@ typedef struct MGPUSurfaceCapabilities {
   // TODO(fleroviux): might want to expose composite alpha, pre-transform and array layer count settings?
   uint32_t min_texture_count;
   uint32_t max_texture_count;
-  MGPUExtent2D current_extent; // can be (MAX_U32, MAX_U32) if the extent is determined by the swap chain targetting the surface
+  MGPUExtent2D current_extent; // can be (MAX_U32, MAX_U32) if the extent is determined by the swap chain targeting the surface
   MGPUExtent2D min_texture_extent;
   MGPUExtent2D max_texture_extent;
   MGPUTextureUsage supported_usage;
